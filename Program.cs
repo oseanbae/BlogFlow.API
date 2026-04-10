@@ -4,6 +4,7 @@ using BlogFlow.API.Services.Interfaces;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using Scalar.AspNetCore;
 using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -25,11 +26,9 @@ builder.Services.AddControllers()
     });
 
 //
-// -------------------- Swagger / OpenAPI --------------------
+// -------------------- OpenAPI / Scalar --------------------
 //
 builder.Services.AddOpenApi();
-builder.Services.AddSwaggerGen();
-
 //
 // -------------------- Dependency Injection --------------------
 //
@@ -74,8 +73,8 @@ var app = builder.Build();
 //
 if (app.Environment.IsDevelopment())
 {
-    app.UseSwagger();
-    app.UseSwaggerUI();
+    app.MapOpenApi();
+    app.MapScalarApiReference();
 }
 
 app.UseHttpsRedirection();
