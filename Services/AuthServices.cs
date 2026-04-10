@@ -78,39 +78,74 @@ namespace BlogFlow.API.Services
 
         private string GenerateToken(User user)
         {
+            // Load JWT configuration section from appsettings.json (or equivalent config source)
             var jwt = _config.GetSection("JwtSettings");
 
+            // Retrieve the secret key used to sign the token.
+            // If missing → fail fast because token generation is impossible without it.
             var key = jwt["Secret"] ?? throw new Exception("JWT Secret is missing");
+
+            // These define who issued the token and who it is meant for (validation later)
             var issuer = jwt["Issuer"];
             var audience = jwt["Audience"];
+
+            // Token lifetime configuration (in minutes)
             var expiryMinutes = Convert.ToDouble(jwt["AccessTokenExpiryMinutes"]);
 
+            // Create symmetric security key from secret string (used for HMAC signing)
             var securityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(key));
+
+            // Define signing algorithm and credentials (HMAC SHA-256)
             var credentials = new SigningCredentials(securityKey, SecurityAlgorithms.HmacSha256);
 
+            // Convert user role enum/value into string for JWT claim storage
             var userRole = user.Role.ToString();
 
+            // Define claims (data embedded inside the JWT payload)
             var claims = new[]
             {
+                // "sub" (subject) usually represents the user ID
                 new Claim(JwtRegisteredClaimNames.Sub, user.Id.ToString()),
+
+                // Standard email claim
                 new Claim(JwtRegisteredClaimNames.Email, user.Email),
+
+                // Username stored as Name claim (used by identity frameworks)
                 new Claim(ClaimTypes.Name, user.Username),
+
+                // Role claim used for authorization [Authorize(Roles = "...")]
                 new Claim(ClaimTypes.Role, userRole),
+
+                // Unique token identifier (prevents replay / helps revoke tracking)
                 new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
             };
 
+            // Build token descriptor (this defines structure + metadata of JWT)
             var tokenDescriptor = new SecurityTokenDescriptor
             {
+                // Attach identity + claims payload
                 Subject = new ClaimsIdentity(claims),
+
+                // Expiration time (important for security)
                 Expires = DateTime.UtcNow.AddMinutes(expiryMinutes),
+
+                // Issuer validation (server that created the token)
                 Issuer = issuer,
+
+                // Audience validation (who this token is intended for)
                 Audience = audience,
+
+                // Signing credentials ensure token integrity and authenticity
                 SigningCredentials = credentials
             };
 
+            // Handler responsible for creating and writing JWT tokens
             var tokenHandler = new JwtSecurityTokenHandler();
+
+            // Create token object based on descriptor
             var securityToken = tokenHandler.CreateToken(tokenDescriptor);
 
+            // Serialize token into compact JWT string (header.payload.signature)
             return tokenHandler.WriteToken(securityToken);
         }
     }
