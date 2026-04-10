@@ -1,5 +1,6 @@
 ﻿using BlogFlow.API.DTOs.Auth;
 using BlogFlow.API.Services.Interfaces;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace BlogFlow.API.Controllers
@@ -41,6 +42,20 @@ namespace BlogFlow.API.Controllers
             {
                 return BadRequest(ex.Message);
             }
+        }
+        
+        //Test: Role-Access end points
+        [Authorize]
+        [HttpGet("profile")]
+        public IActionResult GetProfile()
+        {
+            return Ok("You are authenticated");
+        }
+        [Authorize(Roles = "Admin")]
+        [HttpGet("admin-test")]
+        public IActionResult AdminTest()
+        {
+            return Ok("Admin access granted");
         }
     }
 }
