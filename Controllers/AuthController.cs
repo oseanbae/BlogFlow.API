@@ -4,31 +4,43 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace BlogFlow.API.Controllers
 {
-    [Route("api/[controller]")]
+    [Route("api/v1/[controller]")]
     [ApiController]
     public class AuthController : ControllerBase
     {
         private readonly IAuthServices _authServices;
+
         public AuthController(IAuthServices authservices)
         {
             _authServices = authservices;
         }
 
-        //POST: /api/v1/auth/register
         [HttpPost("register")]
-        public async Task<ActionResult<AuthResponseDTO>> RegisterAsync(RegisterRequestDTO dto)
+        public async Task<ActionResult<AuthResponseDTO>> RegisterAsync([FromBody] RegisterRequestDTO dto)
         {
-            var result = await _authServices.RegisterAsync(dto);
-            return Ok(result);
+            try
+            {
+                var result = await _authServices.RegisterAsync(dto);
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
         }
 
-        //POST: /api/v1/auth/login
         [HttpPost("login")]
-        public async Task<ActionResult<AuthResponseDTO>> LoginAsync(LoginRequestDTO dto)
+        public async Task<ActionResult<AuthResponseDTO>> LoginAsync([FromBody] LoginRequestDTO dto)
         {
-            var result = await _authServices.LoginAsync(dto);
-            return Ok(result);
+            try
+            {
+                var result = await _authServices.LoginAsync(dto);
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
         }
-
     }
 }
