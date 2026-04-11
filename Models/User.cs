@@ -32,5 +32,7 @@ namespace BlogFlow.API.Models
         [Required]
         public bool IsDeleted { get; set; } = false;
         public DateTime? DeletedAt { get; set; }
+
+        public ICollection<RefreshToken> RefreshTokens { get; set; } = [];
     }
 }
