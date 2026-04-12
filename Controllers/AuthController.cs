@@ -2,6 +2,8 @@
 using BlogFlow.API.Services.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
 
 namespace BlogFlow.API.Controllers
 {
@@ -43,19 +45,51 @@ namespace BlogFlow.API.Controllers
                 return BadRequest(ex.Message);
             }
         }
-        
-        //Test: Role-Access end points
+
+        [HttpPost("refresh")]
+        [AllowAnonymous]
+        public async Task<IActionResult> RefreshAsync([FromBody] RefreshTokenRequestDTO dto)
+        {
+            try
+            {
+                var result = await _authServices.RefreshAsync(dto);
+                return Ok(result);
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                return Unauthorized(ex.Message);
+            }
+            catch (Exception)
+            {
+                return StatusCode(500, "Something went wrong");
+            }
+        }
+
+        [HttpPost("revoke")]
         [Authorize]
-        [HttpGet("profile")]
-        public IActionResult GetProfile()
+        public async Task<IActionResult> RevokeAsync([FromBody] RevokeRequestDTO request)
         {
-            return Ok("You are authenticated");
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value
+                ?? User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
+
+            if (!Guid.TryParse(userIdClaim, out var userId))
+                return Unauthorized();
+
+            try
+            {
+                await _authServices.RevokeAsync(request, userId);
+                return NoContent();
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                return Unauthorized(ex.Message);
+            }
+            catch (Exception)
+            {
+                return StatusCode(500, "Something went wrong");
+            }
         }
-        [Authorize(Roles = "Admin")]
-        [HttpGet("admin-test")]
-        public IActionResult AdminTest()
-        {
-            return Ok("Admin access granted");
-        }
+
+
     }
 }

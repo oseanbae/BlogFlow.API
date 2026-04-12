@@ -2,23 +2,28 @@
 using BlogFlow.API.DTOs.Auth;
 using BlogFlow.API.Models;
 using BlogFlow.API.Services.Interfaces;
+using BlogFlow.API.Settings;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
+using System.Security.Cryptography;
 using System.Text;
 
 namespace BlogFlow.API.Services
 {
     public class AuthServices : IAuthServices
     {
-        private readonly IConfiguration _config;
         private readonly AppDbContext _context;
+        private readonly JwtSettings _jwt;
 
-        public AuthServices(IConfiguration config, AppDbContext context)
+        public AuthServices(
+            AppDbContext context,
+            IOptions<JwtSettings> jwtOptions)
         {
-            _config = config;
             _context = context;
+            _jwt = jwtOptions.Value;
         }
 
         public async Task<AuthResponseDTO> RegisterAsync(RegisterRequestDTO request)
@@ -37,11 +42,12 @@ namespace BlogFlow.API.Services
                 Email = request.Email,
                 PasswordHash = passwordHash
             };
-
+            
             await _context.Users.AddAsync(user);
             await _context.SaveChangesAsync();
 
-            var token = GenerateToken(user);
+            var accessToken = GenerateToken(user);
+            var refreshToken = await GenerateRefreshTokenAsync(user.Id);
 
             return new AuthResponseDTO
             {
@@ -49,22 +55,23 @@ namespace BlogFlow.API.Services
                 Username = user.Username,
                 Email = user.Email,
                 Role = user.Role,
-                Token = token
+                AccessToken = accessToken,
+                RefreshToken = refreshToken.Token,
+                RefreshTokenExpiry = refreshToken.ExpiresAt
             };
         }
-
         public async Task<AuthResponseDTO> LoginAsync(LoginRequestDTO request)
         {
             var user = await _context.Users
                 .FirstOrDefaultAsync(u => u.Email == request.Email);
 
-            if (user == null)
-                throw new Exception("Account doesn't exist.");
+            if (user == null || !BCrypt.Net.BCrypt.Verify(request.Password, user.PasswordHash))
+                throw new Exception("Invalid Credentials");
 
-            if (!BCrypt.Net.BCrypt.Verify(request.Password, user.PasswordHash))
-                throw new Exception("Password Incorrect.");
+            await RemoveExpiredRefreshTokensAsync(user.Id);
 
-            var token = GenerateToken(user); 
+            var accessToken = GenerateToken(user);
+            var refreshToken = await GenerateRefreshTokenAsync(user.Id);
 
             return new AuthResponseDTO
             {
@@ -72,22 +79,66 @@ namespace BlogFlow.API.Services
                 Username = user.Username,
                 Email = user.Email,
                 Role = user.Role,
-                Token = token
+                AccessToken = accessToken,
+                RefreshToken = refreshToken.Token,
+                RefreshTokenExpiry = refreshToken.ExpiresAt
             };
+        }
+        public async Task<AuthResponseDTO> RefreshAsync(RefreshTokenRequestDTO request)
+        {
+            var existingToken = await _context.RefreshTokens
+                .Include(r => r.User)
+                .FirstOrDefaultAsync(r => r.Token == request.RefreshToken)
+                ?? throw new UnauthorizedAccessException("Invalid refresh token.");
+
+            // Check revocation before expiry — a revoked token could indicate theft.
+            // If someone is reusing a revoked token, wipe all sessions.
+            if (existingToken.IsRevoked)
+            {
+                await RevokeAllUserTokensAsync(existingToken.UserId, "Reuse of revoked token detected");
+                throw new UnauthorizedAccessException("Token reuse detected. All sessions revoked.");
+            }
+            if (existingToken.IsExpired)
+                throw new UnauthorizedAccessException("Expired refresh token.");
+
+            // rotate
+            var newRefreshToken = await GenerateRefreshTokenAsync(existingToken.UserId);
+
+            existingToken.RevokedAt = DateTime.UtcNow;
+            existingToken.ReplacedByToken = newRefreshToken.Token;
+            existingToken.RevokeReason = "Rotated";
+
+            await _context.SaveChangesAsync();
+
+            var accessToken = GenerateToken(existingToken.User);
+
+            return new AuthResponseDTO
+            {
+                Id = existingToken.User.Id,
+                Username = existingToken.User.Username,
+                Email = existingToken.User.Email,
+                Role = existingToken.User.Role,
+                AccessToken = accessToken,
+                RefreshToken = newRefreshToken.Token,
+                RefreshTokenExpiry = newRefreshToken.ExpiresAt
+            };
+        }
+        public async Task RevokeAsync(RevokeRequestDTO request, Guid userId)
+        {
+            var token = await _context.RefreshTokens
+                .FirstOrDefaultAsync(r => r.Token == request.RefreshToken && r.UserId == userId);
+
+            if (token == null || !token.IsActive) 
+                throw new UnauthorizedAccessException("Invalid token");
+
+            token.RevokedAt = DateTime.UtcNow;
+            token.RevokeReason = "Revoked by user";
+
+            await _context.SaveChangesAsync();
         }
 
         private string GenerateToken(User user)
         {
-            // Load JWT configuration section from appsettings.json (or equivalent config source)
-            var jwt = _config.GetSection("JwtSettings");
-
-            // Retrieve the secret key used to sign the token.
-            // If missing → fail fast because token generation is impossible without it.
-            var key = jwt["Secret"] ?? throw new Exception("JWT Secret is missing");
-
-            // These define who issued the token and who it is meant for (validation later)
-            var issuer = jwt["Issuer"];
-            var audience = jwt["Audience"];
 
             // Token lifetime configuration (in minutes)
             var expiryMinutes = _jwt.AccessTokenExpiryMinutes;
@@ -147,6 +198,50 @@ namespace BlogFlow.API.Services
 
             // Serialize token into compact JWT string (header.payload.signature)
             return tokenHandler.WriteToken(securityToken);
+        }
+        private async Task<RefreshToken> GenerateRefreshTokenAsync(Guid userId)
+        {
+            // Token lifetime configuration (in days)
+            var expiryDays = _jwt.RefreshTokenExpiryDays;
+
+            // Generate secure random refresh token
+            var refreshToken = new RefreshToken
+            {
+                Token = Convert.ToBase64String(RandomNumberGenerator.GetBytes(64)),
+                UserId = userId,
+                ExpiresAt = DateTime.UtcNow.AddDays(expiryDays)
+            };
+
+            await _context.RefreshTokens.AddAsync(refreshToken);
+            await _context.SaveChangesAsync();
+
+            return refreshToken;
+        }
+
+        private async Task RemoveExpiredRefreshTokensAsync(Guid userId)
+        {
+            var expired = await _context.RefreshTokens
+                .Where(r => r.UserId == userId && r.ExpiresAt < DateTime.UtcNow)
+                .ToListAsync();
+
+            _context.RefreshTokens.RemoveRange(expired);
+            await _context.SaveChangesAsync();
+        }
+        private async Task RevokeAllUserTokensAsync(Guid userId, string reason)
+        {
+            var tokens = await _context.RefreshTokens
+                .Where(r => r.UserId == userId
+                    && r.RevokedAt == null
+                    && r.ExpiresAt > DateTime.UtcNow)
+                .ToListAsync();
+
+            foreach (var token in tokens)
+            {
+                token.RevokedAt = DateTime.UtcNow;
+                token.RevokeReason = reason;
+            }
+
+            await _context.SaveChangesAsync();
         }
     }
 }

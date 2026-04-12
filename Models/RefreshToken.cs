@@ -12,7 +12,7 @@ public class RefreshToken
 
     public DateTime? RevokedAt { get; set; }
     public string? RevokeReason { get; set; }
-    public string? ReplacedByTokenId { get; set; } // Consider changing this to Guid? ReplacedByTokenId
+    public string? ReplacedByToken { get; set; }
 
     //Computed Logic (Ignored by DB)
     [NotMapped]
@@ -22,5 +22,5 @@ public class RefreshToken
     public bool IsRevoked => RevokedAt != null;
 
     [NotMapped]
-    public bool IsActive => !IsRevoked && !IsExpired;
+    public bool IsActive => !IsExpired && !IsRevoked; 
 }

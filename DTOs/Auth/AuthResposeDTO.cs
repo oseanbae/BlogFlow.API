@@ -17,6 +17,8 @@ namespace BlogFlow.API.DTOs.Auth
         [Required, StringLength(20)]
         public required UserRole Role { get; set; }
 
-        public required string Token { get; set; } // JWT
+        public required string AccessToken { get; set; } // JWT
+        public required string RefreshToken { get; set; }
+        public DateTime RefreshTokenExpiry { get; set; }
     }
 }
