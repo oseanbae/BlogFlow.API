@@ -46,11 +46,8 @@ builder.Services
     .Validate(jwt => !string.IsNullOrWhiteSpace(jwt.Issuer), "JWT Issuer is missing")
     .Validate(jwt => !string.IsNullOrWhiteSpace(jwt.Audience), "JWT Audience is missing")
     .Validate(jwt => jwt.AccessTokenExpiryMinutes > 0, "Invalid AccessTokenExpiryMinutes")
+    .Validate(jwt => jwt.RefreshTokenExpiryDays > 0, "Invalid RefreshTokenExpiryDays")
     .ValidateOnStart();  // runs validation at startup instead of first use
-var jwtSettings = builder.Configuration
-    .GetSection("JwtSettings")
-    .Get<JwtSettings>()
-    ?? throw new Exception("JwtSettings missing");
 
 // Register authentication services in DI container
 builder.Services
@@ -66,8 +63,12 @@ builder.Services
     // Configure JWT Bearer authentication handler
     .AddJwtBearer(options =>
     {
+        var settings = builder.Configuration.GetSection("JwtSettings").Get<JwtSettings>() ??
+            throw new Exception("JwtSettings is missing");
+
         options.TokenValidationParameters = new TokenValidationParameters
         {
+
             // Ensures token was issued by trusted issuer
             ValidateIssuer = true,
 
@@ -81,12 +82,12 @@ builder.Services
             ValidateIssuerSigningKey = true,
 
             // Expected issuer value (must match token generation)
-            ValidIssuer = jwtSettings.Issuer,
+            ValidIssuer = settings.Issuer,
             // Expected audience value (must match token generation)
-            ValidAudience = jwtSettings.Audience,
+            ValidAudience = settings.Audience,
             // Secret key used to validate HMAC signature
             IssuerSigningKey =
-                new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSettings.Secret))
+                new SymmetricSecurityKey(Encoding.UTF8.GetBytes(settings.Secret))
         };
     });
 
