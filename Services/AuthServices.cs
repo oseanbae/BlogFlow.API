@@ -90,10 +90,10 @@ namespace BlogFlow.API.Services
             var audience = jwt["Audience"];
 
             // Token lifetime configuration (in minutes)
-            var expiryMinutes = Convert.ToDouble(jwt["AccessTokenExpiryMinutes"]);
+            var expiryMinutes = _jwt.AccessTokenExpiryMinutes;
 
             // Create symmetric security key from secret string (used for HMAC signing)
-            var securityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(key));
+            var securityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_jwt.Secret));
 
             // Define signing algorithm and credentials (HMAC SHA-256)
             var credentials = new SigningCredentials(securityKey, SecurityAlgorithms.HmacSha256);
@@ -130,10 +130,10 @@ namespace BlogFlow.API.Services
                 Expires = DateTime.UtcNow.AddMinutes(expiryMinutes),
 
                 // Issuer validation (server that created the token)
-                Issuer = issuer,
+                Issuer = _jwt.Issuer,
 
                 // Audience validation (who this token is intended for)
-                Audience = audience,
+                Audience = _jwt.Audience,
 
                 // Signing credentials ensure token integrity and authenticity
                 SigningCredentials = credentials
