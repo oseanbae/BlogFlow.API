@@ -18,9 +18,7 @@ namespace BlogFlow.API.Services
         private readonly AppDbContext _context;
         private readonly JwtSettings _jwt;
 
-        public AuthServices(
-            AppDbContext context,
-            IOptions<JwtSettings> jwtOptions)
+        public AuthServices(AppDbContext context,IOptions<JwtSettings> jwtOptions)
         {
             _context = context;
             _jwt = jwtOptions.Value;
