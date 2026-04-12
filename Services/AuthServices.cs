@@ -29,9 +29,7 @@ namespace BlogFlow.API.Services
         public async Task<AuthResponseDTO> RegisterAsync(RegisterRequestDTO request)
         {
             var existingUser = await _context.Users
-                .FirstOrDefaultAsync(u => u.Username == request.Username || u.Email == request.Email);
-
-            if (existingUser != null)
+                .FirstOrDefaultAsync(u => u.Username == request.Username || u.Email == request.Email) ??
                 throw new Exception("Username or Email already exists.");
 
             var passwordHash = BCrypt.Net.BCrypt.HashPassword(request.Password);
@@ -104,6 +102,7 @@ namespace BlogFlow.API.Services
             // rotate
             var newRefreshToken = await GenerateRefreshTokenAsync(existingToken.UserId);
 
+            //revoking the token
             existingToken.RevokedAt = DateTime.UtcNow;
             existingToken.ReplacedByToken = newRefreshToken.Token;
             existingToken.RevokeReason = "Rotated";
@@ -139,7 +138,6 @@ namespace BlogFlow.API.Services
 
         private string GenerateToken(User user)
         {
-
             // Token lifetime configuration (in minutes)
             var expiryMinutes = _jwt.AccessTokenExpiryMinutes;
 
@@ -201,15 +199,12 @@ namespace BlogFlow.API.Services
         }
         private async Task<RefreshToken> GenerateRefreshTokenAsync(Guid userId)
         {
-            // Token lifetime configuration (in days)
-            var expiryDays = _jwt.RefreshTokenExpiryDays;
-
             // Generate secure random refresh token
             var refreshToken = new RefreshToken
             {
                 Token = Convert.ToBase64String(RandomNumberGenerator.GetBytes(64)),
                 UserId = userId,
-                ExpiresAt = DateTime.UtcNow.AddDays(expiryDays)
+                ExpiresAt = DateTime.UtcNow.AddDays(_jwt.RefreshTokenExpiryDays)
             };
 
             await _context.RefreshTokens.AddAsync(refreshToken);
@@ -217,7 +212,6 @@ namespace BlogFlow.API.Services
 
             return refreshToken;
         }
-
         private async Task RemoveExpiredRefreshTokensAsync(Guid userId)
         {
             var expired = await _context.RefreshTokens
