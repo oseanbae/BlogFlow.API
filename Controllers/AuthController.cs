@@ -2,6 +2,7 @@
 using BlogFlow.API.Services.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 
@@ -18,6 +19,7 @@ namespace BlogFlow.API.Controllers
             _authServices = authservices;
         }
 
+        [EnableRateLimiting("register")]
         [HttpPost("register")]
         public async Task<ActionResult<AuthResponseDTO>> RegisterAsync([FromBody] RegisterRequestDTO dto)
         {
@@ -32,6 +34,7 @@ namespace BlogFlow.API.Controllers
             }
         }
 
+        [EnableRateLimiting("login")]
         [HttpPost("login")]
         public async Task<ActionResult<AuthResponseDTO>> LoginAsync([FromBody] LoginRequestDTO dto)
         {
@@ -46,6 +49,7 @@ namespace BlogFlow.API.Controllers
             }
         }
 
+        [EnableRateLimiting("refresh")]
         [HttpPost("refresh")]
         [AllowAnonymous]
         public async Task<IActionResult> RefreshAsync([FromBody] RefreshTokenRequestDTO dto)
@@ -65,6 +69,7 @@ namespace BlogFlow.API.Controllers
             }
         }
 
+        [EnableRateLimiting("revoke")]
         [HttpPost("revoke")]
         [Authorize]
         public async Task<IActionResult> RevokeAsync([FromBody] RevokeRequestDTO request)

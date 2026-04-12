@@ -27,7 +27,9 @@ namespace BlogFlow.API.Services
         public async Task<AuthResponseDTO> RegisterAsync(RegisterRequestDTO request)
         {
             var existingUser = await _context.Users
-                .FirstOrDefaultAsync(u => u.Username == request.Username || u.Email == request.Email) ??
+    .           FirstOrDefaultAsync(u => u.Username == request.Username || u.Email == request.Email);
+
+            if (existingUser != null)
                 throw new Exception("Username or Email already exists.");
 
             var passwordHash = BCrypt.Net.BCrypt.HashPassword(request.Password);

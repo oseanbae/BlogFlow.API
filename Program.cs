@@ -1,24 +1,18 @@
 using BlogFlow.API.Data;
+using BlogFlow.API.Extensions;
 using BlogFlow.API.Services;
 using BlogFlow.API.Services.Interfaces;
 using BlogFlow.API.Settings;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.IdentityModel.Tokens;
 using Scalar.AspNetCore;
-using System.Text;
+using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
-//
-// -------------------- Database --------------------
-//
+// Database
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
 
-//
-// -------------------- Controllers & JSON --------------------
-//
+// Controllers & JSON
 builder.Services.AddControllers()
     .AddJsonOptions(options =>
     {
@@ -26,87 +20,31 @@ builder.Services.AddControllers()
             new System.Text.Json.Serialization.JsonStringEnumConverter());
     });
 
-//
-// -------------------- OpenAPI / Scalar --------------------
-//
+// OpenAPI / Scalar
 builder.Services.AddOpenApi();
-//
-// -------------------- Dependency Injection --------------------
-//
+
+// Dependency Injection
 builder.Services.AddScoped<IAuthServices, AuthServices>();
 
-//
-// -------------------- JWT Authentication --------------------
-//
-// Load JWT settings once at startup
-builder.Services
-    .AddOptions<JwtSettings>()
-    .Bind(builder.Configuration.GetSection("JwtSettings"))
-    .Validate(jwt => !string.IsNullOrWhiteSpace(jwt.Secret), "JWT Secret is missing")
-    .Validate(jwt => !string.IsNullOrWhiteSpace(jwt.Issuer), "JWT Issuer is missing")
-    .Validate(jwt => !string.IsNullOrWhiteSpace(jwt.Audience), "JWT Audience is missing")
-    .Validate(jwt => jwt.AccessTokenExpiryMinutes > 0, "Invalid AccessTokenExpiryMinutes")
-    .Validate(jwt => jwt.RefreshTokenExpiryDays > 0, "Invalid RefreshTokenExpiryDays")
-    .ValidateOnStart();  // runs validation at startup instead of first use
+// Authentication & Authorization
+builder.Services.AddJwtAuthentication(builder.Configuration);
 
-// Register authentication services in DI container
-builder.Services
-    .AddAuthentication(options =>
-    {
-        // Default scheme used when [Authorize] is triggered
-        options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
-
-        // Default behavior when auth fails (401 challenge response)
-        options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
-    })
-
-    // Configure JWT Bearer authentication handler
-    .AddJwtBearer(options =>
-    {
-        var settings = builder.Configuration.GetSection("JwtSettings").Get<JwtSettings>() ??
-            throw new Exception("JwtSettings is missing");
-
-        options.TokenValidationParameters = new TokenValidationParameters
-        {
-
-            // Ensures token was issued by trusted issuer
-            ValidateIssuer = true,
-
-            // Ensures token is intended for this API
-            ValidateAudience = true,
-
-            // Ensures token is not expired
-            ValidateLifetime = true,
-
-            // Ensures signature is valid (token not tampered with)
-            ValidateIssuerSigningKey = true,
-
-            // Expected issuer value (must match token generation)
-            ValidIssuer = settings.Issuer,
-            // Expected audience value (must match token generation)
-            ValidAudience = settings.Audience,
-            // Secret key used to validate HMAC signature
-            IssuerSigningKey =
-                new SymmetricSecurityKey(Encoding.UTF8.GetBytes(settings.Secret))
-        };
-    });
-
-// Enable authorization system ([Authorize] attributes work)
-builder.Services.AddAuthorization();
+// Rate Limiting
+builder.Services.AddAuthRateLimiting(builder.Configuration);
 
 var app = builder.Build();
 
-//
-// -------------------- Middleware --------------------
-//
+// Development
 if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
     app.MapScalarApiReference();
 }
 
+// Middleware
 app.UseHttpsRedirection();
-
+app.UseRouting();
+app.UseRateLimiter();
 app.UseAuthentication();
 app.UseAuthorization();
 
