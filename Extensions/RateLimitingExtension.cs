@@ -1,11 +1,19 @@
-﻿using System.Threading.RateLimiting;
-using BlogFlow.API.Settings;
+﻿using BlogFlow.API.Settings;
+using Microsoft.AspNetCore.RateLimiting;
+using Microsoft.Extensions.Options;
+using System.Threading.RateLimiting;
+
 namespace BlogFlow.API.Extensions
 {
     public static class RateLimitingExtension
     {
         public static IServiceCollection AddAuthRateLimiting(this IServiceCollection services, IConfiguration configuration)
         {
+            const string REGISTER_POLICY = "register";
+            const string LOGIN_POLICY = "login";
+            const string REFRESH_POLICY = "refresh";
+            const string REVOKE_POLICY = "revoke";
+
             services.AddOptions<RateLimitOptions>()
                 .Bind(configuration.GetSection(RateLimitOptions.SectionName))
                 .Validate(options =>
@@ -16,69 +24,47 @@ namespace BlogFlow.API.Extensions
                     "All MaxRequest values must be greater than 0"
                 )
                 .ValidateOnStart();
-            var rateLimitConfig = configuration
-                .GetSection(RateLimitOptions.SectionName)
-                .Get<RateLimitOptions>() ?? new RateLimitOptions();
 
-            services.AddRateLimiter(options =>
-            {
-                options.AddPolicy("register", context =>
-                    RateLimitPartition.GetFixedWindowLimiter(
-                        partitionKey: context.Connection.RemoteIpAddress?.ToString() ?? "unknown",
-                        factory: _ => new FixedWindowRateLimiterOptions
-                        {
-                            PermitLimit = rateLimitConfig.Register.MaxRequest,
-                            Window = TimeSpan.FromSeconds(rateLimitConfig.Register.WindowSecond),
-                            QueueLimit = rateLimitConfig.Register.QueueLimit,
-                            AutoReplenishment = rateLimitConfig.Register.AutoReplenishment
-                        }));
-
-                options.AddPolicy("login", context =>
-                    RateLimitPartition.GetFixedWindowLimiter(
-                         partitionKey: context.Connection.RemoteIpAddress?.ToString() ?? "unknown",
-                         factory: _ => new FixedWindowRateLimiterOptions
-                         {
-                             PermitLimit = rateLimitConfig.Login.MaxRequest,
-                             Window = TimeSpan.FromSeconds(rateLimitConfig.Login.WindowSecond),
-                             QueueLimit = rateLimitConfig.Login.QueueLimit,
-                             AutoReplenishment = rateLimitConfig.Login.AutoReplenishment
-                         }));
-
-                options.AddPolicy("refresh", context =>
-                    RateLimitPartition.GetFixedWindowLimiter(
-                        partitionKey: context.Connection.RemoteIpAddress?.ToString() ?? "unknown",
-                        factory: _ => new FixedWindowRateLimiterOptions
-                        {
-                            PermitLimit = rateLimitConfig.Refresh.MaxRequest,
-                            Window = TimeSpan.FromSeconds(rateLimitConfig.Refresh.WindowSecond),
-                            QueueLimit = rateLimitConfig.Refresh.QueueLimit,
-                            AutoReplenishment = rateLimitConfig.Refresh.AutoReplenishment
-                        }));
-
-                options.AddPolicy("revoke", context =>
-                RateLimitPartition.GetFixedWindowLimiter(
-                    partitionKey: context.Connection.RemoteIpAddress?.ToString() ?? "unknown",
-                    factory: _ => new FixedWindowRateLimiterOptions
-                    {
-                        PermitLimit = rateLimitConfig.Revoke.MaxRequest,
-                        Window = TimeSpan.FromSeconds(rateLimitConfig.Revoke.WindowSecond),
-                        QueueLimit = rateLimitConfig.Revoke.QueueLimit,
-                        AutoReplenishment = rateLimitConfig.Revoke.AutoReplenishment
-                    }));
-
-                options.OnRejected = async (context, token) =>
+            services.AddOptions<RateLimiterOptions>()
+                .Configure<IOptions<RateLimitOptions>>((limiterOptions, rateLimitSettings) =>
                 {
-                    context.HttpContext.Response.StatusCode = StatusCodes.Status429TooManyRequests;
-                    await context.HttpContext.Response.WriteAsJsonAsync(new
+                    var config = rateLimitSettings.Value;
+
+                    CreateLimiter(limiterOptions, REGISTER_POLICY, config.Register);
+                    CreateLimiter(limiterOptions, LOGIN_POLICY, config.Login);
+                    CreateLimiter(limiterOptions, REFRESH_POLICY, config.Refresh);
+                    CreateLimiter(limiterOptions, REVOKE_POLICY, config.Revoke);
+
+                    limiterOptions.OnRejected = async (context, token) =>
                     {
-                        error = "Too many attempts",
-                        message = "Please try again later",
-                        retryAfter = 60
-                    }, cancellationToken: token);
-                };
-            });
+                        context.HttpContext.Response.StatusCode = StatusCodes.Status429TooManyRequests;
+                        await context.HttpContext.Response.WriteAsJsonAsync(new
+                        {
+                            error =  config.Rejected.Error,
+                            message = config.Rejected.Message,
+                            retryAfter = TimeSpan.FromSeconds(config.Rejected.WindowSecond) 
+                        }, cancellationToken: token);
+                    };
+                });
 
             return services;
+        }
+
+        private static void CreateLimiter(
+            RateLimiterOptions limiterOptions,
+            string policy,
+            RateLimitPolicyOptions endpointConfig)
+        {
+            limiterOptions.AddPolicy(policy, context =>
+                        RateLimitPartition.GetFixedWindowLimiter(
+                            partitionKey: context.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+                            factory: _ => new FixedWindowRateLimiterOptions
+                            {
+                                PermitLimit = endpointConfig.MaxRequest,
+                                Window = TimeSpan.FromSeconds(endpointConfig.WindowSecond),
+                                QueueLimit = endpointConfig.QueueLimit,
+                                AutoReplenishment = endpointConfig.AutoReplenishment
+                            }));
         }
     }
 }
