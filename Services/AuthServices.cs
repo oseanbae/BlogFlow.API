@@ -1,6 +1,7 @@
 ﻿using BlogFlow.API.Data;
 using BlogFlow.API.DTOs.Auth;
 using BlogFlow.API.Models;
+using BlogFlow.API.Repositories.Interfaces;
 using BlogFlow.API.Services.Interfaces;
 using BlogFlow.API.Settings;
 using Microsoft.EntityFrameworkCore;
@@ -15,19 +16,24 @@ namespace BlogFlow.API.Services
 {
     public class AuthServices : IAuthServices
     {
-        private readonly AppDbContext _context;
+        private readonly AppDbContext _context; // delete later
         private readonly JwtSettings _jwt;
+        private readonly IRefreshTokenRepository _refreshTokenRepo;
 
-        public AuthServices(AppDbContext context,IOptions<JwtSettings> jwtOptions)
+        public AuthServices(
+            AppDbContext context,
+            IRefreshTokenRepository refrshTokenRepo,
+            IOptions<JwtSettings> jwtOptions)
         {
             _context = context;
+            _refreshTokenRepo = refrshTokenRepo;
             _jwt = jwtOptions.Value;
         }
 
         public async Task<AuthResponseDTO> RegisterAsync(RegisterRequestDTO request)
         {
             var existingUser = await _context.Users
-    .           FirstOrDefaultAsync(u => u.Username == request.Username || u.Email == request.Email);
+                .FirstOrDefaultAsync(u => u.Username == request.Username || u.Email == request.Email);
 
             if (existingUser != null)
                 throw new Exception("Username or Email already exists.");
@@ -84,9 +90,7 @@ namespace BlogFlow.API.Services
         }
         public async Task<AuthResponseDTO> RefreshAsync(RefreshTokenRequestDTO request)
         {
-            var existingToken = await _context.RefreshTokens
-                .Include(r => r.User)
-                .FirstOrDefaultAsync(r => r.Token == request.RefreshToken)
+            var existingToken = await _refreshTokenRepo.GetByTokenAsync(request.RefreshToken)
                 ?? throw new UnauthorizedAccessException("Invalid refresh token.");
 
             // Check revocation before expiry — a revoked token could indicate theft.
@@ -103,11 +107,7 @@ namespace BlogFlow.API.Services
             var newRefreshToken = await GenerateRefreshTokenAsync(existingToken.UserId);
 
             //revoking the token
-            existingToken.RevokedAt = DateTime.UtcNow;
-            existingToken.ReplacedByToken = newRefreshToken.Token;
-            existingToken.RevokeReason = "Rotated";
-
-            await _context.SaveChangesAsync();
+            await _refreshTokenRepo.RevokeAsync(existingToken, "Rotated", newRefreshToken.Token);
 
             var accessToken = GenerateToken(existingToken.User);
 
@@ -124,18 +124,13 @@ namespace BlogFlow.API.Services
         }
         public async Task RevokeAsync(RevokeRequestDTO request, Guid userId)
         {
-            var token = await _context.RefreshTokens
-                .FirstOrDefaultAsync(r => r.Token == request.RefreshToken && r.UserId == userId);
+            var token = await _refreshTokenRepo.GetByTokenAsync(request.RefreshToken);
 
-            if (token == null || !token.IsActive) 
+            if (token == null || !token.IsActive)
                 throw new UnauthorizedAccessException("Invalid token");
 
-            token.RevokedAt = DateTime.UtcNow;
-            token.RevokeReason = "Revoked by user";
-
-            await _context.SaveChangesAsync();
+            await _refreshTokenRepo.RevokeAsync(token, "Revoked by user", null);
         }
-
         private string GenerateToken(User user)
         {
             // Token lifetime configuration (in minutes)
@@ -207,35 +202,16 @@ namespace BlogFlow.API.Services
                 ExpiresAt = DateTime.UtcNow.AddDays(_jwt.RefreshTokenExpiryDays)
             };
 
-            await _context.RefreshTokens.AddAsync(refreshToken);
-            await _context.SaveChangesAsync();
+            return await _refreshTokenRepo.CreateAsync(refreshToken);
 
-            return refreshToken;
         }
         private async Task RemoveExpiredRefreshTokensAsync(Guid userId)
         {
-            var expired = await _context.RefreshTokens
-                .Where(r => r.UserId == userId && r.ExpiresAt < DateTime.UtcNow)
-                .ToListAsync();
-
-            _context.RefreshTokens.RemoveRange(expired);
-            await _context.SaveChangesAsync();
+            await _refreshTokenRepo.RemoveExpiredAsync(userId);
         }
         private async Task RevokeAllUserTokensAsync(Guid userId, string reason)
         {
-            var tokens = await _context.RefreshTokens
-                .Where(r => r.UserId == userId
-                    && r.RevokedAt == null
-                    && r.ExpiresAt > DateTime.UtcNow)
-                .ToListAsync();
-
-            foreach (var token in tokens)
-            {
-                token.RevokedAt = DateTime.UtcNow;
-                token.RevokeReason = reason;
-            }
-
-            await _context.SaveChangesAsync();
+            await _refreshTokenRepo.RevokeAllUserTokensAsync(userId, reason);
         }
     }
 }
