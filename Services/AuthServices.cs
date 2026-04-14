@@ -1,10 +1,9 @@
-﻿using BlogFlow.API.Data;
+﻿
 using BlogFlow.API.DTOs.Auth;
 using BlogFlow.API.Models;
 using BlogFlow.API.Repositories.Interfaces;
 using BlogFlow.API.Services.Interfaces;
 using BlogFlow.API.Settings;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
@@ -16,24 +15,22 @@ namespace BlogFlow.API.Services
 {
     public class AuthServices : IAuthServices
     {
-        private readonly AppDbContext _context; // delete later
         private readonly JwtSettings _jwt;
         private readonly IRefreshTokenRepository _refreshTokenRepo;
-
+        private readonly IUserRepository _userRepo;
         public AuthServices(
-            AppDbContext context,
             IRefreshTokenRepository refrshTokenRepo,
+            IUserRepository userRepo,
             IOptions<JwtSettings> jwtOptions)
         {
-            _context = context;
             _refreshTokenRepo = refrshTokenRepo;
+            _userRepo = userRepo;
             _jwt = jwtOptions.Value;
         }
 
         public async Task<AuthResponseDTO> RegisterAsync(RegisterRequestDTO request)
         {
-            var existingUser = await _context.Users
-                .FirstOrDefaultAsync(u => u.Username == request.Username || u.Email == request.Email);
+            var existingUser = await _userRepo.GetByUsernameOrEmailAsync(request.Username, request.Email);
 
             if (existingUser != null)
                 throw new Exception("Username or Email already exists.");
@@ -46,9 +43,8 @@ namespace BlogFlow.API.Services
                 Email = request.Email,
                 PasswordHash = passwordHash
             };
-            
-            await _context.Users.AddAsync(user);
-            await _context.SaveChangesAsync();
+
+            await _userRepo.CreateAsync(user);
 
             var accessToken = GenerateToken(user);
             var refreshToken = await GenerateRefreshTokenAsync(user.Id);
@@ -66,13 +62,12 @@ namespace BlogFlow.API.Services
         }
         public async Task<AuthResponseDTO> LoginAsync(LoginRequestDTO request)
         {
-            var user = await _context.Users
-                .FirstOrDefaultAsync(u => u.Email == request.Email);
+            var user = await _userRepo.GetByEmailAsync(request.Email);
 
             if (user == null || !BCrypt.Net.BCrypt.Verify(request.Password, user.PasswordHash))
                 throw new Exception("Invalid Credentials");
 
-            await RemoveExpiredRefreshTokensAsync(user.Id);
+            await _refreshTokenRepo.RemoveExpiredAsync(user.Id);
 
             var accessToken = GenerateToken(user);
             var refreshToken = await GenerateRefreshTokenAsync(user.Id);
@@ -97,7 +92,7 @@ namespace BlogFlow.API.Services
             // If someone is reusing a revoked token, wipe all sessions.
             if (existingToken.IsRevoked)
             {
-                await RevokeAllUserTokensAsync(existingToken.UserId, "Reuse of revoked token detected");
+                await _refreshTokenRepo.RevokeAllUserTokensAsync(existingToken.UserId, "Reuse of revoked token detected");
                 throw new UnauthorizedAccessException("Token reuse detected. All sessions revoked.");
             }
             if (existingToken.IsExpired)
@@ -204,14 +199,6 @@ namespace BlogFlow.API.Services
 
             return await _refreshTokenRepo.CreateAsync(refreshToken);
 
-        }
-        private async Task RemoveExpiredRefreshTokensAsync(Guid userId)
-        {
-            await _refreshTokenRepo.RemoveExpiredAsync(userId);
-        }
-        private async Task RevokeAllUserTokensAsync(Guid userId, string reason)
-        {
-            await _refreshTokenRepo.RevokeAllUserTokensAsync(userId, reason);
         }
     }
 }
