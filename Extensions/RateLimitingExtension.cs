@@ -25,27 +25,28 @@ namespace BlogFlow.API.Extensions
                 )
                 .ValidateOnStart();
 
-            services.AddOptions<RateLimiterOptions>()
-                .Configure<IOptions<RateLimitOptions>>((limiterOptions, rateLimitSettings) =>
+            services.AddRateLimiter(limiterOptions =>
+            {
+                var config = configuration
+                    .GetSection(RateLimitOptions.SectionName)
+                    .Get<RateLimitOptions>()!;
+
+                CreateLimiter(limiterOptions, REGISTER_POLICY, config.Register);
+                CreateLimiter(limiterOptions, LOGIN_POLICY, config.Login);
+                CreateLimiter(limiterOptions, REFRESH_POLICY, config.Refresh);
+                CreateLimiter(limiterOptions, REVOKE_POLICY, config.Revoke);
+
+                limiterOptions.OnRejected = async (context, token) =>
                 {
-                    var config = rateLimitSettings.Value;
-
-                    CreateLimiter(limiterOptions, REGISTER_POLICY, config.Register);
-                    CreateLimiter(limiterOptions, LOGIN_POLICY, config.Login);
-                    CreateLimiter(limiterOptions, REFRESH_POLICY, config.Refresh);
-                    CreateLimiter(limiterOptions, REVOKE_POLICY, config.Revoke);
-
-                    limiterOptions.OnRejected = async (context, token) =>
+                    context.HttpContext.Response.StatusCode = StatusCodes.Status429TooManyRequests;
+                    await context.HttpContext.Response.WriteAsJsonAsync(new
                     {
-                        context.HttpContext.Response.StatusCode = StatusCodes.Status429TooManyRequests;
-                        await context.HttpContext.Response.WriteAsJsonAsync(new
-                        {
-                            error =  config.Rejected.Error,
-                            message = config.Rejected.Message,
-                            retryAfter = TimeSpan.FromSeconds(config.Rejected.WindowSecond) 
-                        }, cancellationToken: token);
-                    };
-                });
+                        error = config.Rejected.Error,
+                        message = config.Rejected.Message,
+                        retryAfter = TimeSpan.FromSeconds(config.Rejected.WindowSecond)
+                    }, cancellationToken: token);
+                };
+            });
 
             return services;
         }
