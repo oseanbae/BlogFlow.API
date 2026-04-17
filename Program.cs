@@ -1,10 +1,11 @@
 using BlogFlow.API.Data;
 using BlogFlow.API.Extensions;
+using BlogFlow.API.Repositories;
+using BlogFlow.API.Repositories.Interfaces;
 using BlogFlow.API.Services;
 using BlogFlow.API.Services.Interfaces;
-using BlogFlow.API.Settings;
-using Scalar.AspNetCore;
 using Microsoft.EntityFrameworkCore;
+using Scalar.AspNetCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -25,7 +26,8 @@ builder.Services.AddOpenApi();
 
 // Dependency Injection
 builder.Services.AddScoped<IAuthServices, AuthServices>();
-
+builder.Services.AddScoped<IUserRepository, UserRepository>();
+builder.Services.AddScoped<IRefreshTokenRepository, RefreshTokenRepository>();
 // Authentication & Authorization
 builder.Services.AddJwtAuthentication(builder.Configuration);
 

@@ -1,4 +1,6 @@
-﻿namespace BlogFlow.API.Repositories.Interfaces
+﻿using BlogFlow.API.Models;
+
+namespace BlogFlow.API.Repositories.Interfaces
 {
     public interface IRefreshTokenRepository
     {
