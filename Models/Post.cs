@@ -1,33 +1,39 @@
-﻿using System.ComponentModel.DataAnnotations;
-using System.ComponentModel.DataAnnotations.Schema;
-
-namespace BlogFlow.API.Models
+﻿namespace BlogFlow.API.Models
 {
     public class Post
     {
-        //[PK]
-        [Key]
+        //PK
         public Guid Id { get; set; } = Guid.NewGuid();
-
-        [Required, MaxLength(255)]
         public required string Title { get; set; }
-
-        [Required, MaxLength(10000)]
         public required string Body { get; set; }
-        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
-        public DateTime? UpdatedAt { get; set; }
-        public bool IsDeleted { get; set; } = false;
-        public DateTime? DeletedAt { get; set; }
+        public DateTime CreatedAt { get; private set; } = DateTime.UtcNow;
+        public DateTime? UpdatedAt { get; private set; }
+        public DateTime? DeletedAt { get; private set; }
 
+        public Post(Guid authorId, Guid categoryId, string title, string body)
+        {
+            AuthorId = authorId;
+            CategoryId = categoryId;
+            Title = title;
+            Body = body;
+        }
+        public void SoftDelete()
+        {
+            if (DeletedAt != null) throw new InvalidOperationException("This post is already deleted.");
+            DeletedAt = DateTime.UtcNow;
+        }
+        public void Restore()
+        {
+            if (DeletedAt == null) throw new InvalidOperationException("This post is not deleted.");
+            DeletedAt = null;
+        }
         //[FK]
-        public Guid AuthorId { get; set; }
-        public Guid CategoryId { get; set; }
+        public Guid AuthorId { get; private set; }
+        public Guid? CategoryId { get; private set; }
 
         //Navigation Properties
         public User Author { get; set; } = null!;
-        public Category Category { get; set; } = null!;
+        public Category? Category { get; set; } = null!;
         public ICollection<PostTag> PostTags { get; set; } = [];
-
-
     }
 }

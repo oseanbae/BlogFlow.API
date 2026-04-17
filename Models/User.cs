@@ -1,5 +1,4 @@
-﻿using System.ComponentModel.DataAnnotations;
-using System.Text.Json.Serialization;
+﻿using System.Text.Json.Serialization;
 
 namespace BlogFlow.API.Models
 {
@@ -13,27 +12,29 @@ namespace BlogFlow.API.Models
 
     public class User
     {
-        [Key]
         public Guid Id { get; set; } = Guid.NewGuid();
-
-        [Required, StringLength(50, MinimumLength = 3)]
-        public string Username { get; set; } = null!;
-        public string Email { get; set; } = null!;
-        public string PasswordHash { get; set; } = null!;
-
-        [Required]
+        public required string Username { get; set; }
+        public required string Email { get; set; }
+        public required string PasswordHash { get; set; }
         public UserRole Role { get; set; } = UserRole.Reader;
-        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
-
-        public bool IsDeleted { get; set; } = false;
-
-        public DateTime? DeletedAt { get; set; }
-
+        public DateTime CreatedAt { get; private set; } = DateTime.UtcNow;
+        public DateTime? DeletedAt { get; private set; }
+        public void SoftDelete()
+        {
+            if (DeletedAt != null) throw new InvalidOperationException("This user is already deleted.");
+            DeletedAt = DateTime.UtcNow;
+        }
+        public void Restore()
+        {
+           if (DeletedAt == null) throw new InvalidOperationException("This user is not deleted.");
+           DeletedAt = null;
+        }
+        
         // Navigation properties
         [JsonIgnore]
-        public ICollection<Post> Posts { get; set; } = new List<Post>();
+        public ICollection<Post> Posts { get; set; } = [];
 
         [JsonIgnore]
-        public ICollection<RefreshToken> RefreshTokens { get; set; } = new List<RefreshToken>();
+        public ICollection<RefreshToken> RefreshTokens { get; set; } = [];
     }
 }

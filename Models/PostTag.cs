@@ -1,9 +1,6 @@
-﻿
-using System.ComponentModel.DataAnnotations;
-using System.ComponentModel.DataAnnotations.Schema;
-
-namespace BlogFlow.API.Models
+﻿namespace BlogFlow.API.Models
 {
+    // Join entity for many-to-many relationship between Post and Tag
     public class PostTag
     {
         public Guid PostId { get; set; }
