@@ -1,0 +1,34 @@
+﻿using BlogFlow.API.DTOs.Post;
+using FluentValidation;
+
+
+namespace BlogFlow.API.Validators
+{
+    public class PostCreateValidator : AbstractValidator<PostCreateDTO>
+    {
+        public PostCreateValidator()
+        {
+            RuleFor(p => p.Title)
+                .NotEmpty()
+                .MinimumLength(3)
+                .Length(255);
+
+            RuleFor(p => p.Body)
+                .NotEmpty()
+                .MinimumLength(10)
+                .MaximumLength(10000);
+
+            RuleFor(p => p.CategoryId)
+                .Must(id => id == null || id != Guid.Empty)
+                .WithMessage("CategoryId cannot be an empty GUID");
+
+            RuleFor(p => p.TagIds)
+                .Must(tags => tags == null || tags.All(id => id != Guid.Empty))
+                .WithMessage("Tag Ids cannot contain empty GUID");
+
+            RuleFor(p => p.TagIds)
+                .Must(tags => tags == null || tags.Distinct().Count() == tags.Count)
+                .WithMessage("Duplicate TagIds are not allowed.");
+        }
+    }
+}
