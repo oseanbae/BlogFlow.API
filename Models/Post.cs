@@ -1,4 +1,6 @@
-﻿namespace BlogFlow.API.Models
+﻿using NuGet.Protocol.Plugins;
+
+namespace BlogFlow.API.Models
 {
     public class Post
     {
@@ -9,14 +11,14 @@
         public DateTime CreatedAt { get; private set; } = DateTime.UtcNow;
         public DateTime? UpdatedAt { get; private set; }
         public DateTime? DeletedAt { get; private set; }
+        //[FK]
+        public Guid AuthorId { get; private set; }
+        public Guid CategoryId { get; private set; }
 
-        public Post(Guid authorId, Guid categoryId, string title, string body)
-        {
-            AuthorId = authorId;
-            CategoryId = categoryId;
-            Title = title;
-            Body = body;
-        }
+        //Navigation Properties
+        public User Author { get; set; } = null!;
+        public Category Category { get; set; } = null!;
+        public ICollection<PostTag> PostTags { get; set; } = [];
         public void SoftDelete()
         {
             if (DeletedAt != null) throw new InvalidOperationException("This post is already deleted.");
@@ -27,13 +29,14 @@
             if (DeletedAt == null) throw new InvalidOperationException("This post is not deleted.");
             DeletedAt = null;
         }
-        //[FK]
-        public Guid AuthorId { get; private set; }
-        public Guid? CategoryId { get; private set; }
 
-        //Navigation Properties
-        public User Author { get; set; } = null!;
-        public Category? Category { get; set; } = null!;
-        public ICollection<PostTag> PostTags { get; set; } = [];
+        public void Update(string title, string body, Guid categoryId)
+        {
+            Title = title;
+            Body = body;
+            CategoryId = categoryId;
+            UpdatedAt = DateTime.UtcNow;
+        }
+
     }
 }
