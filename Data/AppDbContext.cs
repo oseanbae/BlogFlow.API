@@ -20,9 +20,7 @@ namespace BlogFlow.API.Data
             builder.Entity<User>(entity =>
             {
                 entity.HasKey(u => u.Id);
-
-                entity.Property(u => u.Id)
-                    .ValueGeneratedNever();
+                entity.Property(u => u.Id).ValueGeneratedNever();
 
                 entity.Property(u => u.Username)
                     .IsRequired()
@@ -31,7 +29,7 @@ namespace BlogFlow.API.Data
                 entity.HasIndex(u => u.Username).IsUnique();
 
                 entity.ToTable(t =>
-                    t.HasCheckConstraint("CK_Username_MinLength", "length(\"Username\") >= 3")
+                    t.HasCheckConstraint("CK_Username_MinLength", "length(username) >= 3")
                 );
 
                 entity.Property(u => u.Email)
@@ -44,13 +42,12 @@ namespace BlogFlow.API.Data
                     .IsRequired()
                     .HasMaxLength(500);
 
-                entity.Property(u => u.Role)
-                    .IsRequired();
+                entity.Property(u => u.Role).IsRequired();
+                entity.Property(u => u.CreatedAt).IsRequired();
 
-                entity.Property(u => u.CreatedAt)
-                    .IsRequired();
-
+                // Soft delete filter
                 entity.HasQueryFilter(u => u.DeletedAt == null);
+
                 entity.HasIndex(u => u.DeletedAt);
             });
 
@@ -58,9 +55,7 @@ namespace BlogFlow.API.Data
             builder.Entity<RefreshToken>(entity =>
             {
                 entity.HasKey(r => r.Id);
-
-                entity.Property(r => r.Id)
-                    .ValueGeneratedNever();
+                entity.Property(r => r.Id).ValueGeneratedNever();
 
                 entity.Property(r => r.Token)
                     .IsRequired()
@@ -73,8 +68,7 @@ namespace BlogFlow.API.Data
                     .IsRequired()
                     .HasColumnType("timestamp with time zone");
 
-                entity.Property(r => r.CreatedAt)
-                    .IsRequired();
+                entity.Property(r => r.CreatedAt).IsRequired();
 
                 entity.Property(r => r.RevokeReason)
                     .HasMaxLength(200);
@@ -82,13 +76,13 @@ namespace BlogFlow.API.Data
                 entity.ToTable(t =>
                 {
                     t.HasCheckConstraint(
-                        "CK_Token_Expiration_Future",
-                        "\"ExpiresAt\" > \"CreatedAt\""
+                        "ck_token_expiration_future",
+                        "expires_at > created_at"
                     );
 
                     t.HasCheckConstraint(
-                        "CK_RevokedAt_Valid",
-                        "\"RevokedAt\" IS NULL OR \"RevokedAt\" >= \"CreatedAt\""
+                        "ck_revoked_at_valid",
+                        "revoked_at IS NULL OR revoked_at >= created_at"
                     );
                 });
 
@@ -98,15 +92,15 @@ namespace BlogFlow.API.Data
                     .WithMany(u => u.RefreshTokens)
                     .HasForeignKey(r => r.UserId)
                     .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasQueryFilter(r => r.User.DeletedAt == null);
             });
 
             // POST
             builder.Entity<Post>(entity =>
             {
                 entity.HasKey(p => p.Id);
-
-                entity.Property(p => p.Id)
-                    .ValueGeneratedNever();
+                entity.Property(p => p.Id).ValueGeneratedNever();
 
                 entity.Property(p => p.Title)
                     .IsRequired()
@@ -116,11 +110,8 @@ namespace BlogFlow.API.Data
                     .IsRequired()
                     .HasMaxLength(10000);
 
-                entity.Property(p => p.CreatedAt)
-                    .IsRequired();
-
-                entity.Property(p => p.UpdatedAt)
-                    .IsRequired(false);
+                entity.Property(p => p.CreatedAt).IsRequired();
+                entity.Property(p => p.UpdatedAt);
 
                 entity.HasQueryFilter(p => p.DeletedAt == null);
 
@@ -131,13 +122,11 @@ namespace BlogFlow.API.Data
                 entity.HasOne(p => p.Author)
                     .WithMany(u => u.Posts)
                     .HasForeignKey(p => p.AuthorId)
-                    .IsRequired()
                     .OnDelete(DeleteBehavior.Restrict);
 
                 entity.HasOne(p => p.Category)
                     .WithMany(c => c.Posts)
                     .HasForeignKey(p => p.CategoryId)
-                    .IsRequired()
                     .OnDelete(DeleteBehavior.Restrict);
             });
 
@@ -145,9 +134,7 @@ namespace BlogFlow.API.Data
             builder.Entity<Category>(entity =>
             {
                 entity.HasKey(c => c.Id);
-
-                entity.Property(c => c.Id)
-                    .ValueGeneratedNever();
+                entity.Property(c => c.Id).ValueGeneratedNever();
 
                 entity.Property(c => c.Name)
                     .IsRequired()
@@ -165,9 +152,7 @@ namespace BlogFlow.API.Data
             builder.Entity<Tag>(entity =>
             {
                 entity.HasKey(t => t.Id);
-
-                entity.Property(t => t.Id)
-                    .ValueGeneratedNever();
+                entity.Property(t => t.Id).ValueGeneratedNever();
 
                 entity.Property(t => t.Name)
                     .IsRequired()
@@ -181,12 +166,14 @@ namespace BlogFlow.API.Data
                     .OnDelete(DeleteBehavior.Cascade);
             });
 
-            // POST TAG
+            // POST TAG (MANY-TO-MANY)
             builder.Entity<PostTag>(entity =>
             {
                 entity.HasKey(pt => new { pt.PostId, pt.TagId });
 
                 entity.HasIndex(pt => new { pt.TagId, pt.PostId });
+
+                entity.HasQueryFilter(pt => pt.Post.DeletedAt == null);
 
                 entity.HasOne(pt => pt.Post)
                     .WithMany(p => p.PostTags)
