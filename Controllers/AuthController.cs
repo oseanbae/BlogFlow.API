@@ -19,20 +19,12 @@ namespace BlogFlow.API.Controllers
             _authServices = authservices;
         }
 
-        [EnableRateLimiting("register")]
         [HttpPost("register")]
-        public async Task<ActionResult<AuthResponseDTO>> RegisterAsync([FromBody] RegisterRequestDTO dto)
+        public async Task<ActionResult<AuthResponseDTO>> RegisterAsync(RegisterRequestDTO dto)
         {
-            try
-            {
                 var result = await _authServices.RegisterAsync(dto);
                 return Ok(result);
             }
-            catch (Exception ex)
-            {
-                return BadRequest(ex.Message);
-            }
-        }
 
         [EnableRateLimiting("login")]
         [HttpPost("login")]

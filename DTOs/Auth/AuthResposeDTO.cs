@@ -1,24 +1,19 @@
 ﻿using BlogFlow.API.Models;
-using System.ComponentModel.DataAnnotations;
-using System.ComponentModel.Design.Serialization;
+using System.Text.Json.Serialization;
 
 namespace BlogFlow.API.DTOs.Auth
 {
     public class AuthResponseDTO
     {
         public Guid Id { get; set; }
+        public string Username { get; set; } = null!;
+        public string Email { get; set; } = null!;
 
-        [Required, StringLength(50, MinimumLength = 3)]
-        public required string Username { get; set; }
+        [JsonConverter(typeof(JsonStringEnumConverter))]
+        public UserRole Role { get; set; }
 
-        [Required, EmailAddress, StringLength(100)]
-        public required string Email { get; set; }
-
-        [Required, StringLength(20)]
-        public required UserRole Role { get; set; }
-
-        public required string AccessToken { get; set; } // JWT
-        public required string RefreshToken { get; set; }
+        public string AccessToken { get; set; } = null!;
+        public string RefreshToken { get; set; } = null!;
         public DateTime RefreshTokenExpiry { get; set; }
     }
 }

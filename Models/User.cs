@@ -2,7 +2,6 @@
 
 namespace BlogFlow.API.Models
 {
-    [JsonConverter(typeof(JsonStringEnumConverter))]
     public enum UserRole
     {
         Admin = 1,

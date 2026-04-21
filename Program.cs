@@ -4,8 +4,11 @@ using BlogFlow.API.Repositories;
 using BlogFlow.API.Repositories.Interfaces;
 using BlogFlow.API.Services;
 using BlogFlow.API.Services.Interfaces;
+using BlogFlow.API.Validators;
 using Microsoft.EntityFrameworkCore;
 using Scalar.AspNetCore;
+using FluentValidation;
+using FluentValidation.AspNetCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -34,6 +37,10 @@ builder.Services.AddJwtAuthentication(builder.Configuration);
 
 // Rate Limiting
 builder.Services.AddAuthRateLimiting(builder.Configuration);
+
+//Fluent Validation
+builder.Services.AddFluentValidationAutoValidation();
+builder.Services.AddValidatorsFromAssemblyContaining<UserRegisterValidator>();
 
 var app = builder.Build();
 
