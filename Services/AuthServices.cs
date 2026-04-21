@@ -32,10 +32,14 @@ namespace BlogFlow.API.Services
         {
             var username = request.Username.ToLowerInvariant();
             var email = request.Email.ToLowerInvariant();
-            var existingUser = await _userRepo.GetByUsernameOrEmailAsync(username, email);
 
-            if (existingUser != null)
-                throw new InvalidOperationException("Username or Email already exists.");
+            var existingUserByUsername = await _userRepo.GetByUsernameAsync(username);
+            if (existingUserByUsername != null)
+                throw new InvalidOperationException("Username already exists.");
+
+            var existingUserByEmail = await _userRepo.GetByEmailAsync(email);
+            if (existingUserByEmail != null)
+                throw new InvalidOperationException("Email already exists.");
 
             var passwordHash = BCrypt.Net.BCrypt.HashPassword(request.Password);
 
@@ -64,10 +68,11 @@ namespace BlogFlow.API.Services
         }
         public async Task<AuthResponseDTO> LoginAsync(LoginRequestDTO request)
         {
-            var user = await _userRepo.GetByEmailAsync(request.Email);
+            var identifier = request.UsernameOrEmail.ToLowerInvariant();
+            var user = await _userRepo.GetByUsernameOrEmailAsync(identifier);
 
             if (user == null || !BCrypt.Net.BCrypt.Verify(request.Password, user.PasswordHash))
-                throw new Exception("Invalid Credentials");
+                throw new UnauthorizedAccessException("Invalid Credentials");
 
             await _refreshTokenRepo.RemoveExpiredAsync(user.Id);
 

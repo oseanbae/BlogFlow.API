@@ -22,23 +22,16 @@ namespace BlogFlow.API.Controllers
         [HttpPost("register")]
         public async Task<ActionResult<AuthResponseDTO>> RegisterAsync(RegisterRequestDTO dto)
         {
-                var result = await _authServices.RegisterAsync(dto);
-                return Ok(result);
-            }
+            var result = await _authServices.RegisterAsync(dto);
+            return Ok(result);
+        }
 
         [EnableRateLimiting("login")]
         [HttpPost("login")]
-        public async Task<ActionResult<AuthResponseDTO>> LoginAsync([FromBody] LoginRequestDTO dto)
+        public async Task<ActionResult<AuthResponseDTO>> LoginAsync(LoginRequestDTO dto)
         {
-            try
-            {
-                var result = await _authServices.LoginAsync(dto);
-                return Ok(result);
-            }
-            catch (Exception ex)
-            {
-                return BadRequest(ex.Message);
-            }
+            var result = await _authServices.LoginAsync(dto);
+            return Ok(result);
         }
 
         [EnableRateLimiting("refresh")]
