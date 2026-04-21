@@ -53,7 +53,8 @@ namespace BlogFlow.API.Services
             await _userRepo.CreateAsync(user);
 
             var accessToken = GenerateToken(user);
-            var refreshToken = await GenerateRefreshTokenAsync(user.Id);
+
+            var (rawToken, storedToken) = await GenerateRefreshTokenAsync(user.Id);
 
             return new AuthResponseDTO
             {
@@ -62,8 +63,8 @@ namespace BlogFlow.API.Services
                 Email = user.Email,
                 Role = user.Role,
                 AccessToken = accessToken,
-                RefreshToken = refreshToken.Token,
-                RefreshTokenExpiry = refreshToken.ExpiresAt
+                RefreshToken = rawToken,
+                RefreshTokenExpiry = storedToken.ExpiresAt
             };
         }
         public async Task<AuthResponseDTO> LoginAsync(LoginRequestDTO request)
@@ -77,7 +78,8 @@ namespace BlogFlow.API.Services
             await _refreshTokenRepo.RemoveExpiredAsync(user.Id);
 
             var accessToken = GenerateToken(user);
-            var refreshToken = await GenerateRefreshTokenAsync(user.Id);
+
+            var (rawToken, storedToken) = await GenerateRefreshTokenAsync(user.Id);
 
             return new AuthResponseDTO
             {
@@ -86,13 +88,14 @@ namespace BlogFlow.API.Services
                 Email = user.Email,
                 Role = user.Role,
                 AccessToken = accessToken,
-                RefreshToken = refreshToken.Token,
-                RefreshTokenExpiry = refreshToken.ExpiresAt
+                RefreshToken = rawToken,
+                RefreshTokenExpiry = storedToken.ExpiresAt
             };
         }
         public async Task<AuthResponseDTO> RefreshAsync(RefreshTokenRequestDTO request)
         {
-            var existingToken = await _refreshTokenRepo.GetByTokenAsync(request.RefreshToken)
+            var hashed = HashToken(request.RefreshToken);
+            var existingToken = await _refreshTokenRepo.GetByHashedTokenAsync(hashed)
                 ?? throw new UnauthorizedAccessException("Invalid refresh token.");
 
             // Check revocation before expiry — a revoked token could indicate theft.
@@ -105,13 +108,20 @@ namespace BlogFlow.API.Services
             if (existingToken.IsExpired)
                 throw new UnauthorizedAccessException("Expired refresh token.");
 
-            // rotate
-            var newRefreshToken = await GenerateRefreshTokenAsync(existingToken.UserId);
 
-            //revoking the token
-            await _refreshTokenRepo.RevokeAsync(existingToken, "Rotated", newRefreshToken.Token);
+            // get user BEFORE generating new token
+            var user = existingToken.User;
 
-            var accessToken = GenerateToken(existingToken.User);
+            // rotate refresh token
+            var (rawToken, refreshTokenEntity) = await GenerateRefreshTokenAsync(existingToken.UserId);
+
+            // revoke old token
+            await _refreshTokenRepo.RevokeAsync(
+                existingToken,
+                "Rotated",
+                HashToken(rawToken));
+
+            var accessToken = GenerateToken(user);
 
             return new AuthResponseDTO
             {
@@ -120,16 +130,24 @@ namespace BlogFlow.API.Services
                 Email = existingToken.User.Email,
                 Role = existingToken.User.Role,
                 AccessToken = accessToken,
-                RefreshToken = newRefreshToken.Token,
-                RefreshTokenExpiry = newRefreshToken.ExpiresAt
+                RefreshToken = rawToken,
+                RefreshTokenExpiry = refreshTokenEntity.ExpiresAt
             };
         }
         public async Task RevokeAsync(RevokeRequestDTO request, Guid userId)
         {
-            var token = await _refreshTokenRepo.GetByTokenAsync(request.RefreshToken);
+            var hashed = HashToken(request.RefreshToken);
 
-            if (token == null || !token.IsActive)
+            var token = await _refreshTokenRepo.GetByHashedTokenAsync(hashed);
+
+            if (token == null)
                 throw new UnauthorizedAccessException("Invalid token");
+
+            if (!token.IsActive)
+                throw new UnauthorizedAccessException("Token expired or revoked");
+
+            if (token.UserId != userId)
+                throw new UnauthorizedAccessException("Invalid token ownership");
 
             await _refreshTokenRepo.RevokeAsync(token, "Revoked by user", null);
         }
@@ -150,8 +168,9 @@ namespace BlogFlow.API.Services
             // Define claims (data embedded inside the JWT payload)
             var claims = new[]
             {
-                // "sub" (subject) usually represents the user ID
-                new Claim(JwtRegisteredClaimNames.Sub, user.Id.ToString()),
+                // NameIdentifier claim is used by ASP.NET for user identity mapping
+                // (used by User.FindFirst(ClaimTypes.NameIdentifier))
+                new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
 
                 // Standard email claim
                 new Claim(JwtRegisteredClaimNames.Email, user.Email),
@@ -194,18 +213,25 @@ namespace BlogFlow.API.Services
             // Serialize token into compact JWT string (header.payload.signature)
             return tokenHandler.WriteToken(securityToken);
         }
-        private async Task<RefreshToken> GenerateRefreshTokenAsync(Guid userId)
+        private async Task<(string RawToken, RefreshToken StoredToken)> GenerateRefreshTokenAsync(Guid userId)
         {
-            // Generate secure random refresh token
+            var rawToken = Convert.ToBase64String(RandomNumberGenerator.GetBytes(64));
+
             var refreshToken = new RefreshToken
             {
-                Token = Convert.ToBase64String(RandomNumberGenerator.GetBytes(64)),
+                Token = HashToken(rawToken),
                 UserId = userId,
                 ExpiresAt = DateTime.UtcNow.AddDays(_jwt.RefreshTokenExpiryDays)
             };
 
-            return await _refreshTokenRepo.CreateAsync(refreshToken);
+            await _refreshTokenRepo.CreateAsync(refreshToken);
 
+            return (rawToken, refreshToken);
+        }
+        private static string HashToken(string token)
+        {
+            var bytes = SHA256.HashData(Encoding.UTF8.GetBytes(token));
+            return Convert.ToBase64String(bytes);
         }
     }
 }

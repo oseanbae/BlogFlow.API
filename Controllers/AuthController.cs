@@ -3,7 +3,6 @@ using BlogFlow.API.Services.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
-using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 
 namespace BlogFlow.API.Controllers
@@ -37,21 +36,10 @@ namespace BlogFlow.API.Controllers
         [EnableRateLimiting("refresh")]
         [HttpPost("refresh")]
         [AllowAnonymous]
-        public async Task<IActionResult> RefreshAsync([FromBody] RefreshTokenRequestDTO dto)
+        public async Task<ActionResult<AuthResponseDTO>> RefreshAsync([FromBody] RefreshTokenRequestDTO dto)
         {
-            try
-            {
-                var result = await _authServices.RefreshAsync(dto);
-                return Ok(result);
-            }
-            catch (UnauthorizedAccessException ex)
-            {
-                return Unauthorized(ex.Message);
-            }
-            catch (Exception)
-            {
-                return StatusCode(500, "Something went wrong");
-            }
+            var result = await _authServices.RefreshAsync(dto);
+            return Ok(result);
         }
 
         [EnableRateLimiting("revoke")]
@@ -59,27 +47,14 @@ namespace BlogFlow.API.Controllers
         [Authorize]
         public async Task<IActionResult> RevokeAsync([FromBody] RevokeRequestDTO request)
         {
-            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value
-                ?? User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
 
             if (!Guid.TryParse(userIdClaim, out var userId))
-                return Unauthorized();
+                return Unauthorized("Invalid user identity");
 
-            try
-            {
-                await _authServices.RevokeAsync(request, userId);
-                return NoContent();
-            }
-            catch (UnauthorizedAccessException ex)
-            {
-                return Unauthorized(ex.Message);
-            }
-            catch (Exception)
-            {
-                return StatusCode(500, "Something went wrong");
-            }
+            await _authServices.RevokeAsync(request, userId);
+
+            return NoContent();
         }
-
-
     }
 }

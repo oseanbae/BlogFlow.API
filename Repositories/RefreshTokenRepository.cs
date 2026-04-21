@@ -2,7 +2,7 @@
 using BlogFlow.API.Models;
 using BlogFlow.API.Repositories.Interfaces;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.IdentityModel.Tokens;
+
 namespace BlogFlow.API.Repositories
 {
     public class RefreshTokenRepository : IRefreshTokenRepository
@@ -14,19 +14,23 @@ namespace BlogFlow.API.Repositories
             _context = context;
         }
 
+        // CREATE
         public async Task<RefreshToken> CreateAsync(RefreshToken refreshToken)
         {
             await _context.RefreshTokens.AddAsync(refreshToken);
             await _context.SaveChangesAsync();
-
             return refreshToken;
         }
-        public async Task<RefreshToken?> GetByTokenAsync(string token)
+
+        // GET (HASHED TOKEN LOOKUP)
+        public async Task<RefreshToken?> GetByHashedTokenAsync(string hashedToken)
         {
             return await _context.RefreshTokens
                 .Include(r => r.User)
-                .FirstOrDefaultAsync(r => r.Token == token);
+                .FirstOrDefaultAsync(r => r.Token == hashedToken);
         }
+
+        // REVOKE SINGLE TOKEN
         public async Task RevokeAsync(RefreshToken token, string reason, string? replacedByToken)
         {
             token.RevokedAt = DateTime.UtcNow;
@@ -35,26 +39,31 @@ namespace BlogFlow.API.Repositories
 
             await _context.SaveChangesAsync();
         }
+
+        // CLEAN EXPIRED TOKENS
         public async Task RemoveExpiredAsync(Guid userId)
         {
-            var expired = await _context.RefreshTokens
+            var expiredTokens = await _context.RefreshTokens
                 .Where(r => r.UserId == userId && r.ExpiresAt < DateTime.UtcNow)
                 .ToListAsync();
 
-            _context.RefreshTokens.RemoveRange(expired);
+            _context.RefreshTokens.RemoveRange(expiredTokens);
             await _context.SaveChangesAsync();
         }
+
+        // REVOKE ALL USER TOKENS (SECURITY EVENT)
         public async Task RevokeAllUserTokensAsync(Guid userId, string reason)
         {
-            var tokens = await _context.RefreshTokens
-                .Where(r => r.UserId == userId
-                    && r.RevokedAt == null
-                    && r.ExpiresAt > DateTime.UtcNow)
-                .ToListAsync();
-
             var now = DateTime.UtcNow;
 
-            foreach (var token in tokens)
+            var activeTokens = await _context.RefreshTokens
+                .Where(r =>
+                    r.UserId == userId &&
+                    r.RevokedAt == null &&
+                    r.ExpiresAt > now)
+                .ToListAsync();
+
+            foreach (var token in activeTokens)
             {
                 token.RevokedAt = now;
                 token.RevokeReason = reason;
@@ -62,6 +71,5 @@ namespace BlogFlow.API.Repositories
 
             await _context.SaveChangesAsync();
         }
-        
     }
 }

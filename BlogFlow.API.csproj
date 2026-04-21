@@ -13,6 +13,7 @@
 		<PackageReference Include="BCrypt.Net-Next" Version="4.1.0" />
 		<PackageReference Include="EFCore.NamingConventions" Version="10.0.1" />
 		<PackageReference Include="FluentValidation" Version="12.1.1" />
+		<PackageReference Include="FluentValidation.AspNetCore" Version="11.3.1" />
     <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="10.0.6" />
     <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="10.0.6" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="10.0.6">
@@ -24,6 +25,14 @@
 		<PackageReference Include="NuGet.Packaging" Version="7.3.1" />
 		<PackageReference Include="NuGet.Protocol" Version="7.3.1" />
 		<PackageReference Include="Scalar.AspNetCore" Version="2.14.0" />
+	</ItemGroup>
+
+	<ItemGroup>
+	  <Folder Include="DTOs\Comments\" />
+	  <Folder Include="DTOs\Categories\" />
+	  <Folder Include="DTOs\Admin\" />
+	  <Folder Include="DTOs\Common\" />
+	  <Folder Include="DTOs\Users\" />
 	</ItemGroup>
 
 </Project>

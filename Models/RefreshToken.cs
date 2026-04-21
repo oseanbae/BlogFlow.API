@@ -9,7 +9,7 @@ namespace BlogFlow.API.Models
         public User User { get; set; } = null!;
         public required string Token { get; set; }
         public DateTime ExpiresAt { get; set; }
-        public DateTime CreatedAt { get; private set; } = DateTime.UtcNow;
+        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
         public DateTime? RevokedAt { get; set; }
         public string? RevokeReason { get; set; }
         public string? ReplacedByToken { get; set; }
