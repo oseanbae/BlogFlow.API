@@ -14,7 +14,7 @@ namespace BlogFlow.API.Validators
 
             RuleFor(p => p.Body)
                 .MinimumLength(3)
-                .MaximumLength(255)
+                .MaximumLength(10000)
                 .When(p => p.Body != null);
 
             RuleFor(p => p.CategoryId)

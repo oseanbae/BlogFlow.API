@@ -1,7 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using BlogFlow.API.Models;
-using System.IO.Compression;
-using Microsoft.EntityFrameworkCore.Metadata;
 
 namespace BlogFlow.API.Data
 {
@@ -20,7 +18,6 @@ namespace BlogFlow.API.Data
             builder.Entity<User>(entity =>
             {
                 entity.HasKey(u => u.Id);
-                entity.Property(u => u.Id).ValueGeneratedNever();
 
                 entity.Property(u => u.Username)
                     .IsRequired()
@@ -55,7 +52,6 @@ namespace BlogFlow.API.Data
             builder.Entity<RefreshToken>(entity =>
             {
                 entity.HasKey(r => r.Id);
-                entity.Property(r => r.Id).ValueGeneratedNever();
 
                 entity.Property(r => r.Token)
                     .IsRequired()
@@ -100,7 +96,6 @@ namespace BlogFlow.API.Data
             builder.Entity<Post>(entity =>
             {
                 entity.HasKey(p => p.Id);
-                entity.Property(p => p.Id).ValueGeneratedNever();
 
                 entity.Property(p => p.Title)
                     .IsRequired()
@@ -115,7 +110,6 @@ namespace BlogFlow.API.Data
 
                 entity.HasQueryFilter(p => p.DeletedAt == null);
 
-                entity.HasIndex(p => p.DeletedAt);
                 entity.HasIndex(p => new { p.AuthorId, p.DeletedAt });
                 entity.HasIndex(p => p.CategoryId);
 
@@ -128,13 +122,20 @@ namespace BlogFlow.API.Data
                     .WithMany(c => c.Posts)
                     .HasForeignKey(p => p.CategoryId)
                     .OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasMany(p => p.PostTags)
+                    .WithOne(pt => pt.Post)
+                    .HasForeignKey(pt => pt.PostId);
+
+                entity.ToTable(t =>
+                    t.HasCheckConstraint("CK_Post_Title_MinLength", "length(title) >= 3")
+                );
             });
 
             // CATEGORY
             builder.Entity<Category>(entity =>
             {
                 entity.HasKey(c => c.Id);
-                entity.Property(c => c.Id).ValueGeneratedNever();
 
                 entity.Property(c => c.Name)
                     .IsRequired()
@@ -145,14 +146,13 @@ namespace BlogFlow.API.Data
                 entity.HasMany(c => c.Posts)
                     .WithOne(p => p.Category)
                     .HasForeignKey(p => p.CategoryId)
-                    .OnDelete(DeleteBehavior.SetNull);
+                    .OnDelete(DeleteBehavior.Restrict);
             });
 
             // TAG
             builder.Entity<Tag>(entity =>
             {
                 entity.HasKey(t => t.Id);
-                entity.Property(t => t.Id).ValueGeneratedNever();
 
                 entity.Property(t => t.Name)
                     .IsRequired()
@@ -173,7 +173,6 @@ namespace BlogFlow.API.Data
 
                 entity.HasIndex(pt => new { pt.TagId, pt.PostId });
 
-                entity.HasQueryFilter(pt => pt.Post.DeletedAt == null);
 
                 entity.HasOne(pt => pt.Post)
                     .WithMany(p => p.PostTags)

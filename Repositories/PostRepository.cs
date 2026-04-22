@@ -1,9 +1,8 @@
 ﻿using BlogFlow.API.Data;
 using BlogFlow.API.Models;
 using BlogFlow.API.Repositories.Interfaces;
-using Microsoft.AspNetCore.Components.Web;
+using Microsoft.AspNetCore.Razor.TagHelpers;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.VisualBasic;
 
 namespace BlogFlow.API.Repositories
 {
@@ -15,7 +14,6 @@ namespace BlogFlow.API.Repositories
         {
             _context = context;
         }
-
         public async Task AddAsync(Post post)
         {
             await _context.Posts.AddAsync(post);
@@ -40,15 +38,15 @@ namespace BlogFlow.API.Repositories
 
             if (post.PostTags != null)
             {
-                postToUpdate.PostTags.Clear();
-                foreach (var tag in post.PostTags)
-                {
-                    postToUpdate.PostTags.Add(tag);
-                }
+                postToUpdate.SetTags(post.PostTags.Select(pt => pt.TagId));
             }
+
             await _context.SaveChangesAsync();
         }
-
+        public async Task SaveChangesAsync()
+        {
+            await _context.SaveChangesAsync();
+        }
         public async Task<IEnumerable<Post>> GetAllAsync(bool includeDeleted = false)
         {
             var query = includeDeleted
@@ -56,6 +54,21 @@ namespace BlogFlow.API.Repositories
                 : _context.Posts;
 
             return await query.ToListAsync();
+        }
+
+        public async Task<Post> GetByIdWithDetailsAsync(Guid postId)
+        {
+            var post = await _context.Posts
+                .Include(p => p.Author)
+                .Include(p => p.Category)
+                .Include(p => p.PostTags)
+                    .ThenInclude(pt => pt.Tag)
+                .FirstOrDefaultAsync(p => p.Id == postId);
+
+            if (post == null)
+                throw new KeyNotFoundException("Post not found.");
+
+            return post;
         }
 
         public async Task<Post> GetByIdAsync(Guid postId, bool includeDeleted = false)
@@ -70,25 +83,36 @@ namespace BlogFlow.API.Repositories
         }
 
         public async Task<(IEnumerable<Post> Items, int TotalCount)> GetPagedAsync(
-            int page, int pageSize, Guid? authorId, Guid? categoryId, bool includeDeleted = false)
+            int page,
+            int pageSize,
+            Guid? authorId,
+            Guid? categoryId,
+            Guid? tagId,
+            bool includeDeleted = false)
         {
-
             var query = includeDeleted
                 ? _context.Posts.IgnoreQueryFilters()
                 : _context.Posts;
 
+            // Author filter
             if (authorId.HasValue)
-                query = query.Where(p  => p.AuthorId == authorId.Value);
+                query = query.Where(p => p.AuthorId == authorId.Value);
+
+            // Category filter
             if (categoryId.HasValue)
-                query = query.Where(p  => p.CategoryId == categoryId.Value);
+                query = query.Where(p => p.CategoryId == categoryId.Value);
+
+            // Tag filter
+            if (tagId.HasValue)
+                query = query.Where(p => p.PostTags.Any(x => x.TagId == tagId.Value));
 
             var totalCount = await query.CountAsync();
 
             var items = await query
-                    .OrderByDescending(p => p.CreatedAt)
-                    .Skip((page - 1) * pageSize)
-                    .Take(pageSize)
-                    .ToListAsync();
+                .OrderByDescending(p => p.CreatedAt)
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync();
 
             return (items, totalCount);
         }
@@ -117,7 +141,5 @@ namespace BlogFlow.API.Repositories
 
             return (items, totalCount);
         }
-
-        
     }
 }

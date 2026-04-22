@@ -12,7 +12,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace BlogFlow.API.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20260418052717_InitialCreate")]
+    [Migration("20260422021435_InitialCreate")]
     partial class InitialCreate
     {
         /// <inheritdoc />
@@ -28,6 +28,7 @@ namespace BlogFlow.API.Migrations
             modelBuilder.Entity("BlogFlow.API.Models.Category", b =>
                 {
                     b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
                         .HasColumnType("uuid")
                         .HasColumnName("id");
 
@@ -50,6 +51,7 @@ namespace BlogFlow.API.Migrations
             modelBuilder.Entity("BlogFlow.API.Models.Post", b =>
                 {
                     b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
                         .HasColumnType("uuid")
                         .HasColumnName("id");
 
@@ -91,13 +93,13 @@ namespace BlogFlow.API.Migrations
                     b.HasIndex("CategoryId")
                         .HasDatabaseName("ix_posts_category_id");
 
-                    b.HasIndex("DeletedAt")
-                        .HasDatabaseName("ix_posts_deleted_at");
-
                     b.HasIndex("AuthorId", "DeletedAt")
                         .HasDatabaseName("ix_posts_author_id_deleted_at");
 
-                    b.ToTable("posts", (string)null);
+                    b.ToTable("posts", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_Post_Title_MinLength", "length(title) >= 3");
+                        });
                 });
 
             modelBuilder.Entity("BlogFlow.API.Models.PostTag", b =>
@@ -122,6 +124,7 @@ namespace BlogFlow.API.Migrations
             modelBuilder.Entity("BlogFlow.API.Models.RefreshToken", b =>
                 {
                     b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
                         .HasColumnType("uuid")
                         .HasColumnName("id");
 
@@ -180,6 +183,7 @@ namespace BlogFlow.API.Migrations
             modelBuilder.Entity("BlogFlow.API.Models.Tag", b =>
                 {
                     b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
                         .HasColumnType("uuid")
                         .HasColumnName("id");
 
@@ -202,6 +206,7 @@ namespace BlogFlow.API.Migrations
             modelBuilder.Entity("BlogFlow.API.Models.User", b =>
                 {
                     b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
                         .HasColumnType("uuid")
                         .HasColumnName("id");
 
@@ -267,7 +272,7 @@ namespace BlogFlow.API.Migrations
                     b.HasOne("BlogFlow.API.Models.Category", "Category")
                         .WithMany("Posts")
                         .HasForeignKey("CategoryId")
-                        .OnDelete(DeleteBehavior.SetNull)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .HasConstraintName("fk_posts_categories_category_id");
 
                     b.Navigation("Author");

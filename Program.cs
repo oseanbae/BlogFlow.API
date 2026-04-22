@@ -9,7 +9,6 @@ using FluentValidation;
 using FluentValidation.AspNetCore;
 using Microsoft.EntityFrameworkCore;
 using Scalar.AspNetCore;
-using System.Configuration;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -39,10 +38,12 @@ builder.Services.AddJwtAuthentication(builder.Configuration);
 // Rate Limiting
 builder.Services.AddAuthRateLimiting(builder.Configuration);
 
-//Fluent Validation
+//Fluent Validation for DTOs
 builder.Services.AddFluentValidationAutoValidation();
 builder.Services.AddValidatorsFromAssemblyContaining<UserRegisterValidator>();
 builder.Services.AddValidatorsFromAssemblyContaining<UserLoginValidator>();
+builder.Services.AddValidatorsFromAssemblyContaining<PostCreateValidator>();
+builder.Services.AddValidatorsFromAssemblyContaining<PostUpdateValidator>();
 
 var app = builder.Build();
 

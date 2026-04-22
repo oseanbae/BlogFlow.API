@@ -27,12 +27,4 @@
 		<PackageReference Include="Scalar.AspNetCore" Version="2.14.0" />
 	</ItemGroup>
 
-	<ItemGroup>
-	  <Folder Include="DTOs\Comments\" />
-	  <Folder Include="DTOs\Categories\" />
-	  <Folder Include="DTOs\Admin\" />
-	  <Folder Include="DTOs\Common\" />
-	  <Folder Include="DTOs\Users\" />
-	</ItemGroup>
-
 </Project>

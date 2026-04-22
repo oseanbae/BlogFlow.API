@@ -69,12 +69,13 @@ namespace BlogFlow.API.Migrations
                 constraints: table =>
                 {
                     table.PrimaryKey("pk_posts", x => x.id);
+                    table.CheckConstraint("CK_Post_Title_MinLength", "length(title) >= 3");
                     table.ForeignKey(
                         name: "fk_posts_categories_category_id",
                         column: x => x.category_id,
                         principalTable: "categories",
                         principalColumn: "id",
-                        onDelete: ReferentialAction.SetNull);
+                        onDelete: ReferentialAction.Restrict);
                     table.ForeignKey(
                         name: "fk_posts_users_author_id",
                         column: x => x.author_id,
@@ -153,11 +154,6 @@ namespace BlogFlow.API.Migrations
                 name: "ix_posts_category_id",
                 table: "posts",
                 column: "category_id");
-
-            migrationBuilder.CreateIndex(
-                name: "ix_posts_deleted_at",
-                table: "posts",
-                column: "deleted_at");
 
             migrationBuilder.CreateIndex(
                 name: "ix_refresh_tokens_token",
