@@ -88,9 +88,9 @@ namespace BlogFlow.API.Repositories
             Guid? authorId,
             Guid? categoryId,
             Guid? tagId,
-            bool includeDeleted = false)
+            bool ignoreSoftDelete = false)
         {
-            var query = includeDeleted
+            var query = ignoreSoftDelete
                 ? _context.Posts.IgnoreQueryFilters()
                 : _context.Posts;
 

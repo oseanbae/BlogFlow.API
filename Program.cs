@@ -32,6 +32,8 @@ builder.Services.AddOpenApi();
 builder.Services.AddScoped<IAuthServices, AuthServices>();
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<IRefreshTokenRepository, RefreshTokenRepository>();
+builder.Services.AddScoped<IPostRepository, PostRepository>();
+
 // Authentication & Authorization
 builder.Services.AddJwtAuthentication(builder.Configuration);
 

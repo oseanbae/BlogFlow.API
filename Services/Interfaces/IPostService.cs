@@ -1,5 +1,6 @@
 ﻿using BlogFlow.API.DTOs.Post;
 using BlogFlow.API.Models;
+using System.Security.Claims;
 
 namespace BlogFlow.API.Services.Interfaces
 {
@@ -16,7 +17,7 @@ namespace BlogFlow.API.Services.Interfaces
         Task<PaginatedPostResultDTO> GetAllPostsAsync(
             int page,
             int pageSize,
-            bool includeDeleted
+            ClaimsPrincipal user
         );
 
         // Single post with access control

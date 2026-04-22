@@ -3,6 +3,7 @@ using BlogFlow.API.Helper;
 using BlogFlow.API.Models;
 using BlogFlow.API.Repositories.Interfaces;
 using BlogFlow.API.Services.Interfaces;
+using System.Security.Claims;
 
 namespace BlogFlow.API.Services
 {
@@ -33,15 +34,17 @@ namespace BlogFlow.API.Services
         public async Task<PaginatedPostResultDTO> GetAllPostsAsync(
             int page,
             int pageSize,
-            bool includeDeleted)
+            ClaimsPrincipal user)
         {
+            bool ignoreSoftDelete = user?.IsInRole("Admin") == true;
+
             var (items, totalCount) = await _postRepo.GetPagedAsync(
                 page,
                 pageSize,
-                null,
-                null,
-                null,
-                includeDeleted
+                authorId: null,
+                categoryId: null,
+                tagId: null,
+                ignoreSoftDelete
             );
 
             return new PaginatedPostResultDTO
@@ -79,7 +82,7 @@ namespace BlogFlow.API.Services
                 null,
                 null,
                 tagId,
-                includeDeleted: requesterRole == UserRole.Admin
+                ignoreSoftDelete: requesterRole == UserRole.Admin
             );
 
             return new PaginatedPostResultDTO
@@ -103,7 +106,7 @@ namespace BlogFlow.API.Services
                 null,
                 categoryId,
                 null,
-                includeDeleted: false
+                ignoreSoftDelete: false
             );
 
             return new PaginatedPostResultDTO

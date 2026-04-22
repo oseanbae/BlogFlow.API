@@ -17,7 +17,7 @@ namespace BlogFlow.API.Repositories.Interfaces
             Guid? authorId,
             Guid? categoryId,
             Guid? tagId,
-            bool includeDeleted = false
+            bool ignoreSoftDelete = false
         );
 
         Task<(IEnumerable<Post> Items, int TotalCount)> SearchAsync(
