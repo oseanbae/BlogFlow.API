@@ -7,7 +7,7 @@ namespace BlogFlow.API.Repositories.Interfaces
         // Write operations
         Task AddAsync(Post post);
         Task DeleteAsync(Post post); // hard delete only used by Admin
-        Task<Post> GetByIdAsync(Guid postId, bool includeDeleted = false);
+        Task<Post?> GetByIdAsync(Guid postId, bool includeDeleted = false);
         Task SaveChangesAsync();
         Task<Post> GetByIdWithDetailsAsync(Guid postId);
         Task<IEnumerable<Post>> GetAllAsync(bool includeDeleted = false);

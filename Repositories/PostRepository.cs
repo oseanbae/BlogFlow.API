@@ -1,7 +1,6 @@
 ﻿using BlogFlow.API.Data;
 using BlogFlow.API.Models;
 using BlogFlow.API.Repositories.Interfaces;
-using Microsoft.AspNetCore.Razor.TagHelpers;
 using Microsoft.EntityFrameworkCore;
 
 namespace BlogFlow.API.Repositories
@@ -71,15 +70,14 @@ namespace BlogFlow.API.Repositories
             return post;
         }
 
-        public async Task<Post> GetByIdAsync(Guid postId, bool includeDeleted = false)
+        public async Task<Post?> GetByIdAsync(Guid postId, bool includeDeleted = false)
         {
             var query = includeDeleted
                 ? _context.Posts.IgnoreQueryFilters()
                 : _context.Posts;
 
             return await query
-                .FirstOrDefaultAsync(p => p.Id == postId)
-                ?? throw new KeyNotFoundException("Post not found.");
+                .FirstOrDefaultAsync(p => p.Id == postId);
         }
 
         public async Task<(IEnumerable<Post> Items, int TotalCount)> GetPagedAsync(

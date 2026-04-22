@@ -23,8 +23,7 @@ namespace BlogFlow.API.Services.Interfaces
         // Single post with access control
         Task<PostReadDTO> GetPostByIdAsync(
             Guid postId,
-            Guid requesterId,
-            UserRole requesterRole
+            ClaimsPrincipal user
         );
 
         // Search (respect visibility rules)

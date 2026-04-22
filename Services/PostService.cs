@@ -58,12 +58,15 @@ namespace BlogFlow.API.Services
 
         // GET BY ID
         public async Task<PostReadDTO> GetPostByIdAsync(
-            Guid postId,
-            Guid requesterId,
-            UserRole requesterRole)
+        Guid postId,
+        ClaimsPrincipal user)
         {
-            var post = await _postRepo.GetByIdWithDetailsAsync(postId)
-                ?? throw new KeyNotFoundException("Post not found.");
+            bool isAdmin = user?.IsInRole("Admin") == true;
+
+            var post = await _postRepo.GetByIdAsync(postId, isAdmin);
+
+            if (post == null)
+                throw new KeyNotFoundException("Post not found");
 
             return MappingHelper.PostToDTO(post);
         }

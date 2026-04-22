@@ -7,7 +7,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace BlogFlow.API.Controllers
 {
-   
+
     [Route("api/v1/[controller]")]
     [ApiController]
     public class PostController : Controller
@@ -29,5 +29,12 @@ namespace BlogFlow.API.Controllers
             return Ok(result);
         }
 
+        [HttpGet("{postId}")]
+        [AllowAnonymous]
+        public async Task<ActionResult<PostReadDTO>> GetPostAsync(Guid postId)
+        {
+            var result = await _postService.GetPostByIdAsync(postId, User);
+            return Ok(result);
+        }
     }
 }
