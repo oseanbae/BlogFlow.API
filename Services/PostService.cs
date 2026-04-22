@@ -19,6 +19,9 @@ namespace BlogFlow.API.Services
         // CREATE
         public async Task<PostReadDTO> CreatePostAsync(PostCreateDTO dto, Guid authorId)
         {
+            if (authorId == Guid.Empty)
+                throw new UnauthorizedAccessException("Invalid user.");
+
             var post = new Post(dto.Title, dto.Body, authorId, dto.CategoryId);
 
             if (dto.TagIds != null && dto.TagIds.Any())

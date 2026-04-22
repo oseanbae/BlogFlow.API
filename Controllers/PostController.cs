@@ -36,5 +36,16 @@ namespace BlogFlow.API.Controllers
             var result = await _postService.GetPostByIdAsync(postId, User);
             return Ok(result);
         }
+
+        [HttpPost("create")]
+        [Authorize(Roles = "Author")]
+        public async Task<ActionResult<PostReadDTO>> CreatePostAsync(PostCreateDTO dto)
+        {
+            var userId = Guid.Parse(User.FindFirst("sub")!.Value);
+
+            var result = await _postService.CreatePostAsync(dto, userId);
+
+            return Ok(result);
+        }
     }
 }
