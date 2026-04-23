@@ -35,5 +35,8 @@ namespace BlogFlow.API.Models
 
         [JsonIgnore]
         public ICollection<RefreshToken> RefreshTokens { get; set; } = [];
+
+        [JsonIgnore]
+        public ICollection<Comment> Comments { get; set; } = [];
     }
 }

@@ -15,11 +15,13 @@ namespace BlogFlow.API.Models
         //[FK]
         public Guid AuthorId { get; private set; }
         public Guid? CategoryId { get; private set; }
+        public Guid? CommentId { get; set; }
 
         //Navigation Properties
         public User Author { get; private set; } = null!;
         public Category? Category { get; private set; }
         public ICollection<PostTag> PostTags { get; private set; } = [];
+        public ICollection<Comment> Comments { get; set; } = [];
 
         //Constructor for EF Core to load data from db
         private Post() { }

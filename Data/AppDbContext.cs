@@ -12,6 +12,7 @@ namespace BlogFlow.API.Data
         public DbSet<Category> Categories { get; set; }
         public DbSet<Tag> Tags { get; set; }
         public DbSet<PostTag> PostTags { get; set; }
+        public DbSet<Comment> Comments { get; set; }
         protected override void OnModelCreating(ModelBuilder builder)
         {
             // USER
@@ -183,6 +184,29 @@ namespace BlogFlow.API.Data
                     .WithMany(t => t.PostTags)
                     .HasForeignKey(pt => pt.TagId)
                     .OnDelete(DeleteBehavior.Cascade);
+            });
+
+            // COMMENT
+            builder.Entity<Comment>(entity =>
+            {
+                entity.HasKey(c => c.Id);
+
+                entity.Property(c => c.Body)
+                    .IsRequired()
+                    .HasMaxLength(10000);
+
+                entity.Property(c => c.CreatedAt).IsRequired();
+                entity.Property(c => c.UpdatedAt);
+
+                entity.HasOne(c => c.Post)
+                    .WithMany(p => p.Comments)
+                    .HasForeignKey(c => c.PostId)
+                    .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasOne(c => c.User)
+                    .WithMany(u => u.Comments)
+                    .HasForeignKey(c => c.UserId)
+                    .OnDelete(DeleteBehavior.Restrict);
             });
         }
     } 
