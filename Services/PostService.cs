@@ -153,19 +153,17 @@ namespace BlogFlow.API.Services
             Guid postId,
             PostUpdateDTO dto,
             Guid requesterId,
-            UserRole requesterRole)
+            bool isAdmin)
         {
             var post = await _postRepo.GetByIdWithDetailsAsync(postId)
                 ?? throw new KeyNotFoundException("Post not found.");
 
-            // 🔐 Authorization FIRST
-            if (requesterRole != UserRole.Admin && post.AuthorId != requesterId)
+            if (!isAdmin && post.AuthorId != requesterId)
                 throw new UnauthorizedAccessException("Not allowed.");
 
-            if (post.DeletedAt != null && requesterRole != UserRole.Admin)
+            if (!isAdmin && post.DeletedAt != null)
                 throw new UnauthorizedAccessException("Cannot modify deleted post.");
 
-            // ✏️ Apply updates
             post.Update(
                 dto.Title ?? post.Title,
                 dto.Body ?? post.Body,

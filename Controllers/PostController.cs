@@ -1,8 +1,8 @@
 ﻿using BlogFlow.API.DTOs.Post;
-using BlogFlow.API.Models;
 using BlogFlow.API.Services.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
 
 
 namespace BlogFlow.API.Controllers
@@ -43,12 +43,27 @@ namespace BlogFlow.API.Controllers
         [Authorize(Roles = "Author")]
         public async Task<ActionResult<PostReadDTO>> CreatePostAsync(PostCreateDTO dto)
         {
-            var subClaim = User.FindFirst("sub")?.Value;
+            var subClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
 
             if (!Guid.TryParse(subClaim, out var userId))
                 return Unauthorized();
 
             var result = await _postService.CreatePostAsync(dto, userId);
+
+            return Ok(result);
+        }
+
+        [HttpPut("update")]
+        [Authorize(Roles = "Author, Admin")]
+        public async Task<ActionResult<PostReadDTO>> UpdatePostAsync(Guid postId, PostUpdateDTO dto)
+        {
+            var subClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (!Guid.TryParse(subClaim, out var userId))
+                return Unauthorized();
+
+            var isAdmin = User.IsInRole("Admin");
+
+            var result = await _postService.UpdatePostAsync(postId, dto, userId, isAdmin);
 
             return Ok(result);
         }

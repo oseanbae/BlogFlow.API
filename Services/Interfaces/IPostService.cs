@@ -55,7 +55,7 @@ namespace BlogFlow.API.Services.Interfaces
             Guid postId,
             PostUpdateDTO dto,
             Guid requesterId,
-            UserRole requesterRole
+            bool idAdmin
         );
 
         // Soft delete
