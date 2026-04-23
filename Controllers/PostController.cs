@@ -43,7 +43,10 @@ namespace BlogFlow.API.Controllers
         [Authorize(Roles = "Author")]
         public async Task<ActionResult<PostReadDTO>> CreatePostAsync(PostCreateDTO dto)
         {
-            var userId = Guid.Parse(User.FindFirst("sub")!.Value);
+            var subClaim = User.FindFirst("sub")?.Value;
+
+            if (!Guid.TryParse(subClaim, out var userId))
+                return Unauthorized();
 
             var result = await _postService.CreatePostAsync(dto, userId);
 
