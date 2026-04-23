@@ -2,9 +2,6 @@
 using BlogFlow.API.Services.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using NuGet.Protocol;
-using System.Security.Claims;
-
 
 namespace BlogFlow.API.Controllers
 {
@@ -14,10 +11,11 @@ namespace BlogFlow.API.Controllers
     public class PostController : Controller
     {
         private readonly IPostService _postService;
-
-        public PostController(IPostService postService)
+        private readonly ICurrentUserService _currentUser;
+        public PostController(IPostService postService, ICurrentUserService currentUserService)
         {
             _postService = postService;
+            _currentUser = currentUserService;
         }
 
         [HttpGet]
@@ -44,10 +42,7 @@ namespace BlogFlow.API.Controllers
         [Authorize(Roles = "Author")]
         public async Task<ActionResult<PostReadDTO>> CreatePostAsync(PostCreateDTO dto)
         {
-            var subClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-
-            if (!Guid.TryParse(subClaim, out var userId))
-                return Unauthorized();
+            var userId = _currentUser.GetRequiredUserId();
 
             var result = await _postService.CreatePostAsync(dto, userId);
 
@@ -58,14 +53,9 @@ namespace BlogFlow.API.Controllers
         [Authorize(Roles = "Author, Admin")]
         public async Task<ActionResult<PostReadDTO>> UpdatePostAsync(Guid postId, PostUpdateDTO dto)
         {
-            var subClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            if (!Guid.TryParse(subClaim, out var userId))
-                return Unauthorized();
-
+            var userId = _currentUser.GetRequiredUserId();
             var isAdmin = User.IsInRole("Admin");
-
             var result = await _postService.UpdatePostAsync(postId, dto, userId, isAdmin);
-
             return Ok(result);
         }
 
@@ -73,14 +63,10 @@ namespace BlogFlow.API.Controllers
         [Authorize(Roles = "Author, Admin")]
         public async Task<ActionResult> DeletePostAsync(Guid postId) 
         {
-            var subClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            if (!Guid.TryParse(subClaim, out var userId))
-                return Unauthorized();
-
+            var userId = _currentUser.GetRequiredUserId();
             var isAdmin = User.IsInRole("Admin");
             await _postService.SoftDeletePostAsync(postId, userId, isAdmin);
-
-            return Ok();
+            return NoContent();
         }
     }
 }

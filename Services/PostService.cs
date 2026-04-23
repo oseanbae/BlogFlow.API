@@ -3,8 +3,6 @@ using BlogFlow.API.Helper;
 using BlogFlow.API.Models;
 using BlogFlow.API.Repositories.Interfaces;
 using BlogFlow.API.Services.Interfaces;
-using Microsoft.IdentityModel.Logging;
-using System.Security.Claims;
 
 namespace BlogFlow.API.Services
 {
