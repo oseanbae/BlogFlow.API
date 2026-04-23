@@ -2,6 +2,7 @@
 using BlogFlow.API.Services.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using NuGet.Protocol;
 using System.Security.Claims;
 
 
@@ -53,7 +54,7 @@ namespace BlogFlow.API.Controllers
             return Ok(result);
         }
 
-        [HttpPut("update")]
+        [HttpPut("{postId}")]
         [Authorize(Roles = "Author, Admin")]
         public async Task<ActionResult<PostReadDTO>> UpdatePostAsync(Guid postId, PostUpdateDTO dto)
         {
@@ -66,6 +67,20 @@ namespace BlogFlow.API.Controllers
             var result = await _postService.UpdatePostAsync(postId, dto, userId, isAdmin);
 
             return Ok(result);
+        }
+
+        [HttpDelete("{postId}")]
+        [Authorize(Roles = "Author, Admin")]
+        public async Task<ActionResult> DeletePostAsync(Guid postId) 
+        {
+            var subClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (!Guid.TryParse(subClaim, out var userId))
+                return Unauthorized();
+
+            var isAdmin = User.IsInRole("Admin");
+            await _postService.SoftDeletePostAsync(postId, userId, isAdmin);
+
+            return Ok();
         }
     }
 }

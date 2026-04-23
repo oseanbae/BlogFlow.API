@@ -3,6 +3,7 @@ using BlogFlow.API.Helper;
 using BlogFlow.API.Models;
 using BlogFlow.API.Repositories.Interfaces;
 using BlogFlow.API.Services.Interfaces;
+using Microsoft.IdentityModel.Logging;
 using System.Security.Claims;
 
 namespace BlogFlow.API.Services
@@ -184,11 +185,14 @@ namespace BlogFlow.API.Services
         public async Task SoftDeletePostAsync(
             Guid postId,
             Guid requesterId,
-            UserRole requesterRole)
+            bool isAdmin)
         {
-            var post = await _postRepo.GetByIdAsync(postId, includeDeleted: requesterRole == UserRole.Admin);
+            var post = await _postRepo.GetByIdAsync(postId, includeDeleted: isAdmin);
 
-            if (requesterRole != UserRole.Admin && post.AuthorId != requesterId)
+            if (post == null)
+                throw new KeyNotFoundException("Post not found.");
+
+            if (!isAdmin && post.AuthorId != requesterId)
                 throw new UnauthorizedAccessException("Not allowed.");
 
             post.SoftDelete();

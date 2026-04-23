@@ -62,7 +62,7 @@ namespace BlogFlow.API.Services.Interfaces
         Task SoftDeletePostAsync(
             Guid postId,
             Guid requesterId,
-            UserRole requesterRole
+            bool isAdmin
         );
 
         // Restore (Admin only)
