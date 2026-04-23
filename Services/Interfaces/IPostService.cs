@@ -17,13 +17,13 @@ namespace BlogFlow.API.Services.Interfaces
         Task<PaginatedPostResultDTO> GetAllPostsAsync(
             int page,
             int pageSize,
-            ClaimsPrincipal user
+            bool isAdmin
         );
 
         // Single post with access control
         Task<PostReadDTO> GetPostByIdAsync(
             Guid postId,
-            ClaimsPrincipal user
+            bool isAdmin
         );
 
         // Search (respect visibility rules)

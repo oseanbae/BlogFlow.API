@@ -37,9 +37,9 @@ namespace BlogFlow.API.Services
         public async Task<PaginatedPostResultDTO> GetAllPostsAsync(
             int page,
             int pageSize,
-            ClaimsPrincipal user)
+            bool isAdmin)
         {
-            bool ignoreSoftDelete = user?.IsInRole("Admin") == true;
+            
 
             var (items, totalCount) = await _postRepo.GetPagedAsync(
                 page,
@@ -47,7 +47,7 @@ namespace BlogFlow.API.Services
                 authorId: null,
                 categoryId: null,
                 tagId: null,
-                ignoreSoftDelete
+                ignoreSoftDelete: isAdmin
             );
 
             return new PaginatedPostResultDTO
@@ -61,11 +61,9 @@ namespace BlogFlow.API.Services
 
         // GET BY ID
         public async Task<PostReadDTO> GetPostByIdAsync(
-        Guid postId,
-        ClaimsPrincipal user)
+            Guid postId,
+            bool isAdmin)
         {
-            bool isAdmin = user?.IsInRole("Admin") == true;
-
             var post = await _postRepo.GetByIdAsync(postId, isAdmin);
 
             if (post == null)

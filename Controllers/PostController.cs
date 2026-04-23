@@ -25,7 +25,8 @@ namespace BlogFlow.API.Controllers
             [FromQuery] int page = 1,
             [FromQuery] int pageSize = 10)
         {
-            var result = await _postService.GetAllPostsAsync(page, pageSize, User);
+            var isAdmin = User.IsInRole("Admin");
+            var result = await _postService.GetAllPostsAsync(page, pageSize, isAdmin);
             return Ok(result);
         }
 
@@ -33,7 +34,8 @@ namespace BlogFlow.API.Controllers
         [AllowAnonymous]
         public async Task<ActionResult<PostReadDTO>> GetPostAsync(Guid postId)
         {
-            var result = await _postService.GetPostByIdAsync(postId, User);
+            var isAdmin = User.IsInRole("Admin");
+            var result = await _postService.GetPostByIdAsync(postId, isAdmin);
             return Ok(result);
         }
 
