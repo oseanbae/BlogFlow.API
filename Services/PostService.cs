@@ -209,7 +209,7 @@ namespace BlogFlow.API.Services
 
             var post = await _postRepo.GetByIdAsync(postId, includeDeleted: true);
 
-            post.Restore();
+            post?.Restore();
 
             await _postRepo.SaveChangesAsync();
         }
