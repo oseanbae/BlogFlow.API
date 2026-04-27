@@ -39,5 +39,14 @@ namespace BlogFlow.API.Services
 
             return UserRole.Reader;
         }
+        public UserContext GetCurrentUser()
+        {
+            return new UserContext
+            {
+                UserId = GetSubClaimUserId(),
+                Role = GetRole()
+            };
+        }
+
     }
 }

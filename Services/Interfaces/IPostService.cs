@@ -5,63 +5,14 @@ namespace BlogFlow.API.Services.Interfaces
 {
     public interface IPostService
     {
-        // Public
-        Task<PaginatedPostResultDTO> GetPublishedPostsAsync(
-            int page,
-            int pageSize,
-            Guid? categoryId);
-
-        // Admin or public with filter
-        Task<PaginatedPostResultDTO> GetAllPostsAsync(
-            int page,
-            int pageSize,
-            bool isAdmin);
-
-        // Single post
-        Task<PostReadDTO> GetPostByIdAsync(
-            Guid postId,
-            bool isAdmin);
-
-        // Search
-        Task<PaginatedPostResultDTO> SearchPostsAsync(
-            string keyword,
-            int page,
-            int pageSize,
-            UserRole requesterRole);
-
-        // Filter by tag
-        Task<PaginatedPostResultDTO> GetPostsByTagAsync(
-            Guid tagId,
-            int page,
-            int pageSize,
-            UserRole requesterRole);
-
-        // Create
-        Task<PostReadDTO> CreatePostAsync(
-            PostCreateDTO dto,
-            Guid authorId);
-
-        // Update
-        Task<PostReadDTO> UpdatePostAsync(
-            Guid postId,
-            PostUpdateDTO dto,
-            Guid requesterId,
-            bool isAdmin);
-
-        // Soft delete
-        Task SoftDeletePostAsync(
-            Guid postId,
-            Guid requesterId,
-            bool isAdmin);
-
-        // Restore — Admin only
-        Task RestorePostAsync(
-            Guid postId,
-            UserRole requesterRole);
-
-        // Hard delete — Admin only
-        Task HardDeletePostAsync(
-            Guid postId,
-            UserRole requesterRole);
+        Task<PaginatedPostResultDTO> GetPostsAsync(int page, int pageSize, Guid? categoryId, UserContext user);
+        Task<PostReadDTO> GetPostByIdAsync(Guid postId, UserContext user);
+        Task<PaginatedPostResultDTO> SearchPostsAsync(string keyword, int page, int pageSize, UserContext user);
+        Task<PaginatedPostResultDTO> GetPostsByTagAsync(Guid tagId, int page, int pageSize, UserContext user);
+        Task<PostReadDTO> CreatePostAsync(PostCreateDTO dto, UserContext user);
+        Task<PostReadDTO> UpdatePostAsync(Guid postId, PostUpdateDTO dto, UserContext user);
+        Task SoftDeletePostAsync(Guid postId, UserContext user);
+        Task RestorePostAsync(Guid postId, UserContext user);
+        Task HardDeletePostAsync(Guid postId, UserContext user);
     }
 }

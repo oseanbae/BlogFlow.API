@@ -7,5 +7,6 @@ namespace BlogFlow.API.Services.Interfaces
         Guid? GetSubClaimUserId();
         Guid GetRequiredUserId();
         UserRole GetRole();
+        UserContext GetCurrentUser();
     }
 }

@@ -1,5 +1,4 @@
 ﻿using BlogFlow.API.DTOs.Post;
-using BlogFlow.API.Models;
 using BlogFlow.API.Services.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -27,12 +26,8 @@ namespace BlogFlow.API.Controllers
             [FromQuery] int pageSize = 10,
             [FromQuery] Guid? categoryId = null)
         {
-            var isAdmin = User.IsInRole("Admin");
-
-            var result = isAdmin
-                ? await _postService.GetAllPostsAsync(page, pageSize, isAdmin: true)
-                : await _postService.GetPublishedPostsAsync(page, pageSize, categoryId);
-
+            var user = _currentUser.GetCurrentUser();
+            var result = await _postService.GetPostsAsync(page, pageSize, categoryId, user);
             return Ok(result);
         }
 
@@ -41,8 +36,8 @@ namespace BlogFlow.API.Controllers
         [AllowAnonymous]
         public async Task<ActionResult<PostReadDTO>> GetPostAsync(Guid postId)
         {
-            var isAdmin = User.IsInRole("Admin");
-            var result = await _postService.GetPostByIdAsync(postId, isAdmin);
+            var user = _currentUser.GetCurrentUser();
+            var result = await _postService.GetPostByIdAsync(postId, user);
             return Ok(result);
         }
 
@@ -54,8 +49,8 @@ namespace BlogFlow.API.Controllers
             [FromQuery] int page = 1,
             [FromQuery] int pageSize = 10)
         {
-            var role = _currentUser.GetRole();
-            var result = await _postService.SearchPostsAsync(keyword, page, pageSize, role);
+            var user = _currentUser.GetCurrentUser();
+            var result = await _postService.SearchPostsAsync(keyword, page, pageSize, user);
             return Ok(result);
         }
 
@@ -67,8 +62,8 @@ namespace BlogFlow.API.Controllers
             [FromQuery] int page = 1,
             [FromQuery] int pageSize = 10)
         {
-            var role = _currentUser.GetRole();
-            var result = await _postService.GetPostsByTagAsync(tagId, page, pageSize, role);
+            var user = _currentUser.GetCurrentUser();
+            var result = await _postService.GetPostsByTagAsync(tagId, page, pageSize, user);
             return Ok(result);
         }
 
@@ -77,8 +72,8 @@ namespace BlogFlow.API.Controllers
         [Authorize(Roles = "Author")]
         public async Task<ActionResult<PostReadDTO>> CreatePostAsync(PostCreateDTO dto)
         {
-            var userId = _currentUser.GetRequiredUserId();
-            var result = await _postService.CreatePostAsync(dto, userId);
+            var user = _currentUser.GetCurrentUser();
+            var result = await _postService.CreatePostAsync(dto, user);
             return CreatedAtAction(nameof(GetPostAsync), new { postId = result.Id }, result);
         }
 
@@ -87,9 +82,8 @@ namespace BlogFlow.API.Controllers
         [Authorize(Roles = "Author,Admin")]
         public async Task<ActionResult<PostReadDTO>> UpdatePostAsync(Guid postId, PostUpdateDTO dto)
         {
-            var userId = _currentUser.GetRequiredUserId();
-            var isAdmin = User.IsInRole("Admin");
-            var result = await _postService.UpdatePostAsync(postId, dto, userId, isAdmin);
+            var user = _currentUser.GetCurrentUser();
+            var result = await _postService.UpdatePostAsync(postId, dto, user);
             return Ok(result);
         }
 
@@ -98,9 +92,8 @@ namespace BlogFlow.API.Controllers
         [Authorize(Roles = "Author,Admin")]
         public async Task<ActionResult> SoftDeletePostAsync(Guid postId)
         {
-            var userId = _currentUser.GetRequiredUserId();
-            var isAdmin = User.IsInRole("Admin");
-            await _postService.SoftDeletePostAsync(postId, userId, isAdmin);
+            var user = _currentUser.GetCurrentUser();
+            await _postService.SoftDeletePostAsync(postId, user);
             return NoContent();
         }
 
@@ -109,7 +102,8 @@ namespace BlogFlow.API.Controllers
         [Authorize(Roles = "Admin")]
         public async Task<ActionResult> RestorePostAsync(Guid postId)
         {
-            await _postService.RestorePostAsync(postId, UserRole.Admin);
+            var user = _currentUser.GetCurrentUser();
+            await _postService.RestorePostAsync(postId, user);
             return NoContent();
         }
 
@@ -118,7 +112,8 @@ namespace BlogFlow.API.Controllers
         [Authorize(Roles = "Admin")]
         public async Task<ActionResult> HardDeletePostAsync(Guid postId)
         {
-            await _postService.HardDeletePostAsync(postId, UserRole.Admin);
+            var user = _currentUser.GetCurrentUser();
+            await _postService.HardDeletePostAsync(postId, user);
             return NoContent();
         }
     }
