@@ -1,82 +1,67 @@
 ﻿using BlogFlow.API.DTOs.Post;
 using BlogFlow.API.Models;
-using System.Security.Claims;
 
 namespace BlogFlow.API.Services.Interfaces
 {
     public interface IPostService
     {
-        // Public (published posts only)
+        // Public
         Task<PaginatedPostResultDTO> GetPublishedPostsAsync(
             int page,
             int pageSize,
-            Guid? categoryId
-        );
+            Guid? categoryId);
 
-        // Admin view (can include deleted)
+        // Admin or public with filter
         Task<PaginatedPostResultDTO> GetAllPostsAsync(
             int page,
             int pageSize,
-            bool isAdmin
-        );
+            bool isAdmin);
 
-        // Single post with access control
+        // Single post
         Task<PostReadDTO> GetPostByIdAsync(
             Guid postId,
-            bool isAdmin
-        );
+            bool isAdmin);
 
-        // Search (respect visibility rules)
+        // Search
         Task<PaginatedPostResultDTO> SearchPostsAsync(
             string keyword,
             int page,
             int pageSize,
-            Guid requesterId,
-            UserRole requesterRole
-        );
+            UserRole requesterRole);
 
         // Filter by tag
         Task<PaginatedPostResultDTO> GetPostsByTagAsync(
             Guid tagId,
             int page,
             int pageSize,
-            Guid requesterId,
-            UserRole requesterRole
-        );
+            UserRole requesterRole);
 
         // Create
         Task<PostReadDTO> CreatePostAsync(
             PostCreateDTO dto,
-            Guid authorId
-        );
+            Guid authorId);
 
         // Update
         Task<PostReadDTO> UpdatePostAsync(
             Guid postId,
             PostUpdateDTO dto,
             Guid requesterId,
-            bool idAdmin
-        );
+            bool isAdmin);
 
         // Soft delete
         Task SoftDeletePostAsync(
             Guid postId,
             Guid requesterId,
-            bool isAdmin
-        );
+            bool isAdmin);
 
-        // Restore (Admin only)
+        // Restore — Admin only
         Task RestorePostAsync(
             Guid postId,
-            Guid requesterId,
-            UserRole requesterRole
-        );
+            UserRole requesterRole);
 
-        // Hard delete (Admin only)
+        // Hard delete — Admin only
         Task HardDeletePostAsync(
             Guid postId,
-            Guid requesterId,
-            UserRole requesterRole
-        );
+            UserRole requesterRole);
     }
 }

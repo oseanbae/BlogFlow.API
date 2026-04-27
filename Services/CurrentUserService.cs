@@ -1,4 +1,5 @@
-﻿using BlogFlow.API.Services.Interfaces;
+﻿using BlogFlow.API.Models;
+using BlogFlow.API.Services.Interfaces;
 using System.Security.Claims;
 
 namespace BlogFlow.API.Services
@@ -10,11 +11,11 @@ namespace BlogFlow.API.Services
         {
             _contextAccessor = accessor;
         }
+
         public Guid? GetSubClaimUserId()
         {
-            var user = _contextAccessor.HttpContext?.User;
-
-            var subClaim = user?.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            var subClaim = _contextAccessor.HttpContext?.User
+                .FindFirst(ClaimTypes.NameIdentifier)?.Value;
 
             if (!Guid.TryParse(subClaim, out var userId))
                 return null;
@@ -24,12 +25,19 @@ namespace BlogFlow.API.Services
 
         public Guid GetRequiredUserId()
         {
-            var userId = GetSubClaimUserId();
+            return GetSubClaimUserId()
+                ?? throw new InvalidOperationException("User is not authenticated.");
+        }
 
-            if (userId == null)
-                throw new InvalidOperationException("User is not authenticated.");
+        public UserRole GetRole()
+        {
+            var roleClaim = _contextAccessor.HttpContext?.User
+                .FindFirst(ClaimTypes.Role)?.Value;
 
-            return userId.Value;
+            if (Enum.TryParse<UserRole>(roleClaim, ignoreCase: true, out var role))
+                return role;
+
+            return UserRole.Reader;
         }
     }
 }

@@ -1,7 +1,5 @@
 ﻿using BlogFlow.API.DTOs.Post;
-using BlogFlow.API.Helper;
 using BlogFlow.API.Models;
-using BlogFlow.API.Repositories.Interfaces;
 using BlogFlow.API.Services.Interfaces;
 
 namespace BlogFlow.API.Services
@@ -28,30 +26,29 @@ namespace BlogFlow.API.Services
 
             await _postRepo.AddAsync(post);
 
-            var created = await _postRepo.GetByIdWithDetailsAsync(post.Id);
-            return MappingHelper.PostToDTO(created);
+            // Re-fetch via repo to get full DTO projection with navigations
+            return await _postRepo.GetByIdAsync(post.Id, includeDeleted: false)
+                ?? throw new KeyNotFoundException("Post not found after creation.");
         }
 
-        // GET ALL (ADMIN OR PUBLIC WITH FILTER)
+        // GET ALL (ADMIN OR PUBLIC)
         public async Task<PaginatedPostResultDTO> GetAllPostsAsync(
             int page,
             int pageSize,
             bool isAdmin)
         {
-            
-
             var (items, totalCount) = await _postRepo.GetPagedAsync(
                 page,
                 pageSize,
                 authorId: null,
                 categoryId: null,
                 tagId: null,
-                ignoreSoftDelete: isAdmin
+                includeDeleted: isAdmin
             );
 
             return new PaginatedPostResultDTO
             {
-                Items = items.Select(MappingHelper.PostToDTO).ToList(),
+                Items = items,
                 TotalCount = totalCount,
                 Page = page,
                 PageSize = pageSize
@@ -63,38 +60,8 @@ namespace BlogFlow.API.Services
             Guid postId,
             bool isAdmin)
         {
-            var post = await _postRepo.GetByIdAsync(postId, isAdmin);
-
-            if (post == null)
-                throw new KeyNotFoundException("Post not found");
-
-            return MappingHelper.PostToDTO(post);
-        }
-
-        // GET BY TAG
-        public async Task<PaginatedPostResultDTO> GetPostsByTagAsync(
-            Guid tagId,
-            int page,
-            int pageSize,
-            Guid requesterId,
-            UserRole requesterRole)
-        {
-            var (items, totalCount) = await _postRepo.GetPagedAsync(
-                page,
-                pageSize,
-                null,
-                null,
-                tagId,
-                ignoreSoftDelete: requesterRole == UserRole.Admin
-            );
-
-            return new PaginatedPostResultDTO
-            {
-                Items = items.Select(MappingHelper.PostToDTO).ToList(),
-                TotalCount = totalCount,
-                Page = page,
-                PageSize = pageSize
-            };
+            return await _postRepo.GetByIdAsync(postId, isAdmin)
+                ?? throw new KeyNotFoundException("Post not found.");
         }
 
         // GET PUBLISHED
@@ -106,15 +73,40 @@ namespace BlogFlow.API.Services
             var (items, totalCount) = await _postRepo.GetPagedAsync(
                 page,
                 pageSize,
-                null,
-                categoryId,
-                null,
-                ignoreSoftDelete: false
+                authorId: null,
+                categoryId: categoryId,
+                tagId: null,
+                includeDeleted: false
             );
 
             return new PaginatedPostResultDTO
             {
-                Items = items.Select(MappingHelper.PostToDTO).ToList(),
+                Items = items,
+                TotalCount = totalCount,
+                Page = page,
+                PageSize = pageSize
+            };
+        }
+
+        // GET BY TAG
+        public async Task<PaginatedPostResultDTO> GetPostsByTagAsync(
+            Guid tagId,
+            int page,
+            int pageSize,
+            UserRole requesterRole)
+        {
+            var (items, totalCount) = await _postRepo.GetPagedAsync(
+                page,
+                pageSize,
+                authorId: null,
+                categoryId: null,
+                tagId: tagId,
+                includeDeleted: requesterRole == UserRole.Admin
+            );
+
+            return new PaginatedPostResultDTO
+            {
+                Items = items,
                 TotalCount = totalCount,
                 Page = page,
                 PageSize = pageSize
@@ -126,21 +118,18 @@ namespace BlogFlow.API.Services
             string keyword,
             int page,
             int pageSize,
-            Guid requesterId,
             UserRole requesterRole)
         {
-            var includeDeleted = requesterRole == UserRole.Admin;
-
             var (items, totalCount) = await _postRepo.SearchAsync(
                 keyword,
                 page,
                 pageSize,
-                includeDeleted
+                includeDeleted: requesterRole == UserRole.Admin
             );
 
             return new PaginatedPostResultDTO
             {
-                Items = items.Select(MappingHelper.PostToDTO).ToList(),
+                Items = items,
                 TotalCount = totalCount,
                 Page = page,
                 PageSize = pageSize
@@ -154,14 +143,14 @@ namespace BlogFlow.API.Services
             Guid requesterId,
             bool isAdmin)
         {
-            var post = await _postRepo.GetByIdWithDetailsAsync(postId)
+            var post = await _postRepo.GetTrackedByIdAsync(postId, includeDeleted: isAdmin)
                 ?? throw new KeyNotFoundException("Post not found.");
 
             if (!isAdmin && post.AuthorId != requesterId)
                 throw new UnauthorizedAccessException("Not allowed.");
 
             if (!isAdmin && post.DeletedAt != null)
-                throw new UnauthorizedAccessException("Cannot modify deleted post.");
+                throw new UnauthorizedAccessException("Cannot modify a deleted post.");
 
             post.Update(
                 dto.Title ?? post.Title,
@@ -170,13 +159,13 @@ namespace BlogFlow.API.Services
             );
 
             if (dto.TagIds != null)
-            {
                 post.SetTags(dto.TagIds);
-            }
 
             await _postRepo.SaveChangesAsync();
 
-            return MappingHelper.PostToDTO(post);
+            // Re-fetch to return fully projected DTO
+            return await _postRepo.GetByIdAsync(postId, includeDeleted: isAdmin)
+                ?? throw new KeyNotFoundException("Post not found after update.");
         }
 
         // SOFT DELETE
@@ -185,10 +174,8 @@ namespace BlogFlow.API.Services
             Guid requesterId,
             bool isAdmin)
         {
-            var post = await _postRepo.GetByIdAsync(postId, includeDeleted: isAdmin);
-
-            if (post == null)
-                throw new KeyNotFoundException("Post not found.");
+            var post = await _postRepo.GetTrackedByIdAsync(postId, includeDeleted: isAdmin)
+                ?? throw new KeyNotFoundException("Post not found.");
 
             if (!isAdmin && post.AuthorId != requesterId)
                 throw new UnauthorizedAccessException("Not allowed.");
@@ -201,15 +188,15 @@ namespace BlogFlow.API.Services
         // RESTORE
         public async Task RestorePostAsync(
             Guid postId,
-            Guid requesterId,
             UserRole requesterRole)
         {
             if (requesterRole != UserRole.Admin)
-                throw new UnauthorizedAccessException();
+                throw new UnauthorizedAccessException("Only admins can restore posts.");
 
-            var post = await _postRepo.GetByIdAsync(postId, includeDeleted: true);
+            var post = await _postRepo.GetTrackedByIdAsync(postId, includeDeleted: true)
+                ?? throw new KeyNotFoundException("Post not found.");
 
-            post?.Restore();
+            post.Restore();
 
             await _postRepo.SaveChangesAsync();
         }
@@ -217,13 +204,12 @@ namespace BlogFlow.API.Services
         // HARD DELETE
         public async Task HardDeletePostAsync(
             Guid postId,
-            Guid requesterId,
             UserRole requesterRole)
         {
             if (requesterRole != UserRole.Admin)
-                throw new UnauthorizedAccessException();
+                throw new UnauthorizedAccessException("Only admins can hard delete posts.");
 
-            var post = await _postRepo.GetByIdWithDetailsAsync(postId)
+            var post = await _postRepo.GetTrackedByIdAsync(postId, includeDeleted: true)
                 ?? throw new KeyNotFoundException("Post not found.");
 
             await _postRepo.DeleteAsync(post);

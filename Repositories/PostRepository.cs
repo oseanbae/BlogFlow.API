@@ -1,6 +1,7 @@
 ﻿using BlogFlow.API.Data;
+using BlogFlow.API.DTOs.Post;
 using BlogFlow.API.Models;
-using BlogFlow.API.Repositories.Interfaces;
+using BlogFlow.API.Queries;
 using Microsoft.EntityFrameworkCore;
 
 namespace BlogFlow.API.Repositories
@@ -13,131 +14,111 @@ namespace BlogFlow.API.Repositories
         {
             _context = context;
         }
+
+        // READ — returns DTO directly via AsDTO() projection
+        public async Task<PostReadDTO?> GetByIdAsync(Guid postId, bool includeDeleted = false)
+        {
+            var query = includeDeleted
+                ? _context.Posts.IgnoreQueryFilters()
+                : _context.Posts.AsQueryable();
+
+            return await query
+                .Where(p => p.Id == postId)
+                .AsDTO()
+                .FirstOrDefaultAsync();
+        }
+
+        public async Task<(IEnumerable<PostReadDTO> Items, int TotalCount)> GetPagedAsync(
+            int page,
+            int pageSize,
+            Guid? authorId,
+            Guid? categoryId,
+            Guid? tagId,
+            bool includeDeleted = false)
+        {
+            var query = includeDeleted
+                ? _context.Posts.IgnoreQueryFilters()
+                : _context.Posts.AsQueryable();
+
+            if (authorId.HasValue)
+                query = query.Where(p => p.AuthorId == authorId.Value);
+
+            if (categoryId.HasValue)
+                query = query.Where(p => p.CategoryId == categoryId.Value);
+
+            if (tagId.HasValue)
+                query = query.Where(p => p.PostTags.Any(pt => pt.TagId == tagId.Value));
+
+            var totalCount = await query.CountAsync();
+
+            var items = await query
+                .AsNoTracking()
+                .OrderByDescending(p => p.CreatedAt)
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .AsDTO()
+                .ToListAsync();
+
+            return (items, totalCount);
+        }
+
+        public async Task<(IEnumerable<PostReadDTO> Items, int TotalCount)> SearchAsync(
+            string keyword,
+            int page,
+            int pageSize,
+            bool includeDeleted = false)
+        {
+            var query = includeDeleted
+                ? _context.Posts.IgnoreQueryFilters()
+                : _context.Posts.AsQueryable();
+
+            if (!string.IsNullOrWhiteSpace(keyword))
+            {
+                query = query.Where(p =>
+                    p.Title.Contains(keyword) ||
+                    p.Body.Contains(keyword));
+            }
+
+            var totalCount = await query.CountAsync();
+
+            var items = await query
+                .AsNoTracking()
+                .OrderByDescending(p => p.CreatedAt)
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .AsDTO()
+                .ToListAsync();
+
+            return (items, totalCount);
+        }
+
+        // WRITE — returns tracked Post entity for domain method calls in service
+        public async Task<Post?> GetTrackedByIdAsync(Guid postId, bool includeDeleted = false)
+        {
+            var query = includeDeleted
+                ? _context.Posts.IgnoreQueryFilters()
+                : _context.Posts.AsQueryable();
+
+            return await query
+                .Include(p => p.PostTags)
+                .FirstOrDefaultAsync(p => p.Id == postId);
+        }
+
         public async Task AddAsync(Post post)
         {
             await _context.Posts.AddAsync(post);
             await _context.SaveChangesAsync();
         }
 
-        //Hard delete
         public async Task DeleteAsync(Post post)
         {
             _context.Posts.Remove(post);
             await _context.SaveChangesAsync();
         }
 
-        public async Task UpdateAsync(Post post)
-        {
-            var postToUpdate = await _context.Posts
-                .Include(p => p.PostTags)
-                .FirstOrDefaultAsync(p => p.Id == post.Id && p.DeletedAt == null)
-                ?? throw new KeyNotFoundException("Post not found.");
-
-            postToUpdate.Update(post.Title, post.Body, post.CategoryId);
-
-            if (post.PostTags != null)
-            {
-                postToUpdate.SetTags(post.PostTags.Select(pt => pt.TagId));
-            }
-
-            await _context.SaveChangesAsync();
-        }
         public async Task SaveChangesAsync()
         {
             await _context.SaveChangesAsync();
-        }
-        public async Task<IEnumerable<Post>> GetAllAsync(bool includeDeleted = false)
-        {
-            var query = includeDeleted
-                ? _context.Posts.IgnoreQueryFilters()
-                : _context.Posts;
-
-            return await query.ToListAsync();
-        }
-
-        public async Task<Post> GetByIdWithDetailsAsync(Guid postId)
-        {
-            var post = await _context.Posts
-                .Include(p => p.Author)
-                .Include(p => p.Category)
-                .Include(p => p.PostTags)
-                    .ThenInclude(pt => pt.Tag)
-                .FirstOrDefaultAsync(p => p.Id == postId);
-
-            if (post == null)
-                throw new KeyNotFoundException("Post not found.");
-
-            return post;
-        }
-
-        public async Task<Post?> GetByIdAsync(Guid postId, bool includeDeleted = false)
-        {
-            var query = includeDeleted
-                ? _context.Posts.IgnoreQueryFilters()
-                : _context.Posts;
-
-            return await query
-                .FirstOrDefaultAsync(p => p.Id == postId);
-        }
-
-        public async Task<(IEnumerable<Post> Items, int TotalCount)> GetPagedAsync(
-            int page,
-            int pageSize,
-            Guid? authorId,
-            Guid? categoryId,
-            Guid? tagId,
-            bool ignoreSoftDelete = false)
-        {
-            var query = ignoreSoftDelete
-                ? _context.Posts.IgnoreQueryFilters()
-                : _context.Posts;
-
-            // Author filter
-            if (authorId.HasValue)
-                query = query.Where(p => p.AuthorId == authorId.Value);
-
-            // Category filter
-            if (categoryId.HasValue)
-                query = query.Where(p => p.CategoryId == categoryId.Value);
-
-            // Tag filter
-            if (tagId.HasValue)
-                query = query.Where(p => p.PostTags.Any(x => x.TagId == tagId.Value));
-
-            var totalCount = await query.CountAsync();
-
-            var items = await query
-                .OrderByDescending(p => p.CreatedAt)
-                .Skip((page - 1) * pageSize)
-                .Take(pageSize)
-                .ToListAsync();
-
-            return (items, totalCount);
-        }
-
-        public async Task<(IEnumerable<Post> Items, int TotalCount)> SearchAsync(
-            string keyword, int page, int pageSize, bool includeDeleted = false)
-        {
-            var query = includeDeleted
-                ? _context.Posts.IgnoreQueryFilters()
-                : _context.Posts;
-
-            if (!string.IsNullOrEmpty(keyword))
-            {
-                query = query.Where(p =>
-                        p.Title.Contains(keyword) ||
-                        p.Body.Contains(keyword));
-            }
-
-            var totalCount = await query.CountAsync();
-
-            var items = await query
-                .OrderByDescending(p => p.CreatedAt)
-                .Skip((page - 1) * pageSize)
-                .Take(pageSize)
-                .ToListAsync();
-
-            return (items, totalCount);
         }
     }
 }
