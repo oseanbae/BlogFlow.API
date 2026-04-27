@@ -2,8 +2,8 @@
 using BlogFlow.API.DTOs.Categories;
 using BlogFlow.API.Models;
 using BlogFlow.API.Repositories.Interfaces;
-using BlogFlow.API.Helper;
 using Microsoft.EntityFrameworkCore;
+using BlogFlow.API.Queries;
 
 namespace BlogFlow.API.Repositories
 {
@@ -30,16 +30,16 @@ namespace BlogFlow.API.Repositories
 
         public async Task<IEnumerable<CategoryReadDTO>> GetAllCategoriesAsync()
         {
-
             return await _context.Categories
-                .Select(c => MappingHelper.CategoryToDTO(c))
+                .AsDTO()
                 .ToListAsync();
         }
 
         public async Task<CategoryReadDTO?> GetCategoryByIdAsync(Guid id)
         {
-            var category = await _context.Categories.FirstOrDefaultAsync(c => c.Id == id);
-            return category == null ? null : MappingHelper.CategoryToDTO(category);
+            return await _context.Categories
+                   .AsDTO()
+                   .FirstOrDefaultAsync(c => c.Id == id); 
         }
 
         public async Task UpdateCategoryAsync(Category category)
