@@ -80,9 +80,8 @@ namespace BlogFlow.API.Models
             if (tagIds == null)
                 return;
 
-            var newTagIds = tagIds.Distinct().ToList();
-
-            var existingTagIds = PostTags.Select(pt => pt.TagId).ToList();
+            var newTagIds = tagIds.Distinct().ToHashSet();
+            var existingTagIds = PostTags.Select(pt => pt.TagId).ToHashSet();
 
             var toRemove = PostTags
                 .Where(pt => !newTagIds.Contains(pt.TagId))
@@ -95,7 +94,8 @@ namespace BlogFlow.API.Models
 
             var toAdd = newTagIds
                 .Where(id => !existingTagIds.Contains(id));
-            foreach (var tagId in tagIds.Distinct())
+
+            foreach (var tagId in toAdd)
             {
                 PostTags.Add(new PostTag(Id, tagId));
             }
