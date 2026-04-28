@@ -1,9 +1,9 @@
 ﻿using BlogFlow.API.Data;
 using BlogFlow.API.DTOs.Categories;
 using BlogFlow.API.Models;
+using BlogFlow.API.Queries;
 using BlogFlow.API.Repositories.Interfaces;
 using Microsoft.EntityFrameworkCore;
-using BlogFlow.API.Queries;
 
 namespace BlogFlow.API.Repositories
 {
@@ -22,12 +22,6 @@ namespace BlogFlow.API.Repositories
             await _context.SaveChangesAsync();
         }
 
-        public async Task DeleteCategoryAsync(Category category)
-        {
-            _context.Categories.Remove(category);
-            await _context.SaveChangesAsync();
-        }
-
         public async Task<IEnumerable<CategoryReadDTO>> GetAllCategoriesAsync()
         {
             return await _context.Categories
@@ -38,18 +32,25 @@ namespace BlogFlow.API.Repositories
         public async Task<CategoryReadDTO?> GetCategoryByIdAsync(Guid id)
         {
             return await _context.Categories
-                   .AsDTO()
-                   .FirstOrDefaultAsync(c => c.Id == id); 
+                .AsDTO()
+                .FirstOrDefaultAsync(c => c.Id == id);
         }
 
-        public async Task UpdateCategoryAsync(Category category)
+        public async Task RenameCategoryAsync(Guid id, string newName)
         {
-            var existingCategory = await _context.Categories.FindAsync(category.Id);
-            if (existingCategory != null)
-            {
-                existingCategory.Name = category.Name;
-                await _context.SaveChangesAsync();
-            }
+            var category = await _context.Categories.FindAsync(id)
+                ?? throw new InvalidOperationException("Category does not exist");
+
+            category.Rename(newName);
+            await _context.SaveChangesAsync();
+        }
+
+        public async Task<bool> ExistsByNameAsync(string name)
+        {
+            var normalized = Category.Normalize(name);
+
+            return await _context.Categories
+                .AnyAsync(c => c.Name == normalized);
         }
     }
 }

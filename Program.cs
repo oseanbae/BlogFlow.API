@@ -33,6 +33,7 @@ builder.Services.AddScoped<IAuthServices, AuthServices>();
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<IRefreshTokenRepository, RefreshTokenRepository>();
 builder.Services.AddScoped<IPostRepository, PostRepository>();
+builder.Services.AddScoped<ICategoryRepository, CategoryRepository>();
 
 // Authentication & Authorization
 builder.Services.AddJwtAuthentication(builder.Configuration);
@@ -46,6 +47,7 @@ builder.Services.AddValidatorsFromAssemblyContaining<UserRegisterValidator>();
 builder.Services.AddValidatorsFromAssemblyContaining<UserLoginValidator>();
 builder.Services.AddValidatorsFromAssemblyContaining<PostCreateValidator>();
 builder.Services.AddValidatorsFromAssemblyContaining<PostUpdateValidator>();
+builder.Services.AddValidatorsFromAssemblyContaining<CategoryCreateValidator>();
 
 var app = builder.Build();
 
