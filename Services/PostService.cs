@@ -1,6 +1,6 @@
 ﻿using BlogFlow.API.DTOs.Post;
 using BlogFlow.API.Models;
-using BlogFlow.API.Repositories.Interfaces;
+using BlogFlow.API.Queries;
 using BlogFlow.API.Services.Interfaces;
 
 namespace BlogFlow.API.Services
@@ -111,8 +111,7 @@ namespace BlogFlow.API.Services
 
             await _postRepo.AddAsync(post);
 
-            return await _postRepo.GetByIdAsync(post.Id, includeDeleted: false)
-                ?? throw new KeyNotFoundException("Post not found after creation.");
+            return post.ToDTO();
         }
 
         // UPDATE
@@ -124,11 +123,8 @@ namespace BlogFlow.API.Services
             var post = await _postRepo.GetTrackedByIdAsync(postId, includeDeleted: user.IsAdmin)
                 ?? throw new KeyNotFoundException("Post not found.");
 
-            if (!user.IsAdmin && post.AuthorId != user.UserId)
+            if (post.AuthorId != user.UserId)
                 throw new UnauthorizedAccessException("Not allowed.");
-
-            if (!user.IsAdmin && post.DeletedAt != null)
-                throw new UnauthorizedAccessException("Cannot modify a deleted post.");
 
             post.Update(
                 dto.Title ?? post.Title,
@@ -141,8 +137,7 @@ namespace BlogFlow.API.Services
 
             await _postRepo.SaveChangesAsync();
 
-            return await _postRepo.GetByIdAsync(postId, includeDeleted: user.IsAdmin)
-                ?? throw new KeyNotFoundException("Post not found after update.");
+            return post.ToDTO();
         }
 
         // SOFT DELETE
@@ -153,7 +148,7 @@ namespace BlogFlow.API.Services
             var post = await _postRepo.GetTrackedByIdAsync(postId, includeDeleted: user.IsAdmin)
                 ?? throw new KeyNotFoundException("Post not found.");
 
-            if (!user.IsAdmin && post.AuthorId != user.UserId)
+            if (post.AuthorId != user.UserId)
                 throw new UnauthorizedAccessException("Not allowed.");
 
             post.SoftDelete();
@@ -166,10 +161,7 @@ namespace BlogFlow.API.Services
             Guid postId,
             UserContext user)
         {
-            if (!user.IsAdmin)
-                throw new UnauthorizedAccessException("Only admins can restore posts.");
-
-            var post = await _postRepo.GetTrackedByIdAsync(postId, includeDeleted: true)
+            var post = await _postRepo.GetTrackedByIdAsync(postId, includeDeleted: user.IsAdmin)
                 ?? throw new KeyNotFoundException("Post not found.");
 
             post.Restore();
@@ -182,10 +174,7 @@ namespace BlogFlow.API.Services
             Guid postId,
             UserContext user)
         {
-            if (!user.IsAdmin)
-                throw new UnauthorizedAccessException("Only admins can hard delete posts.");
-
-            var post = await _postRepo.GetTrackedByIdAsync(postId, includeDeleted: true)
+            var post = await _postRepo.GetTrackedByIdAsync(postId, includeDeleted: user.IsAdmin)
                 ?? throw new KeyNotFoundException("Post not found.");
 
             await _postRepo.DeleteAsync(post);

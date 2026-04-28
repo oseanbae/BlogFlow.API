@@ -31,5 +31,27 @@ namespace BlogFlow.API.Queries
                     .ToList()
             });
         }
+        public static PostReadDTO ToDTO(this Post post)
+        {
+            return new PostReadDTO
+            {
+                Id = post.Id,
+                Title = post.Title,
+                Body = post.Body,
+                CreatedAt = post.CreatedAt,
+                UpdatedAt = post.UpdatedAt,
+                AuthorId = post.AuthorId,
+                AuthorUsername = post.Author?.Username ?? string.Empty,
+                CategoryId = post.CategoryId,
+                CategoryName = post.Category?.Name ?? string.Empty,
+                Tags = post.PostTags
+                    .Select(pt => new TagReadDTO
+                    {
+                        Id = pt.Tag.Id,
+                        Name = pt.Tag.Name
+                    })
+                    .ToList()
+            };
+        }
     }
 }
