@@ -12,38 +12,33 @@ namespace BlogFlow.API.Services
             _contextAccessor = accessor;
         }
 
-        public Guid? GetSubClaimUserId()
+        public Guid GetRequiredUserId()
         {
             var subClaim = _contextAccessor.HttpContext?.User
                 .FindFirst(ClaimTypes.NameIdentifier)?.Value;
 
             if (!Guid.TryParse(subClaim, out var userId))
-                return null;
+                throw new InvalidOperationException("Invalid or missing user id claim.");
 
             return userId;
         }
-
-        public Guid GetRequiredUserId()
-        {
-            return GetSubClaimUserId()
-                ?? throw new InvalidOperationException("User is not authenticated.");
-        }
-
         public UserRole GetRole()
         {
-            var roleClaim = _contextAccessor.HttpContext?.User
-                .FindFirst(ClaimTypes.Role)?.Value;
+            var roleClaim = (_contextAccessor.HttpContext?.User
+                .FindFirst(ClaimTypes.Role)?.Value) ?? 
+                throw new InvalidOperationException("Missing role claim.");
 
             if (Enum.TryParse<UserRole>(roleClaim, ignoreCase: true, out var role))
-                return role;
+                throw new InvalidOperationException("Invalid role claim");
 
-            return UserRole.Reader;
+            return role;
         }
+
         public UserContext GetCurrentUser()
         {
             return new UserContext
             {
-                UserId = GetSubClaimUserId(),
+                UserId = GetRequiredUserId(),
                 Role = GetRole()
             };
         }
