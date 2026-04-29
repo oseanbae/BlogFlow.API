@@ -5,6 +5,8 @@ public interface IPostRepository
 {
     // Read — returns DTOs directly
     Task<PostReadDTO?> GetByIdAsync(Guid postId, bool includeDeleted = false);
+    // Write — returns tracked entity for domain method calls
+    Task<Post?> GetTrackedByIdAsync(Guid postId, bool includeDeleted = false);
 
     Task<(IEnumerable<PostReadDTO> Items, int TotalCount)> GetPagedAsync(
         int page,
@@ -20,8 +22,6 @@ public interface IPostRepository
         int pageSize,
         bool includeDeleted = false);
 
-    // Write — returns tracked entity for domain method calls
-    Task<Post?> GetTrackedByIdAsync(Guid postId, bool includeDeleted = false);
 
     Task AddAsync(Post post);
     Task DeleteAsync(Post post);

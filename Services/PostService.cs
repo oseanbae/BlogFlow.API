@@ -180,7 +180,7 @@ namespace BlogFlow.API.Services
                 ?? throw new KeyNotFoundException("Post not found.");
 
             if (!user.IsAdmin)
-                throw new UnauthorizedAccessException("Only admin can restore posts.");
+                throw new UnauthorizedAccessException("Only admin can hard delete posts.");
 
             await _postRepo.DeleteAsync(post);
         }
