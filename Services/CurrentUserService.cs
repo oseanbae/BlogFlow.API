@@ -28,7 +28,7 @@ namespace BlogFlow.API.Services
                 .FindFirst(ClaimTypes.Role)?.Value) ?? 
                 throw new InvalidOperationException("Missing role claim.");
 
-            if (Enum.TryParse<UserRole>(roleClaim, ignoreCase: true, out var role))
+            if (!Enum.TryParse<UserRole>(roleClaim, ignoreCase: true, out var role))
                 throw new InvalidOperationException("Invalid role claim");
 
             return role;
