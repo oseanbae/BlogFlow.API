@@ -101,16 +101,17 @@ namespace BlogFlow.API.Services
             PostCreateDTO dto,
             UserContext user)
         {
-            if (!user.IsAuthenticated || !user.UserId.HasValue)
-                throw new UnauthorizedAccessException("Invalid user.");
+            var post = new Post(
+                    dto.Title,
+                    dto.Body,
+                    user.UserId,
+                    dto.CategoryId
+            );
 
-            var post = new Post(dto.Title, dto.Body, user.UserId.Value, dto.CategoryId);
-
-            if (dto.TagIds != null && dto.TagIds.Any())
+            if (dto.TagIds != null && dto.TagIds.Count != 0)
                 post.SetTags(dto.TagIds);
 
             await _postRepo.AddAsync(post);
-
             return post.ToDTO();
         }
 
