@@ -1,6 +1,5 @@
 ﻿using BlogFlow.API.Data;
 using BlogFlow.API.DTOs.Categories;
-using BlogFlow.API.Models;
 using BlogFlow.API.Queries;
 using BlogFlow.API.Repositories.Interfaces;
 using Microsoft.EntityFrameworkCore;
@@ -39,18 +38,19 @@ namespace BlogFlow.API.Repositories
         public async Task RenameCategoryAsync(Guid id, string newName)
         {
             var category = await _context.Categories.FindAsync(id)
-                ?? throw new InvalidOperationException("Category does not exist");
+                ?? throw new KeyNotFoundException($"Category with ID {id} not found.");
 
             category.Rename(newName);
             await _context.SaveChangesAsync();
         }
 
-        public async Task<bool> ExistsByNameAsync(string name)
+        public Task<bool> ExistsByNameAsync(string name, Guid? excludeId = null)
         {
             var normalized = Category.Normalize(name);
 
-            return await _context.Categories
-                .AnyAsync(c => c.Name == normalized);
+            return _context.Categories.AnyAsync(c =>
+                c.Name == normalized &&
+                (!excludeId.HasValue || c.Id != excludeId.Value));
         }
     }
 }

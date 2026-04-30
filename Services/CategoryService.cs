@@ -2,7 +2,6 @@
 using BlogFlow.API.Models;
 using BlogFlow.API.Repositories.Interfaces;
 using BlogFlow.API.Services.Interfaces;
-
 namespace BlogFlow.API.Services
 {
     public class CategoryService : ICategoryService
@@ -14,30 +13,38 @@ namespace BlogFlow.API.Services
             _repo = repo;
         }
 
-        public async Task<CategoryReadDTO> CreateCategoryAsync(CategoryCreateDTO dto, UserContext user)
+        public async Task<CategoryReadDTO> CreateCategoryAsync(
+            CategoryCreateDTO dto,
+            UserContext user)
         {
             ValidateRequestSync(dto.Name, user);
-            var category = new Category(dto.Name);
 
-            if (await _repo.ExistsByNameAsync(dto.Name))
+            if (await _repo.ExistsByNameAsync(dto.Name, null))
                 throw new InvalidOperationException("Category already exists.");
 
+            var category = new Category(dto.Name);
+
             await _repo.CreateCategoryAsync(category);
+
             return new CategoryReadDTO
             {
                 Id = category.Id,
-                Name = category.Name,
+                Name = category.DisplayName
             };
         }
 
-        public async Task<CategoryReadDTO> RenameCategoryAsync(Guid categoryId, string newName, UserContext user)
+        public async Task<CategoryReadDTO> RenameCategoryAsync(
+            Guid categoryId,
+            string newName,
+            UserContext user)
         {
             ValidateRequestSync(newName, user);
 
-            if (await _repo.ExistsByNameAsync(newName))
+            if (await _repo.ExistsByNameAsync(newName, categoryId))
                 throw new InvalidOperationException("Category already exists.");
 
             await _repo.RenameCategoryAsync(categoryId, newName);
+
             var updated = await _repo.GetCategoryByIdAsync(categoryId);
             return updated!;
         }

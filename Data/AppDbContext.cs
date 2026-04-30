@@ -138,6 +138,10 @@ namespace BlogFlow.API.Data
             {
                 entity.HasKey(c => c.Id);
 
+                entity.Property(c => c.DisplayName)
+                    .IsRequired()
+                    .HasMaxLength(50);
+
                 entity.Property(c => c.Name)
                     .IsRequired()
                     .HasMaxLength(50);

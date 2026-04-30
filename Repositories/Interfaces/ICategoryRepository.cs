@@ -8,6 +8,6 @@ namespace BlogFlow.API.Repositories.Interfaces
         Task RenameCategoryAsync(Guid id, string newName);
         Task<IEnumerable<CategoryReadDTO>> GetAllCategoriesAsync();
         Task<CategoryReadDTO?> GetCategoryByIdAsync(Guid id);
-        Task<bool> ExistsByNameAsync(string name);
+        Task<bool> ExistsByNameAsync(string name, Guid? excludeId);
     }
 }

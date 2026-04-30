@@ -1,28 +1,28 @@
-﻿namespace BlogFlow.API.Models
+﻿using BlogFlow.API.Models;
+
+public class Category
 {
-    public class Category
+    public Guid Id { get; init; } = Guid.NewGuid();
+    public string DisplayName { get; private set; } = null!;
+    public string Name { get; private set; } = null!;
+    public ICollection<Post> Posts { get; private set; } = [];
+
+    private Category() { }
+
+    public Category(string displayName)
     {
-        public Guid Id { get; set; } = Guid.NewGuid();
-        public string Name { get; private set; } = null!;
-        public ICollection<Post> Posts { get; private set; } = [];
-
-        //Constructor for EF Core to load data from db
-        private Category() { }
-
-        public Category(string name)
-        {
-            Name = Normalize(name);
-        }
-        public void Rename(string newName)
-        {
-            Name = Normalize(newName);
-        }
-        public static string Normalize(string name)
-        {
-            if (string.IsNullOrWhiteSpace(name))
-                throw new ArgumentException("Name is required");
-
-            return name.Trim().ToLowerInvariant();
-        }
+        ArgumentException.ThrowIfNullOrWhiteSpace(displayName);
+        DisplayName = displayName.Trim();
+        Name = Normalize(displayName);
     }
+
+    public void Rename(string newName)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(newName);
+        DisplayName = newName.Trim();
+        Name = Normalize(newName);
+    }
+
+    public static string Normalize(string name)
+        => name.Trim().ToLowerInvariant();
 }
