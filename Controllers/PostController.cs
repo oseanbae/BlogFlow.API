@@ -1,4 +1,5 @@
 ﻿using BlogFlow.API.DTOs.Post;
+using BlogFlow.API.Models;
 using BlogFlow.API.Services.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;

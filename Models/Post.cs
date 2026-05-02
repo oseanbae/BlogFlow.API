@@ -15,7 +15,6 @@ namespace BlogFlow.API.Models
         //[FK]
         public Guid AuthorId { get; private set; }
         public Guid? CategoryId { get; private set; }
-        public Guid? CommentId { get; set; }
 
         //Navigation Properties
         public User Author { get; private set; } = null!;
