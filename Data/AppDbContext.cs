@@ -127,10 +127,6 @@ namespace BlogFlow.API.Data
                 entity.HasMany(p => p.PostTags)
                     .WithOne(pt => pt.Post)
                     .HasForeignKey(pt => pt.PostId);
-
-                entity.ToTable(t =>
-                    t.HasCheckConstraint("CK_Post_Title_MinLength", "length(title) >= 3")
-                );
             });
 
             // CATEGORY

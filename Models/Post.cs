@@ -30,9 +30,6 @@ namespace BlogFlow.API.Models
             if (string.IsNullOrWhiteSpace(title))
                 throw new ArgumentException("Title is required");
 
-            if (title.Length > 255)
-                throw new ArgumentException("Title too long");
-
             if (string.IsNullOrWhiteSpace(body))
                 throw new ArgumentException("Body is required");
 
