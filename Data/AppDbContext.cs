@@ -114,14 +114,22 @@ namespace BlogFlow.API.Data
                 entity.HasIndex(p => new { p.AuthorId, p.DeletedAt });
                 entity.HasIndex(p => p.CategoryId);
 
+                // Post -> User
                 entity.HasOne(p => p.Author)
                     .WithMany(u => u.Posts)
                     .HasForeignKey(p => p.AuthorId)
                     .OnDelete(DeleteBehavior.Restrict);
 
+                // Post -> Category
                 entity.HasOne(p => p.Category)
                     .WithMany(c => c.Posts)
                     .HasForeignKey(p => p.CategoryId)
+                    .OnDelete(DeleteBehavior.Restrict);
+
+                // Post -> Comments
+                entity.HasMany(p => p.Comments)
+                    .WithOne(c => c.Post)
+                    .HasForeignKey(c => c.PostId)
                     .OnDelete(DeleteBehavior.Restrict);
 
                 entity.HasMany(p => p.PostTags)
@@ -178,16 +186,15 @@ namespace BlogFlow.API.Data
 
                 entity.HasIndex(pt => new { pt.TagId, pt.PostId });
 
-
                 entity.HasOne(pt => pt.Post)
                     .WithMany(p => p.PostTags)
                     .HasForeignKey(pt => pt.PostId)
-                    .OnDelete(DeleteBehavior.Cascade);
+                    .OnDelete(DeleteBehavior.Restrict);
 
                 entity.HasOne(pt => pt.Tag)
                     .WithMany(t => t.PostTags)
                     .HasForeignKey(pt => pt.TagId)
-                    .OnDelete(DeleteBehavior.Cascade);
+                    .OnDelete(DeleteBehavior.Restrict);
             });
 
             // COMMENT
@@ -202,11 +209,15 @@ namespace BlogFlow.API.Data
                 entity.Property(c => c.CreatedAt).IsRequired();
                 entity.Property(c => c.UpdatedAt);
 
+                entity.HasQueryFilter(p => p.DeletedAt == null);
+
+                // Comment -> Post
                 entity.HasOne(c => c.Post)
                     .WithMany(p => p.Comments)
                     .HasForeignKey(c => c.PostId)
-                    .OnDelete(DeleteBehavior.Cascade);
+                    .OnDelete(DeleteBehavior.Restrict);
 
+                // Comment -> User
                 entity.HasOne(c => c.User)
                     .WithMany(u => u.Comments)
                     .HasForeignKey(c => c.UserId)
