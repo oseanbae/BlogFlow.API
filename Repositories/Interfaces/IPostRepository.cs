@@ -1,29 +1,18 @@
-﻿using BlogFlow.API.DTOs.Post;
-using BlogFlow.API.Models;
+﻿using BlogFlow.API.Models;
 
-public interface IPostRepository
+namespace BlogFlow.API.Repositories.Interfaces
 {
-    // Read — returns DTOs directly
-    Task<PostReadDTO?> GetByIdAsync(Guid postId, bool includeDeleted = false);
-    // Write — returns tracked entity for domain method calls
-    Task<Post?> GetTrackedByIdAsync(Guid postId, bool includeDeleted = false);
+    public interface IPostRepository
+    {
+        // For Reading: Provides the base query for projection
+        IQueryable<Post> GetPostsQuery(bool includeDeleted = false);
 
-    Task<(IEnumerable<PostReadDTO> Items, int TotalCount)> GetPagedAsync(
-        int page,
-        int pageSize,
-        Guid? authorId,
-        Guid? categoryId,
-        Guid? tagId,
-        bool includeDeleted = false);
+        // For Writing/Updating: Provides a tracked entity from the DB
+        Task<Post?> GetTrackedByIdAsync(Guid postId, bool includeDeleted = false);
 
-    Task<(IEnumerable<PostReadDTO> Items, int TotalCount)> SearchAsync(
-        string keyword,
-        int page,
-        int pageSize,
-        bool includeDeleted = false);
-
-
-    Task AddAsync(Post post);
-    Task DeleteAsync(Post post);
-    Task SaveChangesAsync();
+        // CRUD Operations
+        Task AddAsync(Post post);
+        Task DeleteAsync(Post post);
+        Task SaveChangesAsync();
+    }
 }

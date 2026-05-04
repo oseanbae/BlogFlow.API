@@ -1,4 +1,5 @@
-﻿using BlogFlow.API.DTOs.Post;
+﻿using BlogFlow.API.DTOs;
+using BlogFlow.API.DTOs.Post;
 using BlogFlow.API.Models;
 using BlogFlow.API.Services.Interfaces;
 using Microsoft.AspNetCore.Authorization;
@@ -22,7 +23,7 @@ namespace BlogFlow.API.Controllers
         // GET api/v1/post
         [HttpGet]
         [AllowAnonymous]
-        public async Task<ActionResult<PaginatedPostResultDTO>> GetPostsAsync(
+        public async Task<ActionResult<PaginatedResultDTO<PostReadDTO>>> GetPostsAsync(
             [FromQuery] int page = 1,
             [FromQuery] int pageSize = 10,
             [FromQuery] Guid? categoryId = null)
@@ -45,7 +46,7 @@ namespace BlogFlow.API.Controllers
         // GET api/v1/post/search?keyword=xxx
         [HttpGet("search")]
         [AllowAnonymous]
-        public async Task<ActionResult<PaginatedPostResultDTO>> SearchPostsAsync(
+        public async Task<ActionResult<PaginatedResultDTO<PostReadDTO>>> SearchPostsAsync(
             [FromQuery] string keyword,
             [FromQuery] int page = 1,
             [FromQuery] int pageSize = 10)
@@ -58,7 +59,7 @@ namespace BlogFlow.API.Controllers
         // GET api/v1/post/tag/{tagId}
         [HttpGet("tag/{tagId}")]
         [AllowAnonymous]
-        public async Task<ActionResult<PaginatedPostResultDTO>> GetPostsByTagAsync(
+        public async Task<ActionResult<PaginatedResultDTO<PostReadDTO>>> GetPostsByTagAsync(
             Guid tagId,
             [FromQuery] int page = 1,
             [FromQuery] int pageSize = 10)
