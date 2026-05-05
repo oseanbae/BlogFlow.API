@@ -148,20 +148,10 @@ namespace BlogFlow.API.Services
         private static async Task<PaginatedResultDTO<PostReadDTO>> ExecutePagedQueryAsync(
             IQueryable<Post> query, int page, int pageSize)
         {
-            var totalCount = await query.CountAsync();
-            var items = await query
+            return await query
                 .OrderByDescending(p => p.CreatedAt)
-                .AsDTO()
-                .ApplyPagination(page, pageSize)
-                .ToListAsync();
-
-            return new PaginatedResultDTO<PostReadDTO>
-            {
-                Items = items,
-                TotalCount = totalCount,
-                Page = page,
-                PageSize = pageSize
-            };
+                .AsDTO()                           
+                .ToPaginatedResultAsync(page, pageSize); 
         }
     }
 }
