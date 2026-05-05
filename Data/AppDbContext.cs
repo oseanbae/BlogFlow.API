@@ -199,7 +199,7 @@ namespace BlogFlow.API.Data
 
             // COMMENT
             builder.Entity<Comment>(entity =>
-            {
+            {   
                 entity.HasKey(c => c.Id);
 
                 entity.Property(c => c.Body)
