@@ -1,6 +1,4 @@
 ﻿using BlogFlow.API.Data;
-using BlogFlow.API.DTOs.Categories;
-using BlogFlow.API.Queries;
 using BlogFlow.API.Repositories.Interfaces;
 using Microsoft.EntityFrameworkCore;
 
@@ -10,30 +8,16 @@ namespace BlogFlow.API.Repositories
     {
         private readonly AppDbContext _context;
 
-        public CategoryRepository(AppDbContext context)
-        {
-            _context = context;
-        }
+        public CategoryRepository(AppDbContext context) => _context = context;
+
+        public IQueryable<Category> GetCategoriesQuery()
+            => _context.Categories.AsNoTracking();
+
+        public IQueryable<Category> GetCategoryQuery(Guid id)
+            => _context.Categories.AsNoTracking().Where(c => c.Id == id);
 
         public async Task CreateCategoryAsync(Category category)
-        {
-            await _context.Categories.AddAsync(category);
-            await _context.SaveChangesAsync();
-        }
-
-        public async Task<IEnumerable<CategoryReadDTO>> GetAllCategoriesAsync()
-        {
-            return await _context.Categories
-                .AsDTO()
-                .ToListAsync();
-        }
-
-        public async Task<CategoryReadDTO?> GetCategoryByIdAsync(Guid id)
-        {
-            return await _context.Categories
-                .AsDTO()
-                .FirstOrDefaultAsync(c => c.Id == id);
-        }
+            => await _context.Categories.AddAsync(category);
 
         public async Task RenameCategoryAsync(Guid id, string newName)
         {
@@ -41,14 +25,15 @@ namespace BlogFlow.API.Repositories
                 ?? throw new KeyNotFoundException($"Category with ID {id} not found.");
 
             category.Rename(newName);
-            await _context.SaveChangesAsync();
         }
 
-        public Task<bool> ExistsByNameAsync(string name, Guid? excludeId = null)
+        public async Task SaveChangesAsync() => await _context.SaveChangesAsync();
+
+        public async Task<bool> ExistsByNameAsync(string name, Guid? excludeId = null)
         {
             var normalized = Category.Normalize(name);
 
-            return _context.Categories.AnyAsync(c =>
+            return await _context.Categories.AnyAsync(c =>
                 c.Name == normalized &&
                 (!excludeId.HasValue || c.Id != excludeId.Value));
         }

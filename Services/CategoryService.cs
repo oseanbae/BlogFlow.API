@@ -2,66 +2,71 @@
 using BlogFlow.API.Models;
 using BlogFlow.API.Repositories.Interfaces;
 using BlogFlow.API.Services.Interfaces;
+using BlogFlow.API.Queries;
+using Microsoft.EntityFrameworkCore;
+
 namespace BlogFlow.API.Services
 {
     public class CategoryService : ICategoryService
     {
         private readonly ICategoryRepository _repo;
 
-        public CategoryService(ICategoryRepository repo)
+        public CategoryService(ICategoryRepository repo) => _repo = repo;
+
+        public async Task<IEnumerable<CategoryReadDTO>> GetCategoriesAsync()
         {
-            _repo = repo;
+            return await _repo.GetCategoriesQuery()
+                .AsDTO()
+                .ToListAsync();
         }
 
-        public async Task<CategoryReadDTO> CreateCategoryAsync(
-            CategoryCreateDTO dto,
-            UserContext user)
+        public async Task<CategoryReadDTO?> GetCategoryByIdAsync(Guid id)
+        {
+            return await _repo.GetCategoryQuery(id)
+                .AsDTO()
+                .FirstOrDefaultAsync();
+        }
+
+        public async Task<CategoryReadDTO> CreateCategoryAsync(CategoryCreateDTO dto, UserContext user)
         {
             ValidateRequestSync(dto.Name, user);
 
-            if (await _repo.ExistsByNameAsync(dto.Name, null))
+            if (await _repo.ExistsByNameAsync(dto.Name))
                 throw new InvalidOperationException("Category already exists.");
 
             var category = new Category(dto.Name);
 
             await _repo.CreateCategoryAsync(category);
+            await _repo.SaveChangesAsync();
 
-            return new CategoryReadDTO
-            {
-                Id = category.Id,
-                Name = category.DisplayName
-            };
+            return await _repo.GetCategoryQuery(category.Id)
+                .AsDTO()
+                .FirstAsync();
         }
 
-        public async Task<CategoryReadDTO> RenameCategoryAsync(
-            Guid categoryId,
-            string newName,
-            UserContext user)
+        public async Task<CategoryReadDTO> RenameCategoryAsync(Guid categoryId, string newName, UserContext user)
         {
             ValidateRequestSync(newName, user);
 
             if (await _repo.ExistsByNameAsync(newName, categoryId))
-                throw new InvalidOperationException("Category already exists.");
+                throw new InvalidOperationException("A category with this name already exists.");
 
             await _repo.RenameCategoryAsync(categoryId, newName);
+            await _repo.SaveChangesAsync();
 
-            var updated = await _repo.GetCategoryByIdAsync(categoryId);
-            return updated!;
+            return await _repo.GetCategoryQuery(categoryId)
+                .AsDTO()
+                .FirstOrDefaultAsync()
+                ?? throw new KeyNotFoundException("Updated category not found.");
         }
-
-        public Task<IEnumerable<CategoryReadDTO>> GetCategoriesAsync()
-            => _repo.GetAllCategoriesAsync();
-
-        public Task<CategoryReadDTO?> GetCategoryByIdAsync(Guid id)
-            => _repo.GetCategoryByIdAsync(id);
 
         private static void ValidateRequestSync(string name, UserContext user)
         {
             if (!user.IsAdmin)
-                throw new UnauthorizedAccessException("Invalid user.");
+                throw new UnauthorizedAccessException("Admin access required.");
 
             if (string.IsNullOrWhiteSpace(name))
-                throw new ArgumentException("Name is required.");
+                throw new ArgumentException("Category name is required.");
         }
     }
 }
