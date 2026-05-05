@@ -1,7 +1,7 @@
 ﻿using BlogFlow.API.DTOs;
 using BlogFlow.API.DTOs.Post;
 using BlogFlow.API.Models;
-using BlogFlow.API.Queries; // Ensure this contains AsDTO() and ApplyPagination()
+using BlogFlow.API.Queries;
 using BlogFlow.API.Repositories.Interfaces;
 using BlogFlow.API.Services.Interfaces;
 using Microsoft.EntityFrameworkCore;
@@ -11,10 +11,13 @@ namespace BlogFlow.API.Services
     public class PostService : IPostService
     {
         private readonly IPostRepository _postRepo;
-
-        public PostService(IPostRepository repo)
+        private readonly ICategoryRepository _categoryRepo;
+        private readonly ITagRepository _tagRepo;
+        public PostService(IPostRepository repo, ICategoryRepository categoryRepo, ITagRepository tagRepo)
         {
             _postRepo = repo;
+            _categoryRepo = categoryRepo;
+            _tagRepo = tagRepo;
         }
 
         // --- READ OPERATIONS ---
@@ -25,7 +28,7 @@ namespace BlogFlow.API.Services
             Guid? categoryId,
             UserContext user)
         {
-            var query = _postRepo.GetPostsQuery(user.IsAdmin);
+            var query = _postRepo.GetPostsQuery(includeDeleted: user.IsAdmin);
 
             if (categoryId.HasValue)
                 query = query.Where(p => p.CategoryId == categoryId.Value);
@@ -35,7 +38,7 @@ namespace BlogFlow.API.Services
 
         public async Task<PostReadDTO> GetPostByIdAsync(Guid postId, UserContext user)
         {
-            var postDto = await _postRepo.GetPostsQuery(user.IsAdmin)
+            var postDto = await _postRepo.GetPostsQuery(includeDeleted: user.IsAdmin)
                 .Where(p => p.Id == postId)
                 .AsDTO()
                 .FirstOrDefaultAsync();
@@ -49,7 +52,7 @@ namespace BlogFlow.API.Services
             int pageSize,
             UserContext user)
         {
-            var query = _postRepo.GetPostsQuery(user.IsAdmin);
+            var query = _postRepo.GetPostsQuery(includeDeleted: user.IsAdmin);
 
             if (!string.IsNullOrWhiteSpace(keyword))
             {
@@ -65,7 +68,7 @@ namespace BlogFlow.API.Services
             int pageSize,
             UserContext user)
         {
-            var query = _postRepo.GetPostsQuery(user.IsAdmin)
+            var query = _postRepo.GetPostsQuery(includeDeleted: user.IsAdmin)
                 .Where(p => p.PostTags.Any(pt => pt.TagId == tagId));
 
             return await ExecutePagedQueryAsync(query, page, pageSize);
@@ -75,24 +78,56 @@ namespace BlogFlow.API.Services
 
         public async Task<PostReadDTO> CreatePostAsync(PostCreateDTO dto, UserContext user)
         {
+            if (!user.IsAuthenticated)
+                throw new UnauthorizedAccessException("Authentication required.");
+
+            if (!user.IsAuthor && !user.IsAdmin)
+                throw new UnauthorizedAccessException("Only authors or admins can create posts.");
+
+            var categoryExists = await _categoryRepo.GetCategoryQuery(dto.CategoryId).AnyAsync();
+            if (!categoryExists)
+                throw new KeyNotFoundException("Invalid category.");
+
+            await ValidateTagsExistAsync(dto.TagIds);
+
             var post = new Post(dto.Title, dto.Body, user.UserId, dto.CategoryId);
 
-            if (dto.TagIds != null && dto.TagIds.Count != 0)
-                post.SetTags(dto.TagIds);
+            post.SetTags(dto.TagIds ?? []);
 
             await _postRepo.AddAsync(post);
-            await _postRepo.SaveChangesAsync(); // Commit transaction
+            await _postRepo.SaveChangesAsync();
 
-            return post.ToDTO();
+            return await GetPostByIdAsync(post.Id, user);
         }
 
         public async Task<PostReadDTO> UpdatePostAsync(Guid postId, PostUpdateDTO dto, UserContext user)
         {
-            var post = await _postRepo.GetTrackedByIdAsync(postId, user.IsAdmin)
+            if (!user.IsAuthenticated)
+                throw new UnauthorizedAccessException("Authentication required.");
+
+            if (!user.IsAuthor && !user.IsAdmin)
+                throw new UnauthorizedAccessException("Only authors or admins can update posts.");
+
+            var post = await _postRepo.GetTrackedByIdAsync(postId, includeDeleted: user.IsAdmin)
                 ?? throw new KeyNotFoundException("Post not found.");
 
             if (!user.IsAdmin && post.AuthorId != user.UserId)
                 throw new UnauthorizedAccessException("Not allowed.");
+
+            if (dto.CategoryId.HasValue)
+            {
+                if (dto.CategoryId.Value == Guid.Empty)
+                    throw new ArgumentException("Invalid category.");
+
+                var catExists = await _categoryRepo
+                    .GetCategoryQuery(dto.CategoryId.Value)
+                    .AnyAsync();
+
+                if (!catExists)
+                    throw new KeyNotFoundException("Invalid category.");
+            }
+
+            await ValidateTagsExistAsync(dto.TagIds);
 
             post.Update(
                 dto.Title ?? post.Title,
@@ -104,12 +139,19 @@ namespace BlogFlow.API.Services
                 post.SetTags(dto.TagIds);
 
             await _postRepo.SaveChangesAsync();
-            return post.ToDTO();
+
+            return await GetPostByIdAsync(post.Id, user);
         }
 
         public async Task SoftDeletePostAsync(Guid postId, UserContext user)
         {
-            var post = await _postRepo.GetTrackedByIdAsync(postId, user.IsAdmin)
+            if (!user.IsAuthenticated)
+                throw new UnauthorizedAccessException("Authentication required.");
+
+            if (!user.IsAuthor && !user.IsAdmin)
+                throw new UnauthorizedAccessException("Only authors or admins can delete posts.");
+
+            var post = await _postRepo.GetTrackedByIdAsync(postId, includeDeleted: user.IsAdmin)
                 ?? throw new KeyNotFoundException("Post not found.");
 
             if (!user.IsAdmin && post.AuthorId != user.UserId)
@@ -121,6 +163,9 @@ namespace BlogFlow.API.Services
 
         public async Task RestorePostAsync(Guid postId, UserContext user)
         {
+            if (!user.IsAuthenticated)
+                throw new UnauthorizedAccessException("Authentication required.");
+
             if (!user.IsAdmin)
                 throw new UnauthorizedAccessException("Only admin can restore posts.");
 
@@ -133,6 +178,9 @@ namespace BlogFlow.API.Services
 
         public async Task HardDeletePostAsync(Guid postId, UserContext user)
         {
+            if (!user.IsAuthenticated)
+                throw new UnauthorizedAccessException("Authentication required.");
+
             if (!user.IsAdmin)
                 throw new UnauthorizedAccessException("Only admin can hard delete posts.");
 
@@ -150,8 +198,24 @@ namespace BlogFlow.API.Services
         {
             return await query
                 .OrderByDescending(p => p.CreatedAt)
-                .AsDTO()                           
-                .ToPaginatedResultAsync(page, pageSize); 
+                .AsDTO()
+                .ToPaginatedResultAsync(page, pageSize);
+        }
+
+        private async Task ValidateTagsExistAsync(IEnumerable<Guid>? tagIds)
+        {
+            if (tagIds == null || !tagIds.Any()) return;
+
+            var uniqueTagIds = tagIds.Distinct().ToList();
+
+            var validTagCount = await _tagRepo.GetTagsQuery()
+                .Where(t => uniqueTagIds.Contains(t.Id))
+                .CountAsync();
+
+            if (validTagCount != uniqueTagIds.Count)
+            {
+                throw new KeyNotFoundException("One or more tags are invalid.");
+            }
         }
     }
 }

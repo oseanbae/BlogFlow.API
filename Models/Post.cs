@@ -14,18 +14,18 @@ namespace BlogFlow.API.Models
         public DateTime? DeletedAt { get; private set; }
         //[FK]
         public Guid AuthorId { get; private set; }
-        public Guid? CategoryId { get; private set; }
+        public Guid CategoryId { get; private set; }
 
         //Navigation Properties
         public User Author { get; private set; } = null!;
-        public Category? Category { get; private set; }
+        public Category Category { get; private set; } = null!;
         public ICollection<PostTag> PostTags { get; private set; } = [];
         public ICollection<Comment> Comments { get; set; } = [];
 
         //Constructor for EF Core to load data from db
         private Post() { }
 
-        public Post(string title, string body, Guid authorId, Guid? categoryId)
+        public Post(string title, string body, Guid authorId, Guid categoryId)
         {
             if (string.IsNullOrWhiteSpace(title))
                 throw new ArgumentException("Title is required");
@@ -52,7 +52,7 @@ namespace BlogFlow.API.Models
             if (DeletedAt == null) throw new InvalidOperationException("This post is not deleted.");
             DeletedAt = null;
         }
-        public void Update(string title, string body, Guid? categoryId)
+        public void Update(string title, string body, Guid categoryId)
         {
             if (DeletedAt != null)
                 throw new InvalidOperationException("Cannot update a deleted post.");
@@ -63,7 +63,7 @@ namespace BlogFlow.API.Models
             if (string.IsNullOrWhiteSpace(body))
                 throw new ArgumentException("Body is required");
 
-            if (categoryId.HasValue && categoryId == Guid.Empty)
+            if (categoryId == Guid.Empty)
                 throw new ArgumentException("Invalid category");
 
             Title = title.Trim();

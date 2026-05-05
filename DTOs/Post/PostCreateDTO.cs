@@ -4,7 +4,7 @@
     {
         public required string Title { get; set; }
         public required string Body { get; set; }
-        public Guid? CategoryId { get; set; }
+        public Guid CategoryId { get; set; }
         public List<Guid>? TagIds { get; set; }
     }
 }

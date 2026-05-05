@@ -21,7 +21,7 @@ namespace BlogFlow.API.Validators
                 .MaximumLength(10000);
 
             RuleFor(p => p.CategoryId)
-                .Must(id => id == null || id != Guid.Empty)
+                .NotEmpty()
                 .WithMessage("CategoryId cannot be an empty GUID");
 
             RuleFor(p => p.TagIds)

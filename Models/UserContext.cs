@@ -6,6 +6,6 @@
         public UserRole Role { get; init; } = UserRole.Reader;
         public bool IsAdmin => Role == UserRole.Admin;
         public bool IsAuthor => Role == UserRole.Author;
-        public bool IsAuthenticated => true;
+        public bool IsAuthenticated => UserId != Guid.Empty;
     }
 }
