@@ -6,6 +6,7 @@ namespace BlogFlow.API.Queries
 {
     public static class PostQueries
     {
+        // For Database Queries (translates to SQL)
         public static IQueryable<PostReadDTO> AsDTO(this IQueryable<Post> query)
         {
             return query.Select(p => new PostReadDTO
@@ -20,17 +21,20 @@ namespace BlogFlow.API.Queries
                 AuthorUsername = p.Author.Username,
 
                 CategoryId = p.CategoryId,
-                CategoryName = p.Category != null ? p.Category.Name : null,
-
-                Tags = p.PostTags
-                    .Select(pt => new TagReadDTO
-                    {
-                        Id = pt.Tag.Id,
-                        Name = pt.Tag.Name
-                    })
-                    .ToList()
+                CategoryName = p.Category != null ? p.Category.Name : string.Empty,
+                Tags = p.PostTags.Select(pt => new TagReadDTO
+                {
+                    Id = pt.Tag.Id,
+                    Name = pt.Tag.Name
+                }).ToList()
             });
         }
+        public static IEnumerable<PostReadDTO> AsDTO(this IEnumerable<Post> posts)
+        {
+            return posts.Select(p => p.ToDTO());
+        }
+
+        // Single Object Mapper
         public static PostReadDTO ToDTO(this Post post)
         {
             return new PostReadDTO
@@ -44,13 +48,12 @@ namespace BlogFlow.API.Queries
                 AuthorUsername = post.Author?.Username ?? string.Empty,
                 CategoryId = post.CategoryId,
                 CategoryName = post.Category?.Name ?? string.Empty,
-                Tags = post.PostTags
+                Tags = post.PostTags?
                     .Select(pt => new TagReadDTO
                     {
                         Id = pt.Tag.Id,
                         Name = pt.Tag.Name
-                    })
-                    .ToList()
+                    }).ToList() ?? []
             };
         }
     }
