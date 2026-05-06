@@ -21,21 +21,6 @@ namespace BlogFlow.API.Services
         }
 
         // --- READ OPERATIONS ---
-
-        public async Task<PaginatedResultDTO<PostReadDTO>> GetPostsAsync(
-            int page,
-            int pageSize,
-            Guid? categoryId,
-            UserContext user)
-        {
-            var query = _postRepo.GetPostsQuery(includeDeleted: user.IsAdmin);
-
-            if (categoryId.HasValue)
-                query = query.Where(p => p.CategoryId == categoryId.Value);
-
-            return await ExecutePagedQueryAsync(query, page, pageSize);
-        }
-
         public async Task<PostReadDTO> GetPostByIdAsync(Guid postId, UserContext user)
         {
             var postDto = await _postRepo.GetPostsQuery(includeDeleted: user.IsAdmin)
@@ -45,33 +30,15 @@ namespace BlogFlow.API.Services
 
             return postDto ?? throw new KeyNotFoundException("Post not found.");
         }
-
-        public async Task<PaginatedResultDTO<PostReadDTO>> SearchPostsAsync(
-            string keyword,
-            int page,
-            int pageSize,
+        public async Task<PaginatedResultDTO<PostReadDTO>> GetPostsAsync(
+            PostQueryParams p,
             UserContext user)
         {
             var query = _postRepo.GetPostsQuery(includeDeleted: user.IsAdmin);
 
-            if (!string.IsNullOrWhiteSpace(keyword))
-            {
-                query = query.Where(p => p.Title.Contains(keyword) || p.Body.Contains(keyword));
-            }
+            query = ApplyFilters(query, p);
 
-            return await ExecutePagedQueryAsync(query, page, pageSize);
-        }
-
-        public async Task<PaginatedResultDTO<PostReadDTO>> GetPostsByTagAsync(
-            Guid tagId,
-            int page,
-            int pageSize,
-            UserContext user)
-        {
-            var query = _postRepo.GetPostsQuery(includeDeleted: user.IsAdmin)
-                .Where(p => p.PostTags.Any(pt => pt.TagId == tagId));
-
-            return await ExecutePagedQueryAsync(query, page, pageSize);
+            return await ExecutePagedQueryAsync(query, p.Page, p.PageSize);
         }
 
         // --- WRITE OPERATIONS ---
@@ -196,10 +163,17 @@ namespace BlogFlow.API.Services
         private static async Task<PaginatedResultDTO<PostReadDTO>> ExecutePagedQueryAsync(
             IQueryable<Post> query, int page, int pageSize)
         {
-            return await query
+            var pagedResult = await query
                 .OrderByDescending(p => p.CreatedAt)
-                .AsDTO()
                 .ToPaginatedResultAsync(page, pageSize);
+
+            return new PaginatedResultDTO<PostReadDTO>
+            {
+                TotalCount = pagedResult.TotalCount,
+                Page = pagedResult.Page,
+                PageSize = pagedResult.PageSize,
+                Items = pagedResult.Items.AsDTO().ToList()
+            };
         }
 
         private async Task ValidateTagsExistAsync(IEnumerable<Guid>? tagIds)
@@ -216,6 +190,22 @@ namespace BlogFlow.API.Services
             {
                 throw new KeyNotFoundException("One or more tags are invalid.");
             }
+        }
+
+        private static IQueryable<Post> ApplyFilters(IQueryable<Post> query, PostQueryParams p)
+        {
+            if (p.CategoryId is Guid catId)
+                query = query.Where(post => post.CategoryId == catId);
+
+            if (p.TagId is Guid tagId)
+                query = query.Where(post => post.PostTags.Any(pt => pt.TagId == tagId));
+
+            if (!string.IsNullOrWhiteSpace(p.Keyword))
+                query = query.Where(post =>
+                    post.Title.Contains(p.Keyword) ||
+                    post.Body.Contains(p.Keyword));
+
+            return query;
         }
     }
 }

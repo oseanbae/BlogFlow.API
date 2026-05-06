@@ -7,10 +7,8 @@ namespace BlogFlow.API.Services.Interfaces
     public interface IPostService
     {
         // Read Operations
-        Task<PaginatedResultDTO<PostReadDTO>> GetPostsAsync(int page, int pageSize, Guid? categoryId, UserContext user);
         Task<PostReadDTO> GetPostByIdAsync(Guid postId, UserContext user);
-        Task<PaginatedResultDTO<PostReadDTO>> SearchPostsAsync(string keyword, int page, int pageSize, UserContext user);
-        Task<PaginatedResultDTO<PostReadDTO>> GetPostsByTagAsync(Guid tagId, int page, int pageSize, UserContext user);
+        Task<PaginatedResultDTO<PostReadDTO>> GetPostsAsync(PostQueryParams p, UserContext user);
 
         // Write Operations
         Task<PostReadDTO> CreatePostAsync(PostCreateDTO dto, UserContext user);

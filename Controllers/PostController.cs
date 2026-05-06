@@ -1,5 +1,6 @@
 ﻿using BlogFlow.API.DTOs;
 using BlogFlow.API.DTOs.Post;
+using BlogFlow.API.Models;
 using BlogFlow.API.Services.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -23,12 +24,10 @@ namespace BlogFlow.API.Controllers
         [HttpGet]
         [AllowAnonymous]
         public async Task<ActionResult<PaginatedResultDTO<PostReadDTO>>> GetPostsAsync(
-            [FromQuery] int page = 1,
-            [FromQuery] int pageSize = 10,
-            [FromQuery] Guid? categoryId = null)
+        [FromQuery] PostQueryParams p)
         {
             var user = _currentUser.GetCurrentUser();
-            var result = await _postService.GetPostsAsync(page, pageSize, categoryId, user);
+            var result = await _postService.GetPostsAsync(p, user);
             return Ok(result);
         }
 
@@ -39,32 +38,6 @@ namespace BlogFlow.API.Controllers
         {
             var user = _currentUser.GetCurrentUser();
             var result = await _postService.GetPostByIdAsync(postId, user);
-            return Ok(result);
-        }
-
-        // GET api/v1/post/search?keyword=xxx
-        [HttpGet("search")]
-        [AllowAnonymous]
-        public async Task<ActionResult<PaginatedResultDTO<PostReadDTO>>> SearchPostsAsync(
-            [FromQuery] string keyword,
-            [FromQuery] int page = 1,
-            [FromQuery] int pageSize = 10)
-        {
-            var user = _currentUser.GetCurrentUser();
-            var result = await _postService.SearchPostsAsync(keyword, page, pageSize, user);
-            return Ok(result);
-        }
-
-        // GET api/v1/post/tag/{tagId}
-        [HttpGet("tag/{tagId}")]
-        [AllowAnonymous]
-        public async Task<ActionResult<PaginatedResultDTO<PostReadDTO>>> GetPostsByTagAsync(
-            Guid tagId,
-            [FromQuery] int page = 1,
-            [FromQuery] int pageSize = 10)
-        {
-            var user = _currentUser.GetCurrentUser();
-            var result = await _postService.GetPostsByTagAsync(tagId, page, pageSize, user);
             return Ok(result);
         }
 
