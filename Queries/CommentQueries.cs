@@ -21,14 +21,21 @@ namespace BlogFlow.API.Queries
         // Compiled version for ToDTO (In-memory)
         private static readonly Func<Comment, CommentReadDTO> _mapFunc = Map.Compile();
 
+        // For IQueryable (SQL)
         public static IQueryable<CommentReadDTO> AsDTO(this IQueryable<Comment> query)
         {
-            return query.Select(Map); // Uses the Expression (SQL)
+            return query.Select(Map);
+        }
+
+        // For IEnumerable (Memory) 
+        public static IEnumerable<CommentReadDTO> AsDTO(this IEnumerable<Comment> comments)
+        {
+            return comments.Select(ToDTO);
         }
 
         public static CommentReadDTO ToDTO(this Comment comment)
         {
-            return _mapFunc(comment); // Uses the compiled function (In-Memory)
+            return _mapFunc(comment);
         }
 
     }

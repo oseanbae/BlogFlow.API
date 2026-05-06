@@ -44,14 +44,18 @@ namespace BlogFlow.API.Services
 
         public async Task<PaginatedResultDTO<CommentReadDTO>> GetByPostAsync(Guid postId, int page, int pageSize)
         {
-            // 1. Get the base query from the repo (already includes the Soft Delete filter)
-            var query = _repo.GetCommentsByPostQuery(postId);
+            var query = _repo.GetCommentsByPostQuery(postId)
+                             .OrderByDescending(c => c.CreatedAt);
 
-            // 2. Build the pipeline and execute once
-            return await query
-                .OrderByDescending(c => c.CreatedAt) // Stable sort
-                .AsDTO()                             // Project to DTO
-                .ToPaginatedResultAsync(page, pageSize); // Executes Count + Fetch
+            var pagedEntities = await query.ToPaginatedResultAsync(page, pageSize);
+
+            return new PaginatedResultDTO<CommentReadDTO>
+            {
+                TotalCount = pagedEntities.TotalCount,
+                Page = pagedEntities.Page,
+                PageSize = pagedEntities.PageSize,
+                Items = pagedEntities.Items.AsDTO().ToList()
+            };
         }
 
         public async Task<CommentReadDTO> UpdateAsync(Guid commentId, Guid userId, string newBody)
