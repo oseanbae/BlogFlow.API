@@ -1,12 +1,6 @@
 using BlogFlow.API.Data;
 using BlogFlow.API.Extensions;
-using BlogFlow.API.Repositories;
-using BlogFlow.API.Repositories.Interfaces;
-using BlogFlow.API.Services;
-using BlogFlow.API.Services.Interfaces;
-using BlogFlow.API.Validators;
 using FluentValidation;
-using FluentValidation.AspNetCore;
 using Microsoft.EntityFrameworkCore;
 using Scalar.AspNetCore;
 
@@ -28,14 +22,8 @@ builder.Services.AddControllers()
 // OpenAPI / Scalar
 builder.Services.AddOpenApi();
 
-// Dependency Injection
-builder.Services.AddScoped<IAuthServices, AuthServices>();
-builder.Services.AddScoped<IUserRepository, UserRepository>();
-builder.Services.AddScoped<IRefreshTokenRepository, RefreshTokenRepository>();
-builder.Services.AddScoped<IPostRepository, PostRepository>();
-builder.Services.AddScoped<ICategoryRepository, CategoryRepository>();
-builder.Services.AddScoped<ITagRepository, TagRepository>();
-builder.Services.AddScoped<ICommentRepository, CommentRepository>();
+// Repositories & Services 
+builder.Services.AddApplicationServices();
 
 // Authentication & Authorization
 builder.Services.AddJwtAuthentication(builder.Configuration);
@@ -44,14 +32,7 @@ builder.Services.AddJwtAuthentication(builder.Configuration);
 builder.Services.AddAuthRateLimiting(builder.Configuration);
 
 //Fluent Validation for DTOs
-builder.Services.AddFluentValidationAutoValidation();
-builder.Services.AddValidatorsFromAssemblyContaining<UserRegisterValidator>();
-builder.Services.AddValidatorsFromAssemblyContaining<UserLoginValidator>();
-builder.Services.AddValidatorsFromAssemblyContaining<PostCreateValidator>();
-builder.Services.AddValidatorsFromAssemblyContaining<PostUpdateValidator>();
-builder.Services.AddValidatorsFromAssemblyContaining<CategoryCreateValidator>();
-builder.Services.AddValidatorsFromAssemblyContaining<TagCreateValidator>();
-builder.Services.AddValidatorsFromAssemblyContaining<CommentCreateValidator>();
+builder.Services.AddValidatorsFromAssemblyContaining<Program>();
 
 var app = builder.Build();
 
