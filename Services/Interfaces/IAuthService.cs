@@ -2,7 +2,7 @@
 
 namespace BlogFlow.API.Services.Interfaces
 {
-    public interface IAuthServices
+    public interface IAuthService
     {
         Task<AuthResponseDTO> RegisterAsync(RegisterRequestDTO request);
         Task<AuthResponseDTO> LoginAsync(LoginRequestDTO request);

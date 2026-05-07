@@ -13,12 +13,12 @@ using System.Text;
 
 namespace BlogFlow.API.Services
 {
-    public class AuthServices : IAuthServices
+    public class AuthService : IAuthService
     {
         private readonly JwtSettings _jwt;
         private readonly IRefreshTokenRepository _refreshTokenRepo;
         private readonly IUserRepository _userRepo;
-        public AuthServices(
+        public AuthService(
             IRefreshTokenRepository refrshTokenRepo,
             IUserRepository userRepo,
             IOptions<JwtSettings> jwtOptions)

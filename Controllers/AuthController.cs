@@ -11,9 +11,9 @@ namespace BlogFlow.API.Controllers
     [ApiController]
     public class AuthController : ControllerBase
     {
-        private readonly IAuthServices _authServices;
+        private readonly IAuthService _authServices;
 
-        public AuthController(IAuthServices authservices)
+        public AuthController(IAuthService authservices)
         {
             _authServices = authservices;
         }
