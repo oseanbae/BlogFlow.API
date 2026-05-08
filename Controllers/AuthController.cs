@@ -3,7 +3,6 @@ using BlogFlow.API.Services.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
-using System.Security.Claims;
 
 namespace BlogFlow.API.Controllers
 {
@@ -11,17 +10,18 @@ namespace BlogFlow.API.Controllers
     [ApiController]
     public class AuthController : ControllerBase
     {
-        private readonly IAuthService _authServices;
-
-        public AuthController(IAuthService authservices)
+        private readonly IAuthService _authService;
+        private readonly ICurrentUserService _currentUser;
+        public AuthController(IAuthService authServices, ICurrentUserService currentUser)
         {
-            _authServices = authservices;
+            _authService = authServices;
+            _currentUser = currentUser;
         }
 
         [HttpPost("register")]
         public async Task<ActionResult<AuthResponseDTO>> RegisterAsync(RegisterRequestDTO dto)
         {
-            var result = await _authServices.RegisterAsync(dto);
+            var result = await _authService.RegisterAsync(dto);
             return Ok(result);
         }
 
@@ -29,7 +29,7 @@ namespace BlogFlow.API.Controllers
         [HttpPost("login")]
         public async Task<ActionResult<AuthResponseDTO>> LoginAsync(LoginRequestDTO dto)
         {
-            var result = await _authServices.LoginAsync(dto);
+            var result = await _authService.LoginAsync(dto);
             return Ok(result);
         }
 
@@ -38,22 +38,17 @@ namespace BlogFlow.API.Controllers
         [AllowAnonymous]
         public async Task<ActionResult<AuthResponseDTO>> RefreshAsync([FromBody] RefreshTokenRequestDTO dto)
         {
-            var result = await _authServices.RefreshAsync(dto);
+            var result = await _authService.RefreshAsync(dto);
             return Ok(result);
         }
 
         [EnableRateLimiting("revoke")]
         [HttpPost("revoke")]
         [Authorize]
-        public async Task<IActionResult> RevokeAsync([FromBody] RevokeRequestDTO request)
+        public async Task<ActionResult> RevokeAsync([FromBody] RevokeRequestDTO request)
         {
-            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-
-            if (!Guid.TryParse(userIdClaim, out var userId))
-                return Unauthorized("Invalid user identity");
-
-            await _authServices.RevokeAsync(request, userId);
-
+            var user =  _currentUser.GetCurrentUser();
+            await _authService.RevokeAsync(request, user);
             return NoContent();
         }
     }

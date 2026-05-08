@@ -4,6 +4,7 @@ using BlogFlow.API.Models;
 using BlogFlow.API.Repositories.Interfaces;
 using BlogFlow.API.Services.Interfaces;
 using BlogFlow.API.Settings;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
@@ -134,19 +135,17 @@ namespace BlogFlow.API.Services
                 RefreshTokenExpiry = refreshTokenEntity.ExpiresAt
             };
         }
-        public async Task RevokeAsync(RevokeRequestDTO request, Guid userId)
+        public async Task RevokeAsync(RevokeRequestDTO request, UserContext user)
         {
             var hashed = HashToken(request.RefreshToken);
 
-            var token = await _refreshTokenRepo.GetByHashedTokenAsync(hashed);
-
-            if (token == null)
-                throw new UnauthorizedAccessException("Invalid token");
+            var token = await _refreshTokenRepo.GetByHashedTokenAsync(hashed) 
+                ?? throw new UnauthorizedAccessException("Invalid token");
 
             if (!token.IsActive)
                 throw new UnauthorizedAccessException("Token expired or revoked");
 
-            if (token.UserId != userId)
+            if (token.UserId != user.UserId)
                 throw new UnauthorizedAccessException("Invalid token ownership");
 
             await _refreshTokenRepo.RevokeAsync(token, "Revoked by user", null);
