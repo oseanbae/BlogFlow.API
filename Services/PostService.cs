@@ -1,4 +1,4 @@
-﻿using BlogFlow.API.DTOs;
+﻿using BlogFlow.API.DTOs.Common;
 using BlogFlow.API.DTOs.Post;
 using BlogFlow.API.Models;
 using BlogFlow.API.Queries;

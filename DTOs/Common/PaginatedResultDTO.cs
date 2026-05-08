@@ -1,4 +1,4 @@
-﻿namespace BlogFlow.API.DTOs
+﻿namespace BlogFlow.API.DTOs.Common
 {
     public class PaginatedResultDTO<T>
     {

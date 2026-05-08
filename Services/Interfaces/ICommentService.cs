@@ -1,5 +1,5 @@
-﻿using BlogFlow.API.DTOs;
-using BlogFlow.API.DTOs.Comment;
+﻿using BlogFlow.API.DTOs.Comment;
+using BlogFlow.API.DTOs.Common;
 
 namespace BlogFlow.API.Services.Interfaces
 {

@@ -1,4 +1,4 @@
-﻿using BlogFlow.API.DTOs;
+﻿using BlogFlow.API.DTOs.Common;
 using Microsoft.EntityFrameworkCore;
 
 namespace BlogFlow.API.Queries
