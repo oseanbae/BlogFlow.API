@@ -4,8 +4,9 @@ namespace BlogFlow.API.Services.Interfaces
 {
     public interface ICurrentUserService
     {
-        Guid GetRequiredUserId();
-        UserRole GetRole();
         UserContext GetCurrentUser();
+        UserContext GetRequiredUser();
+        Guid GetRequiredUserId();
+        UserRole GetRequiredValidRole();
     }
 }
