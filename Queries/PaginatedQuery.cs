@@ -10,6 +10,9 @@ namespace BlogFlow.API.Queries
             int page,
             int pageSize)
         {
+            if (page < 1) page = 1;
+            if (pageSize < 1) pageSize = 10;
+
             var totalCount = await query.CountAsync();
 
             var items = await query
