@@ -32,72 +32,35 @@ namespace BlogFlow.API.Services
             var username = request.Username.ToLowerInvariant();
             var email = request.Email.ToLowerInvariant();
 
-            var existingUserByUsername = await _userRepo.GetByUsernameAsync(username);
-            if (existingUserByUsername != null)
-                throw new InvalidOperationException("Username already exists.");
-
-            var existingUserByEmail = await _userRepo.GetByEmailAsync(email);
-            if (existingUserByEmail != null)
-                throw new InvalidOperationException("Email already exists.");
-
-            var passwordHash = BCrypt.Net.BCrypt.HashPassword(request.Password);
+            await ValidateUserDoesNotExist(username, email);
 
             var user = new User
             {
                 Username = username,
                 Email = email,
-                PasswordHash = passwordHash
+                PasswordHash = BCrypt.Net.BCrypt.HashPassword(request.Password)
             };
 
             await _userRepo.CreateAsync(user);
-
-            var accessToken = GenerateToken(user);
-
-            var (rawToken, storedToken) = await GenerateRefreshTokenAsync(user.Id);
-
             await _userRepo.SaveChangesAsync();
 
-            return new AuthResponseDTO
-            {
-                Id = user.Id,
-                Username = user.Username,
-                Email = user.Email,
-                Role = user.Role,
-                AccessToken = accessToken,
-                RefreshToken = rawToken,
-                RefreshTokenExpiry = storedToken.ExpiresAt
-            };
+            return await IssueAuthResponseAsync(user);
         }
         public async Task<AuthResponseDTO> LoginAsync(LoginRequestDTO request)
         {
-            var identifier = request.UsernameOrEmail.ToLowerInvariant();
-            var user = await _userRepo.GetByUsernameOrEmailAsync(identifier);
+            var user = await ResolveUserAsync(request.UsernameOrEmail);
 
             if (user == null || !BCrypt.Net.BCrypt.Verify(request.Password, user.PasswordHash))
                 throw new UnauthorizedAccessException("Invalid Credentials");
 
             await _refreshTokenRepo.RemoveExpiredAsync(user.Id);
 
-            var accessToken = GenerateToken(user);
-
-            var (rawToken, storedToken) = await GenerateRefreshTokenAsync(user.Id);
-
-            await _userRepo.SaveChangesAsync();
-
-            return new AuthResponseDTO
-            {
-                Id = user.Id,
-                Username = user.Username,
-                Email = user.Email,
-                Role = user.Role,
-                AccessToken = accessToken,
-                RefreshToken = rawToken,
-                RefreshTokenExpiry = storedToken.ExpiresAt
-            };
+            return await IssueAuthResponseAsync(user);
         }
         public async Task<AuthResponseDTO> RefreshAsync(RefreshTokenRequestDTO request)
         {
             var hashed = HashToken(request.RefreshToken);
+
             var existingToken = await _refreshTokenRepo.GetByHashedTokenAsync(hashed)
                 ?? throw new UnauthorizedAccessException("Invalid refresh token.");
 
@@ -105,18 +68,19 @@ namespace BlogFlow.API.Services
             // If someone is reusing a revoked token, wipe all sessions.
             if (existingToken.IsRevoked)
             {
-                await _refreshTokenRepo.RevokeAllUserTokensAsync(existingToken.UserId, "Reuse of revoked token detected");
+                await _refreshTokenRepo.RevokeAllUserTokensAsync(
+                    existingToken.UserId,
+                    "Reuse of revoked token detected");
+
                 throw new UnauthorizedAccessException("Token reuse detected. All sessions revoked.");
             }
+
             if (existingToken.IsExpired)
                 throw new UnauthorizedAccessException("Expired refresh token.");
-
-
             // get user BEFORE generating new token
             var user = existingToken.User;
-
             // rotate refresh token
-            var (rawToken, refreshTokenEntity) = await GenerateRefreshTokenAsync(existingToken.UserId);
+            var (rawToken, refreshTokenEntity) = await GenerateRefreshTokenAsync(user.Id);
 
             // revoke old token
             await _refreshTokenRepo.RevokeAsync(
@@ -126,14 +90,14 @@ namespace BlogFlow.API.Services
 
             var accessToken = GenerateToken(user);
 
-            await _userRepo.SaveChangesAsync();
+            await _refreshTokenRepo.SaveChangesAsync();
 
             return new AuthResponseDTO
             {
-                Id = existingToken.User.Id,
-                Username = existingToken.User.Username,
-                Email = existingToken.User.Email,
-                Role = existingToken.User.Role,
+                Id = user.Id,
+                Username = user.Username,
+                Email = user.Email,
+                Role = user.Role,
                 AccessToken = accessToken,
                 RefreshToken = rawToken,
                 RefreshTokenExpiry = refreshTokenEntity.ExpiresAt
@@ -143,7 +107,7 @@ namespace BlogFlow.API.Services
         {
             var hashed = HashToken(request.RefreshToken);
 
-            var token = await _refreshTokenRepo.GetByHashedTokenAsync(hashed) 
+            var token = await _refreshTokenRepo.GetByHashedTokenAsync(hashed)
                 ?? throw new UnauthorizedAccessException("Invalid token");
 
             if (!token.IsActive)
@@ -154,7 +118,7 @@ namespace BlogFlow.API.Services
 
             await _refreshTokenRepo.RevokeAsync(token, "Revoked by user", null);
 
-            await _userRepo.SaveChangesAsync();
+            await _refreshTokenRepo.SaveChangesAsync();
         }
         private string GenerateToken(User user)
         {
@@ -237,6 +201,44 @@ namespace BlogFlow.API.Services
         {
             var bytes = SHA256.HashData(Encoding.UTF8.GetBytes(token));
             return Convert.ToBase64String(bytes);
+        }
+
+        private async Task<User?> ResolveUserAsync(string input)
+        {
+            var value = input.ToLowerInvariant();
+
+            if (value.Contains('@'))
+                return await _userRepo.GetByEmailAsync(value);
+
+            return await _userRepo.GetByUsernameAsync(value);
+        }
+
+        private async Task ValidateUserDoesNotExist(string username, string email)
+        {
+            if (await _userRepo.GetByUsernameAsync(username) != null)
+                throw new InvalidOperationException("Username already exists.");
+
+            if (await _userRepo.GetByEmailAsync(email) != null)
+                throw new InvalidOperationException("Email already exists.");
+        }
+
+        private async Task<AuthResponseDTO> IssueAuthResponseAsync(User user)
+        {
+            var accessToken = GenerateToken(user);
+
+            var (rawToken, storedToken) =
+                await GenerateRefreshTokenAsync(user.Id);
+
+            return new AuthResponseDTO
+            {
+                Id = user.Id,
+                Username = user.Username,
+                Email = user.Email,
+                Role = user.Role,
+                AccessToken = accessToken,
+                RefreshToken = rawToken,
+                RefreshTokenExpiry = storedToken.ExpiresAt
+            };
         }
     }
 }

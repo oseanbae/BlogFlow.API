@@ -2,7 +2,6 @@
 using BlogFlow.API.Models;
 using BlogFlow.API.Repositories.Interfaces;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.VisualStudio.Web.CodeGenerators.Mvc.Templates.BlazorIdentity.Pages.Manage;
 
 namespace BlogFlow.API.Repositories
 {
@@ -17,7 +16,6 @@ namespace BlogFlow.API.Repositories
         public async Task CreateAsync(User user)
         {
             await _context.Users.AddAsync(user);
-            await _context.SaveChangesAsync();
         }
         public async Task<User?> GetByUsernameAsync(string username)
         {
@@ -30,9 +28,10 @@ namespace BlogFlow.API.Repositories
                 .FirstOrDefaultAsync(u => u.Email == email);
         }
 
-        Task<User?> IUserRepository.GetByIdAsync(Guid id)
+        public async Task<User?> GetByIdAsync(Guid id)
         {
-            throw new NotImplementedException();
+            return await _context.Users
+                .FirstOrDefaultAsync(u => u.Id == id);
         }
 
         public async Task<User?> GetByUsernameOrEmailAsync(string value)
@@ -42,9 +41,15 @@ namespace BlogFlow.API.Repositories
                     u.Username == value || u.Email == value);
         }
 
-        Task<User> IUserRepository.UpdateAsync(User user)
+        public async Task<User> UpdateAsync(User user)
         {
-            throw new NotImplementedException();
+            _context.Users.Update(user);
+            return user;
+        }
+
+        public async Task SaveChangesAsync()
+        {
+            await _context.SaveChangesAsync();
         }
     }
 }

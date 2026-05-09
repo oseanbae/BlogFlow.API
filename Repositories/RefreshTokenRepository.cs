@@ -71,5 +71,10 @@ namespace BlogFlow.API.Repositories
 
             await _context.SaveChangesAsync();
         }
+        public Task SaveChangesAsync()
+        {
+            return _context.SaveChangesAsync();
+        }
+
     }
 }

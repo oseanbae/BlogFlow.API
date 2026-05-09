@@ -16,6 +16,7 @@ namespace BlogFlow.API.Repositories.Interfaces
         Task RevokeAllUserTokensAsync(Guid userId, string reason);
 
         Task RemoveExpiredAsync(Guid userId);
+        Task SaveChangesAsync();
     }
 
 }
