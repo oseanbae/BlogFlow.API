@@ -1,9 +1,9 @@
 ﻿using BlogFlow.API.DTOs.Tag;
 using BlogFlow.API.Models;
 
-namespace BlogFlow.API.Queries
+namespace BlogFlow.API.QueryExtensions
 {
-    public static class TagQueries
+    public static class TagQueryExtensions
     {
         public static IQueryable<TagReadDTO> AsDTO(this IQueryable<Tag> query)
         {

@@ -1,5 +1,5 @@
 using BlogFlow.API.Data;
-using BlogFlow.API.Extensions;
+using BlogFlow.API.Infrastructure;
 using FluentValidation;
 using Microsoft.EntityFrameworkCore;
 using Scalar.AspNetCore;

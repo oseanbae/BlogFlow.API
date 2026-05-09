@@ -1,7 +1,7 @@
 ﻿using BlogFlow.API.DTOs.Common;
 using Microsoft.EntityFrameworkCore;
 
-namespace BlogFlow.API.Queries
+namespace BlogFlow.API.QueryExtensions
 {
     public static class Pagination
     {

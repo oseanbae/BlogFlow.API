@@ -1,10 +1,10 @@
 ﻿using BlogFlow.API.Models;
 using BlogFlow.API.DTOs.Comment;
-using BlogFlow.API.Queries;
 using BlogFlow.API.Repositories.Interfaces;
 using BlogFlow.API.Services.Interfaces;
 using Microsoft.EntityFrameworkCore;
 using BlogFlow.API.DTOs.Common;
+using BlogFlow.API.QueryExtensions;
 
 namespace BlogFlow.API.Services
 {

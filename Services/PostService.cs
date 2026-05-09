@@ -1,7 +1,7 @@
 ﻿using BlogFlow.API.DTOs.Common;
 using BlogFlow.API.DTOs.Post;
 using BlogFlow.API.Models;
-using BlogFlow.API.Queries;
+using BlogFlow.API.QueryExtensions;
 using BlogFlow.API.Repositories.Interfaces;
 using BlogFlow.API.Services.Interfaces;
 using Microsoft.EntityFrameworkCore;

@@ -2,8 +2,8 @@
 using BlogFlow.API.Models;
 using BlogFlow.API.Repositories.Interfaces;
 using BlogFlow.API.Services.Interfaces;
-using BlogFlow.API.Queries;
 using Microsoft.EntityFrameworkCore;
+using BlogFlow.API.QueryExtensions;
 
 namespace BlogFlow.API.Services
 {

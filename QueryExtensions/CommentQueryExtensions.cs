@@ -2,9 +2,9 @@
 using BlogFlow.API.Models;
 using System.Linq.Expressions;
 
-namespace BlogFlow.API.Queries
+namespace BlogFlow.API.QueryExtensions
 {
-    public static class CommentQueries
+    public static class CommentQueryExtensions
     {
        
         public static readonly Expression<Func<Comment, CommentReadDTO>> Map = comment => new CommentReadDTO

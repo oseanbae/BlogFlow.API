@@ -1,9 +1,8 @@
 ﻿using BlogFlow.API.Settings;
 using Microsoft.AspNetCore.RateLimiting;
-using Microsoft.Extensions.Options;
 using System.Threading.RateLimiting;
 
-namespace BlogFlow.API.Extensions
+namespace BlogFlow.API.Infrastructure
 {
     public static class RateLimitingExtension
     {

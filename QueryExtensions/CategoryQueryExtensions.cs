@@ -1,9 +1,8 @@
 ﻿using BlogFlow.API.DTOs.Categories;
-using BlogFlow.API.Models;
 
-namespace BlogFlow.API.Queries
+namespace BlogFlow.API.QueryExtensions
 {
-    public static class CategoryQueries
+    public static class CategoryQueryExtensions
     {
         public static IQueryable<CategoryReadDTO> AsDTO(this IQueryable<Category> query)
         {

@@ -3,7 +3,7 @@ using BlogFlow.API.Repositories.Interfaces;
 using BlogFlow.API.Services;
 using BlogFlow.API.Services.Interfaces;
 
-namespace BlogFlow.API.Extensions
+namespace BlogFlow.API.Infrastructure
 {
     public static class ServiceExtension
     {
