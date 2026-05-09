@@ -1,10 +1,8 @@
-﻿
-using BlogFlow.API.DTOs.Auth;
+﻿using BlogFlow.API.DTOs.Auth;
 using BlogFlow.API.Models;
 using BlogFlow.API.Repositories.Interfaces;
 using BlogFlow.API.Services.Interfaces;
 using BlogFlow.API.Settings;
-using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
@@ -57,6 +55,8 @@ namespace BlogFlow.API.Services
 
             var (rawToken, storedToken) = await GenerateRefreshTokenAsync(user.Id);
 
+            await _userRepo.SaveChangesAsync();
+
             return new AuthResponseDTO
             {
                 Id = user.Id,
@@ -81,6 +81,8 @@ namespace BlogFlow.API.Services
             var accessToken = GenerateToken(user);
 
             var (rawToken, storedToken) = await GenerateRefreshTokenAsync(user.Id);
+
+            await _userRepo.SaveChangesAsync();
 
             return new AuthResponseDTO
             {
@@ -124,6 +126,8 @@ namespace BlogFlow.API.Services
 
             var accessToken = GenerateToken(user);
 
+            await _userRepo.SaveChangesAsync();
+
             return new AuthResponseDTO
             {
                 Id = existingToken.User.Id,
@@ -149,6 +153,8 @@ namespace BlogFlow.API.Services
                 throw new UnauthorizedAccessException("Invalid token ownership");
 
             await _refreshTokenRepo.RevokeAsync(token, "Revoked by user", null);
+
+            await _userRepo.SaveChangesAsync();
         }
         private string GenerateToken(User user)
         {
