@@ -45,9 +45,6 @@ namespace BlogFlow.API.Services
 
         public async Task<PostReadDTO> CreatePostAsync(PostCreateDTO dto, UserContext user)
         {
-            if (!user.IsAuthenticated)
-                throw new UnauthorizedAccessException("Authentication required.");
-
             if (!user.IsAuthor && !user.IsAdmin)
                 throw new UnauthorizedAccessException("Only authors or admins can create posts.");
 
@@ -69,9 +66,6 @@ namespace BlogFlow.API.Services
 
         public async Task<PostReadDTO> UpdatePostAsync(Guid postId, PostUpdateDTO dto, UserContext user)
         {
-            if (!user.IsAuthenticated)
-                throw new UnauthorizedAccessException("Authentication required.");
-
             if (!user.IsAuthor && !user.IsAdmin)
                 throw new UnauthorizedAccessException("Only authors or admins can update posts.");
 
@@ -112,9 +106,6 @@ namespace BlogFlow.API.Services
 
         public async Task SoftDeletePostAsync(Guid postId, UserContext user)
         {
-            if (!user.IsAuthenticated)
-                throw new UnauthorizedAccessException("Authentication required.");
-
             if (!user.IsAuthor && !user.IsAdmin)
                 throw new UnauthorizedAccessException("Only authors or admins can delete posts.");
 
@@ -130,9 +121,6 @@ namespace BlogFlow.API.Services
 
         public async Task RestorePostAsync(Guid postId, UserContext user)
         {
-            if (!user.IsAuthenticated)
-                throw new UnauthorizedAccessException("Authentication required.");
-
             if (!user.IsAdmin)
                 throw new UnauthorizedAccessException("Only admin can restore posts.");
 
@@ -145,9 +133,6 @@ namespace BlogFlow.API.Services
 
         public async Task HardDeletePostAsync(Guid postId, UserContext user)
         {
-            if (!user.IsAuthenticated)
-                throw new UnauthorizedAccessException("Authentication required.");
-
             if (!user.IsAdmin)
                 throw new UnauthorizedAccessException("Only admin can hard delete posts.");
 

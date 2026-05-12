@@ -10,12 +10,18 @@ namespace BlogFlow.API.Controllers
     public class TagController : ControllerBase
     {
         private readonly ITagService _service;
-        private readonly ICurrentUserService _currentUser;
 
-        public TagController(ITagService service, ICurrentUserService currentUser)
+        public TagController(ITagService service)
         {
             _service = service;
-            _currentUser = currentUser;
+        }
+
+        [HttpGet]
+        [AllowAnonymous]
+        public async Task<ActionResult<IEnumerable<TagReadDTO>>> GetAllTagsAsync()
+        {
+            var tags = await _service.GetAllTagsAsync();
+            return Ok(tags);
         }
 
         [HttpGet("{tagId}")]
@@ -23,7 +29,7 @@ namespace BlogFlow.API.Controllers
         public async Task<ActionResult<TagReadDTO>> GetTagByIdAsync(Guid tagId)
         {
             var result = await _service.GetTagByIdAsync(tagId);
-            return result == null ? NotFound() : Ok(result);
+            return Ok(result);
         }
 
         [HttpPost]

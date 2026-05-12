@@ -1,12 +1,11 @@
 ﻿using BlogFlow.API.DTOs.Categories;
-using BlogFlow.API.Models;
 
 namespace BlogFlow.API.Services.Interfaces
 {
     public interface ICategoryService
     {
-        Task<CategoryReadDTO> CreateCategoryAsync(CategoryCreateDTO dto, UserContext user);
-        Task<CategoryReadDTO> RenameCategoryAsync(Guid categoryId, string newName, UserContext user);
+        Task<CategoryReadDTO> CreateCategoryAsync(CategoryCreateDTO dto);
+        Task<CategoryReadDTO> RenameCategoryAsync(Guid categoryId, string newName);
         Task<IEnumerable<CategoryReadDTO>> GetCategoriesAsync();
         Task<CategoryReadDTO?> GetCategoryByIdAsync(Guid id);
 

@@ -31,7 +31,7 @@ namespace BlogFlow.API.Controllers
         public async Task<ActionResult> UpdateProfile(UserUpdateDTO dto)
         {
             var user = _currentUser.GetCurrentUser();
-            await _service.UpdateProfileAsync(dto, user);
+            await _service.UpdateProfileAsync(dto, _currentUser.GetRequiredUserId());
             return NoContent();
         }
 
@@ -49,7 +49,7 @@ namespace BlogFlow.API.Controllers
         [Authorize]
         public async Task<ActionResult> DeleteAccount()
         {
-            await _service.DeleteOwnAccountAsync(_currentUser.GetCurrentUser());
+            await _service.DeleteOwnAccountAsync(_currentUser.GetRequiredUserId());
             return NoContent();
         }
     }

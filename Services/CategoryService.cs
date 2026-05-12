@@ -24,12 +24,13 @@ namespace BlogFlow.API.Services
         {
             return await _repo.GetCategoryQuery(id)
                 .AsDTO()
-                .FirstOrDefaultAsync();
+                .FirstOrDefaultAsync() ??
+                throw new KeyNotFoundException("Category not found");
         }
 
         public async Task<CategoryReadDTO> CreateCategoryAsync(CategoryCreateDTO dto, UserContext user)
         {
-            ValidateRequestSync(dto.Name, user);
+            ValidateRequestSync(dto.Name);
 
             if (await _repo.ExistsByNameAsync(dto.Name))
                 throw new InvalidOperationException("Category already exists.");
@@ -46,7 +47,7 @@ namespace BlogFlow.API.Services
 
         public async Task<CategoryReadDTO> RenameCategoryAsync(Guid categoryId, string newName, UserContext user)
         {
-            ValidateRequestSync(newName, user);
+            ValidateRequestSync(newName);
 
             if (await _repo.ExistsByNameAsync(newName, categoryId))
                 throw new InvalidOperationException("A category with this name already exists.");
@@ -60,11 +61,8 @@ namespace BlogFlow.API.Services
                 ?? throw new KeyNotFoundException("Updated category not found.");
         }
 
-        private static void ValidateRequestSync(string name, UserContext user)
+        private static void ValidateRequestSync(string name)
         {
-            if (!user.IsAdmin)
-                throw new UnauthorizedAccessException("Admin access required.");
-
             if (string.IsNullOrWhiteSpace(name))
                 throw new ArgumentException("Category name is required.");
         }

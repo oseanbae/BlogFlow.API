@@ -15,8 +15,12 @@ namespace BlogFlow.API.Services
         public async Task<IEnumerable<TagReadDTO>> GetAllTagsAsync()
             => await _repo.GetTagsQuery().AsDTO().ToListAsync();
 
-        public async Task<TagReadDTO?> GetTagByIdAsync(Guid id)
-            => await _repo.GetTagQuery(id).AsDTO().FirstOrDefaultAsync();
+        public async Task<TagReadDTO> GetTagByIdAsync(Guid id)
+        {
+            return await _repo.GetTagQuery(id).AsDTO().FirstOrDefaultAsync()
+                ?? throw new KeyNotFoundException("Tag not found.");
+        }
+
 
         public async Task<TagReadDTO> CreateTagAsync(TagCreateDTO dto)
         {

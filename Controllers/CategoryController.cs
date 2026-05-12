@@ -10,12 +10,10 @@ namespace BlogFlow.API.Controllers
     public class CategoryController : ControllerBase
     {
         private readonly ICategoryService _categoryService;
-        private readonly ICurrentUserService _currentUser;
-
-        public CategoryController(ICategoryService service, ICurrentUserService userService)
+   
+        public CategoryController(ICategoryService service)
         {
             _categoryService = service;
-            _currentUser = userService;
         }
 
         // GET /api/v1/category
@@ -33,7 +31,6 @@ namespace BlogFlow.API.Controllers
         public async Task<ActionResult<CategoryReadDTO>> GetCategoryByIdAsync(Guid categoryId)
         {
             var result = await _categoryService.GetCategoryByIdAsync(categoryId);
-            if (result == null) return NotFound(); 
             return Ok(result);
         }
 
@@ -42,9 +39,7 @@ namespace BlogFlow.API.Controllers
         [Authorize(Roles = "Admin")]
         public async Task<ActionResult<CategoryReadDTO>> CreateCategoryAsync(CategoryCreateDTO dto)
         {
-            var user = _currentUser.GetCurrentUser();
-            var result = await _categoryService.CreateCategoryAsync(dto, user);
-
+            var result = await _categoryService.CreateCategoryAsync(dto);
             return CreatedAtAction(nameof(GetCategoryByIdAsync),new { categoryId = result.Id }, result);
         }
 
@@ -53,8 +48,7 @@ namespace BlogFlow.API.Controllers
         [Authorize(Roles = "Admin")]
         public async Task<ActionResult> RenameCategoryAsync(Guid categoryId, CategoryRenameDTO dto)
         {
-            var user = _currentUser.GetCurrentUser();
-            await _categoryService.RenameCategoryAsync(categoryId, dto.Name, user);
+            await _categoryService.RenameCategoryAsync(categoryId, dto.Name);
             return NoContent();
 
         }

@@ -32,11 +32,9 @@ namespace BlogFlow.API.Services
             await _repo.SaveChangesAsync();
         }
 
-        public async Task DeleteOwnAccountAsync(UserContext current)
+        public async Task DeleteOwnAccountAsync(Guid userId)
         {
-            if(!current.IsAuthenticated) throw new UnauthorizedAccessException();
-
-            var user = await _repo.GetTrackedByIdAsync(current.UserId) 
+            var user = await _repo.GetTrackedByIdAsync(userId) 
                 ?? throw new KeyNotFoundException("User does not exist");
 
             user.SoftDelete();
@@ -58,11 +56,9 @@ namespace BlogFlow.API.Services
             };
         }
 
-        public async Task UpdateProfileAsync(UserUpdateDTO dto, UserContext user)
+        public async Task UpdateProfileAsync(UserUpdateDTO dto, Guid userId)
         {
-            if (!user.IsAuthenticated) throw new UnauthorizedAccessException();
-
-            var existingUser = await _repo.GetTrackedByIdAsync(user.UserId)
+            var existingUser = await _repo.GetTrackedByIdAsync(userId)
                 ?? throw new KeyNotFoundException("User does not exist");
 
             existingUser.UpdateIdentity(dto.Username, dto.Email);

@@ -70,8 +70,7 @@ namespace BlogFlow.API.Controllers
             Guid commentId,
             [FromBody] CommentUpdateDTO dto)
         {
-            var userId = _currentUser.GetCurrentUser().UserId;
-
+            var userId = _currentUser.GetRequiredUserId();
             var result = await _service.UpdateAsync(commentId, userId, dto.Body);
 
             return Ok(result);
@@ -81,12 +80,10 @@ namespace BlogFlow.API.Controllers
         // DELETE: /api/v1/comments/{commentId}
         [HttpDelete("{commentId}")]
         [Authorize]
-        public async Task<ActionResult> DeleteCommentAsync(Guid commentId)
+        public async Task<ActionResult> DeleteComment(Guid commentId)
         {
-            var user = _currentUser.GetCurrentUser();
-
-            await _service.DeleteAsync(commentId, user.UserId);
-
+            var userId = _currentUser.GetRequiredUserId(); // Get just the ID
+            await _service.DeleteAsync(commentId, userId);
             return NoContent();
         }
     }
