@@ -6,7 +6,7 @@ using Microsoft.AspNetCore.RateLimiting;
 
 namespace BlogFlow.API.Controllers
 {
-    [Route("api/v1/[controller]")]
+    [Route("api/v1/auth")]
     [ApiController]
     public class AuthController : ControllerBase
     {
@@ -18,6 +18,7 @@ namespace BlogFlow.API.Controllers
             _currentUser = currentUser;
         }
 
+        [AllowAnonymous]
         [HttpPost("register")]
         public async Task<ActionResult<AuthResponseDTO>> RegisterAsync(RegisterRequestDTO dto)
         {
@@ -25,6 +26,7 @@ namespace BlogFlow.API.Controllers
             return Ok(result);
         }
 
+        [AllowAnonymous]
         [EnableRateLimiting("login")]
         [HttpPost("login")]
         public async Task<ActionResult<AuthResponseDTO>> LoginAsync(LoginRequestDTO dto)
@@ -47,8 +49,7 @@ namespace BlogFlow.API.Controllers
         [Authorize]
         public async Task<ActionResult> RevokeAsync([FromBody] RevokeRequestDTO request)
         {
-            var user =  _currentUser.GetCurrentUser();
-            await _authService.RevokeAsync(request, user);
+            await _authService.RevokeAsync(request, _currentUser.GetRequiredUserId());
             return NoContent();
         }
     }

@@ -6,7 +6,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace BlogFlow.API.Controllers
 {
     [ApiController]
-    [Route("api/v1/[controller]")]
+    [Route("api/v1/users")]
     public class UserController : ControllerBase
     {
         private readonly IUserService _service;
@@ -18,7 +18,7 @@ namespace BlogFlow.API.Controllers
             _currentUser = currentUser;
         }
 
-        [HttpGet("{userId}")]
+        [HttpGet("{userId}")] // GET    api/v1/users/{userId}
         [AllowAnonymous]
         public async Task<ActionResult<UserReadDTO>> GetProfileAsync(Guid userId)
         {
@@ -26,7 +26,7 @@ namespace BlogFlow.API.Controllers
             return Ok(result);
         }
 
-        [HttpPut("profile")]
+        [HttpPut("me")] // PUT    api/v1/users/me 
         [Authorize]
         public async Task<ActionResult> UpdateProfile(UserUpdateDTO dto)
         {
@@ -35,8 +35,7 @@ namespace BlogFlow.API.Controllers
             return NoContent();
         }
 
-
-        [HttpPatch("change-password")]
+        [HttpPatch("me/password")]  // PATCH  api/v1/users/me/password
         [Authorize]
         public async Task<ActionResult> ChangePassword([FromBody] UserChangePasswordDTO dto)
         {
@@ -45,7 +44,7 @@ namespace BlogFlow.API.Controllers
             return NoContent();
         }
 
-        [HttpDelete("me")]
+        [HttpDelete("me")] // DELETE api/v1/users/me
         [Authorize]
         public async Task<ActionResult> DeleteAccount()
         {

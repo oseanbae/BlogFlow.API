@@ -5,7 +5,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace BlogFlow.API.Controllers
 {
-    [Route("api/v1/[controller]")]
+    [Route("api/v1/tags")]
     [ApiController]
     public class TagController : ControllerBase
     {
@@ -16,7 +16,7 @@ namespace BlogFlow.API.Controllers
             _service = service;
         }
 
-        [HttpGet]
+        [HttpGet] // GET    api/v1/tags
         [AllowAnonymous]
         public async Task<ActionResult<IEnumerable<TagReadDTO>>> GetAllTagsAsync()
         {
@@ -24,7 +24,7 @@ namespace BlogFlow.API.Controllers
             return Ok(tags);
         }
 
-        [HttpGet("{tagId}")]
+        [HttpGet("{tagId}")] // GET    api/v1/tags/{tagId}
         [AllowAnonymous]
         public async Task<ActionResult<TagReadDTO>> GetTagByIdAsync(Guid tagId)
         {
@@ -32,7 +32,7 @@ namespace BlogFlow.API.Controllers
             return Ok(result);
         }
 
-        [HttpPost]
+        [HttpPost] // POST   api/v1/tags
         [Authorize(Roles = "Author,Admin")]
         public async Task<ActionResult<TagReadDTO>> CreateTagAsync(TagCreateDTO dto)
         {
@@ -45,7 +45,7 @@ namespace BlogFlow.API.Controllers
             );
         }
 
-        [HttpDelete("{tagId}")]
+        [HttpDelete("{tagId}")] // DELETE api/v1/tags/{tagId}
         [Authorize(Roles = "Admin")]
         public async Task<ActionResult> DeleteTagAsync(Guid tagId)
         {

@@ -7,7 +7,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace BlogFlow.API.Controllers
 {
-    [Route("api/v1/[controller]")]
+    [Route("api/v1/posts")]
     [ApiController]
     public class PostController : ControllerBase
     {
@@ -20,8 +20,7 @@ namespace BlogFlow.API.Controllers
             _currentUser = currentUserService;
         }
 
-        // GET api/v1/post
-        [HttpGet]
+        [HttpGet] // GET api/v1/posts
         [AllowAnonymous]
         public async Task<ActionResult<PaginatedResultDTO<PostReadDTO>>> GetPostsAsync(
         [FromQuery] PostQueryParams p)
@@ -31,8 +30,7 @@ namespace BlogFlow.API.Controllers
             return Ok(result);
         }
 
-        // GET api/v1/post/{postId}
-        [HttpGet("{postId}")]
+        [HttpGet("{postId}")] // GET api/v1/posts/{postId}
         [AllowAnonymous]
         public async Task<ActionResult<PostReadDTO>> GetPostAsync(Guid postId)
         {
@@ -41,8 +39,7 @@ namespace BlogFlow.API.Controllers
             return Ok(result);
         }
 
-        // POST api/v1/post
-        [HttpPost]
+        [HttpPost] // POST api/v1/posts
         [Authorize(Roles = "Author")]
         public async Task<ActionResult<PostReadDTO>> CreatePostAsync(PostCreateDTO dto)
         {
@@ -51,9 +48,8 @@ namespace BlogFlow.API.Controllers
             return CreatedAtAction(nameof(GetPostAsync), new { postId = result.Id }, result);
         }
 
-        // PUT api/v1/post/{postId}
-        [HttpPut("{postId}")]
-        [Authorize(Roles = "Author,Admin")]
+        [HttpPut("{postId}")] // PUT api/v1/posts/{postId}
+        [Authorize(Roles = "Author,Admin")] 
         public async Task<ActionResult<PostReadDTO>> UpdatePostAsync(Guid postId, PostUpdateDTO dto)
         {
             var user = _currentUser.GetCurrentUser();
@@ -61,8 +57,7 @@ namespace BlogFlow.API.Controllers
             return Ok(result);
         }
 
-        // DELETE api/v1/post/{postId}
-        [HttpDelete("{postId}")]
+        [HttpDelete("{postId}")] // DELETE api/v1/posts/{postId}
         [Authorize(Roles = "Author,Admin")]
         public async Task<ActionResult> SoftDeletePostAsync(Guid postId)
         {
@@ -71,8 +66,7 @@ namespace BlogFlow.API.Controllers
             return NoContent();
         }
 
-        // PATCH api/v1/post/{postId}/restore
-        [HttpPatch("{postId}/restore")]
+        [HttpPatch("{postId}/restore")] // PATCH api/v1/posts/{postId}/restore
         [Authorize(Roles = "Admin")]
         public async Task<ActionResult> RestorePostAsync(Guid postId)
         {
@@ -81,8 +75,7 @@ namespace BlogFlow.API.Controllers
             return NoContent();
         }
 
-        // DELETE api/v1/post/{postId}/hard
-        [HttpDelete("{postId}/hard")]
+        [HttpDelete("{postId}/hard")] // DELETE api/v1/posts/{postId}/hard
         [Authorize(Roles = "Admin")]
         public async Task<ActionResult> HardDeletePostAsync(Guid postId)
         {

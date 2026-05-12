@@ -103,7 +103,7 @@ namespace BlogFlow.API.Services
                 RefreshTokenExpiry = refreshTokenEntity.ExpiresAt
             };
         }
-        public async Task RevokeAsync(RevokeRequestDTO request, UserContext user)
+        public async Task RevokeAsync(RevokeRequestDTO request, Guid userId)
         {
             var hashed = HashToken(request.RefreshToken);
 
@@ -113,7 +113,7 @@ namespace BlogFlow.API.Services
             if (!token.IsActive)
                 throw new UnauthorizedAccessException("Token expired or revoked");
 
-            if (token.UserId != user.UserId)
+            if (token.UserId != userId)
                 throw new UnauthorizedAccessException("Invalid token ownership");
 
             await _refreshTokenRepo.RevokeAsync(token, "Revoked by user", null);

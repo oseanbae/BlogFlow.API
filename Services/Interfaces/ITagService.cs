@@ -1,6 +1,5 @@
 ﻿using BlogFlow.API.DTOs.Tag;
 
-
 namespace BlogFlow.API.Services.Interfaces
 {
     public interface ITagService

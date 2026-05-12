@@ -1,5 +1,4 @@
 ﻿using BlogFlow.API.DTOs.User;
-using BlogFlow.API.Models;
 
 namespace BlogFlow.API.Services.Interfaces
 {

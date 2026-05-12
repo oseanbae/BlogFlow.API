@@ -6,7 +6,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace BlogFlow.API.Controllers
 {
-    [Route("api/v1/comments")]
+    [Route("api/v1/posts")]
     [ApiController]
     public class CommentsController : ControllerBase
     {
@@ -21,9 +21,7 @@ namespace BlogFlow.API.Controllers
             _currentUser = currentUserService;
         }
 
-        // CREATE comment for a post
-        // POST: /api/v1/comments/post/{postId}
-        [HttpPost("post/{postId}")]
+        [HttpPost("{postId}/comments")] // POST   api/v1/posts/{postId}/comments
         [Authorize]
         public async Task<ActionResult<CommentReadDTO>> CreateCommentAsync(
             Guid postId,
@@ -35,13 +33,11 @@ namespace BlogFlow.API.Controllers
 
             return CreatedAtAction(
                 nameof(GetCommentByIdAsync),
-                new { commentId = result.Id },
+                new { postId, commentId = result.Id },
                 result);
         }
 
-        // GET comments for a post
-        // GET: /api/v1/comments/post/{postId}
-        [HttpGet("post/{postId}")]
+        [HttpGet("{postId}/comments")] // GET    api/v1/posts/{postId}/comments
         [AllowAnonymous]
         public async Task<ActionResult<PaginatedResultDTO<CommentReadDTO>>> GetCommentsByPostAsync(
             Guid postId,
@@ -52,38 +48,22 @@ namespace BlogFlow.API.Controllers
             return Ok(result);
         }
 
-        // GET single comment
-        // GET: /api/v1/comments/{commentId}
-        [HttpGet("{commentId}")]
+        [HttpGet("{postId}/comments/{commentId}")]   // GET    api/v1/posts/{postId}/comments/{commentId}
         [AllowAnonymous]
-        public async Task<ActionResult<CommentReadDTO>> GetCommentByIdAsync(Guid commentId)
-        {
-            var result = await _service.GetByIdAsync(commentId);
-            return Ok(result);
-        }
+        public async Task<ActionResult<CommentReadDTO>> GetCommentByIdAsync(Guid postId, Guid commentId)
+        => Ok(await _service.GetByIdAsync(postId, commentId));
 
-        // UPDATE comment
-        // PATCH: /api/v1/comments/{commentId}
-        [HttpPatch("{commentId}")]
+        [HttpPatch("{postId}/comments/{commentId}")] // PATCH  api/v1/posts/{postId}/comments/{commentId}
         [Authorize]
-        public async Task<ActionResult<CommentReadDTO>> UpdateCommentAsync(
-            Guid commentId,
-            [FromBody] CommentUpdateDTO dto)
-        {
-            var userId = _currentUser.GetRequiredUserId();
-            var result = await _service.UpdateAsync(commentId, userId, dto.Body);
+        public async Task<ActionResult<CommentReadDTO>> UpdateCommentAsync(Guid postId, Guid commentId, [FromBody] CommentUpdateDTO dto)
+        => Ok(await _service.UpdateAsync(postId, commentId, _currentUser.GetRequiredUserId(), dto.Body));
 
-            return Ok(result);
-        }
 
-        // DELETE comment (soft delete)
-        // DELETE: /api/v1/comments/{commentId}
-        [HttpDelete("{commentId}")]
+        [HttpDelete("{postId}/comments/{commentId}")] // DELETE api/v1/posts/{postId}/comments/{commentId}
         [Authorize]
-        public async Task<ActionResult> DeleteComment(Guid commentId)
+        public async Task<ActionResult> DeleteComment(Guid postId, Guid commentId)
         {
-            var userId = _currentUser.GetRequiredUserId(); // Get just the ID
-            await _service.DeleteAsync(commentId, userId);
+            await _service.DeleteAsync(postId, commentId, _currentUser.GetRequiredUserId());
             return NoContent();
         }
     }

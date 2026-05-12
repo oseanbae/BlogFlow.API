@@ -5,7 +5,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace BlogFlow.API.Controllers
 {
-    [Route("api/v1/[controller]")]
+    [Route("api/v1/categories")]
     [ApiController]
     public class CategoryController : ControllerBase
     {
@@ -16,8 +16,7 @@ namespace BlogFlow.API.Controllers
             _categoryService = service;
         }
 
-        // GET /api/v1/category
-        [HttpGet]
+        [HttpGet] // GET   api/v1/categories
         [AllowAnonymous]
         public async Task<ActionResult<IEnumerable<CategoryReadDTO>>> GetAllCategoriesAsync()
         {
@@ -25,8 +24,8 @@ namespace BlogFlow.API.Controllers
             return Ok(result);
         }
 
-        // Get api/v1/category/{categoryId}
-        [HttpGet("{categoryId}")]
+
+        [HttpGet("{categoryId}")] // GET   api/v1/categories/{categoryId}
         [AllowAnonymous]
         public async Task<ActionResult<CategoryReadDTO>> GetCategoryByIdAsync(Guid categoryId)
         {
@@ -34,17 +33,15 @@ namespace BlogFlow.API.Controllers
             return Ok(result);
         }
 
-        // Post /api/v1/category
-        [HttpPost]
+        [HttpPost] // POST  api/v1/categories
         [Authorize(Roles = "Admin")]
         public async Task<ActionResult<CategoryReadDTO>> CreateCategoryAsync(CategoryCreateDTO dto)
         {
             var result = await _categoryService.CreateCategoryAsync(dto);
-            return CreatedAtAction(nameof(GetCategoryByIdAsync),new { categoryId = result.Id }, result);
+            return CreatedAtAction(nameof(GetCategoryByIdAsync), new { categoryId = result.Id }, result);
         }
 
-        // Patch api/v1/categories/{categoryId}
-        [HttpPatch("{categoryId}")]
+        [HttpPatch("{categoryId}")] // PATCH api/v1/categories/{categoryId}
         [Authorize(Roles = "Admin")]
         public async Task<ActionResult> RenameCategoryAsync(Guid categoryId, CategoryRenameDTO dto)
         {

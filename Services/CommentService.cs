@@ -11,11 +11,22 @@ namespace BlogFlow.API.Services
     public class CommentService : ICommentService
     {
         private readonly ICommentRepository _repo;
+        private readonly IPostRepository _postRepo;
 
-        public CommentService(ICommentRepository repo) => _repo = repo;
+        public CommentService(ICommentRepository repo, IPostRepository postRepo)
+        {
+            _repo = repo;
+            _postRepo = postRepo;
+        }
 
         public async Task<CommentReadDTO> CreateAsync(Guid postId, Guid userId, CommentCreateDTO dto)
         {
+            var postExists = await _postRepo.GetPostsQuery(includeDeleted: false)
+                .AnyAsync(p => p.Id == postId);
+
+            if (!postExists)
+                throw new KeyNotFoundException("Post not found.");
+
             var comment = new Comment(dto.Body, userId, postId);
             await _repo.AddAsync(comment);
             await _repo.SaveChangesAsync();
@@ -28,17 +39,18 @@ namespace BlogFlow.API.Services
         }
 
         //SOFT DELETE
-        public async Task DeleteAsync(Guid commentId, Guid userId)
+        public async Task DeleteAsync(Guid postId, Guid commentId, Guid userId)
         {
-
             var comment = await _repo.GetTrackedByIdAsync(commentId)
                 ?? throw new KeyNotFoundException("Comment not found.");
+
+            if (comment.PostId != postId)
+                throw new KeyNotFoundException("Comment not found.");
 
             if (comment.UserId != userId)
                 throw new UnauthorizedAccessException("You can only delete your own comments.");
 
             comment.SoftDelete();
-
             await _repo.SaveChangesAsync();
         }
 
@@ -58,26 +70,32 @@ namespace BlogFlow.API.Services
             };
         }
 
-        public async Task<CommentReadDTO> UpdateAsync(Guid commentId, Guid userId, string newBody)
+        public async Task<CommentReadDTO> UpdateAsync(Guid postId, Guid commentId, Guid userId, string newBody)
         {
             var comment = await _repo.GetTrackedByIdAsync(commentId)
                 ?? throw new KeyNotFoundException("Comment not found.");
+
+            if (comment.PostId != postId)
+                throw new KeyNotFoundException("Comment not found.");
 
             if (comment.UserId != userId)
                 throw new UnauthorizedAccessException("Not authorized.");
 
             comment.UpdateBody(newBody);
             await _repo.SaveChangesAsync();
-
             return comment.ToDTO();
         }
 
-        public async Task<CommentReadDTO> GetByIdAsync(Guid commentId)
+
+        public async Task<CommentReadDTO> GetByIdAsync(Guid postId, Guid commentId)
         {
             var comment = await _repo.GetTrackedByIdAsync(commentId)
                 ?? throw new KeyNotFoundException("Comment not found.");
 
+            if (comment.PostId != postId)
+                throw new KeyNotFoundException("Comment not found.");  // Don't leak that the comment exists under a different post
+
             return comment.ToDTO();
-        } 
+        }
     }
 }

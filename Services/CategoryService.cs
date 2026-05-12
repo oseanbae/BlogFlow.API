@@ -1,5 +1,4 @@
 ﻿using BlogFlow.API.DTOs.Categories;
-using BlogFlow.API.Models;
 using BlogFlow.API.Repositories.Interfaces;
 using BlogFlow.API.Services.Interfaces;
 using Microsoft.EntityFrameworkCore;
@@ -28,7 +27,7 @@ namespace BlogFlow.API.Services
                 throw new KeyNotFoundException("Category not found");
         }
 
-        public async Task<CategoryReadDTO> CreateCategoryAsync(CategoryCreateDTO dto, UserContext user)
+        public async Task<CategoryReadDTO> CreateCategoryAsync(CategoryCreateDTO dto)
         {
             ValidateRequestSync(dto.Name);
 
@@ -45,7 +44,7 @@ namespace BlogFlow.API.Services
                 .FirstAsync();
         }
 
-        public async Task<CategoryReadDTO> RenameCategoryAsync(Guid categoryId, string newName, UserContext user)
+        public async Task<CategoryReadDTO> RenameCategoryAsync(Guid categoryId, string newName)
         {
             ValidateRequestSync(newName);
 
