@@ -150,6 +150,7 @@ namespace BlogFlow.API.Services
         {
             var pagedResult = await query
                 .OrderByDescending(p => p.CreatedAt)
+                .AsDTO()
                 .ToPaginatedResultAsync(page, pageSize);
 
             return new PaginatedResultDTO<PostReadDTO>
@@ -157,7 +158,7 @@ namespace BlogFlow.API.Services
                 TotalCount = pagedResult.TotalCount,
                 Page = pagedResult.Page,
                 PageSize = pagedResult.PageSize,
-                Items = pagedResult.Items.AsDTO().ToList()
+                Items = pagedResult.Items
             };
         }
 
@@ -189,9 +190,7 @@ namespace BlogFlow.API.Services
                 query = query.Where(post => post.AuthorId == authorId);
 
             if (!string.IsNullOrWhiteSpace(p.Keyword))
-                query = query.Where(post =>
-                    post.Title.Contains(p.Keyword) ||
-                    post.Body.Contains(p.Keyword));
+                query = query.Where(post => post.Title.Contains(p.Keyword));
 
             return query;
         }

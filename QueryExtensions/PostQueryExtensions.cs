@@ -26,7 +26,7 @@ namespace BlogFlow.API.QueryExtensions
                 {
                     Id = pt.Tag.Id,
                     Name = pt.Tag.Name
-                }).ToList()
+                })
             });
         }
         public static IEnumerable<PostReadDTO> AsDTO(this IEnumerable<Post> posts)

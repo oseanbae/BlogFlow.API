@@ -13,6 +13,6 @@ namespace BlogFlow.API.DTOs.Post
         public string AuthorUsername { get; set; } = null!;
         public Guid CategoryId { get; set; }
         public string CategoryName { get; set; } = null!;
-        public List<TagReadDTO> Tags { get; set; } = [];
+        public IEnumerable<TagReadDTO> Tags { get; set; } = [];
     }
 }
