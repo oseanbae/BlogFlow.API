@@ -13,9 +13,9 @@ namespace BlogFlow.API.Services
         private readonly IPostRepository _postRepo;
         private readonly ICategoryRepository _categoryRepo;
         private readonly ITagRepository _tagRepo;
-        public PostService(IPostRepository repo, ICategoryRepository categoryRepo, ITagRepository tagRepo)
+        public PostService(IPostRepository postRepo, ICategoryRepository categoryRepo, ITagRepository tagRepo)
         {
-            _postRepo = repo;
+            _postRepo = postRepo;
             _categoryRepo = categoryRepo;
             _tagRepo = tagRepo;
         }
@@ -184,6 +184,9 @@ namespace BlogFlow.API.Services
 
             if (p.TagId is Guid tagId)
                 query = query.Where(post => post.PostTags.Any(pt => pt.TagId == tagId));
+
+            if (p.AuthorId is Guid authorId)
+                query = query.Where(post => post.AuthorId == authorId);
 
             if (!string.IsNullOrWhiteSpace(p.Keyword))
                 query = query.Where(post =>
