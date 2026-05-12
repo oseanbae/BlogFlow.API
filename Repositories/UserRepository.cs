@@ -12,7 +12,7 @@ namespace BlogFlow.API.Repositories
         {
             _context = context;
         }
-
+        
         public async Task CreateAsync(User user)
         {
             await _context.Users.AddAsync(user);
@@ -28,25 +28,17 @@ namespace BlogFlow.API.Repositories
                 .FirstOrDefaultAsync(u => u.Email == email);
         }
 
-        public async Task<User?> GetByIdAsync(Guid id)
+        public async Task<User?> GetTrackedByIdAsync(Guid id)
         {
             return await _context.Users
                 .FirstOrDefaultAsync(u => u.Id == id);
         }
-
         public async Task<User?> GetByUsernameOrEmailAsync(string value)
         {
             return await _context.Users
                 .FirstOrDefaultAsync(u => 
                     u.Username == value || u.Email == value);
         }
-
-        public async Task<User> UpdateAsync(User user)
-        {
-            _context.Users.Update(user);
-            return user;
-        }
-
         public async Task SaveChangesAsync()
         {
             await _context.SaveChangesAsync();
