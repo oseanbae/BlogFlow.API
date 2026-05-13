@@ -1,4 +1,5 @@
 ﻿using BlogFlow.API.DTOs.Categories;
+using Microsoft.EntityFrameworkCore;
 
 namespace BlogFlow.API.QueryExtensions
 {
@@ -6,11 +7,13 @@ namespace BlogFlow.API.QueryExtensions
     {
         public static IQueryable<CategoryReadDTO> AsDTO(this IQueryable<Category> query)
         {
-            return query.Select(c => new CategoryReadDTO
-            {
-                Id = c.Id,
-                Name = c.Name,
-            });
+            return query
+                .AsNoTracking()
+                .Select(c => new CategoryReadDTO
+                {
+                    Id = c.Id,
+                    Name = c.Name,
+                });
         }
     }
 }

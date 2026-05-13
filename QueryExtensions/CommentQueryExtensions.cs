@@ -1,5 +1,6 @@
 ﻿using BlogFlow.API.DTOs.Comment;
 using BlogFlow.API.Models;
+using Microsoft.EntityFrameworkCore;
 using System.Linq.Expressions;
 
 namespace BlogFlow.API.QueryExtensions
@@ -12,7 +13,7 @@ namespace BlogFlow.API.QueryExtensions
             Id = comment.Id,
             PostId = comment.PostId,
             UserId = comment.UserId,
-            AuthorName = comment.User!.Username, // EF translates this to a JOIN in SQL
+            AuthorName = comment.User.Username, // EF translates this to a JOIN in SQL
             Body = comment.Body,
             CreatedAt = comment.CreatedAt,
             UpdatedAt = comment.UpdatedAt
@@ -24,7 +25,7 @@ namespace BlogFlow.API.QueryExtensions
         // For IQueryable (SQL)
         public static IQueryable<CommentReadDTO> AsDTO(this IQueryable<Comment> query)
         {
-            return query.Select(Map);
+            return query.AsNoTracking().Select(Map);
         }
 
         // For IEnumerable (Memory) 
