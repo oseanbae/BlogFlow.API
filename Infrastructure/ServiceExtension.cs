@@ -2,6 +2,7 @@
 using BlogFlow.API.Repositories.Interfaces;
 using BlogFlow.API.Services;
 using BlogFlow.API.Services.Interfaces;
+using Microsoft.AspNetCore.Mvc.ViewComponents;
 
 namespace BlogFlow.API.Infrastructure
 {
@@ -16,14 +17,16 @@ namespace BlogFlow.API.Infrastructure
             services.AddScoped<ICategoryRepository, CategoryRepository>();
             services.AddScoped<ITagRepository, TagRepository>();
             services.AddScoped<ICommentRepository, CommentRepository>();
-
+            
             // --- Services ---
+            services.AddScoped<IUserService, UserService>();
             services.AddScoped<IAuthService, AuthService>();
             services.AddScoped<ICurrentUserService, CurrentUserService>();
             services.AddScoped<IPostService, PostService>();
             services.AddScoped<ICategoryService, CategoryService>();
             services.AddScoped<ITagService, TagService>();
             services.AddScoped<ICommentService, CommentService>();
+            services.AddScoped<IUserManagementService, UserManagementService>();
 
             return services;
         }
