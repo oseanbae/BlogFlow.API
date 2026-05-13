@@ -1,0 +1,66 @@
+﻿using BlogFlow.API.DTOs.Admin;
+using BlogFlow.API.DTOs.Common;
+using BlogFlow.API.DTOs.User;
+using BlogFlow.API.Models;
+using BlogFlow.API.Services.Interfaces;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+
+namespace BlogFlow.API.Controllers
+{
+    [ApiController]
+    [Route("api/admin/users")]
+    [Authorize (Roles ="Admin")]
+    public class AdminUsersController : ControllerBase
+    {
+        private readonly IUserManagementService _service;
+
+        public AdminUsersController(IUserManagementService service)
+        {
+            _service = service;
+        }
+
+        // GET: api/admin/users
+        [HttpGet]
+        public async Task<ActionResult<PaginatedResultDTO<AdminUserReadDTO>>> GetUsers(
+            [FromQuery] UserQueryParams query)
+        {
+            var result = await _service.GetUsersAsync(query);
+            return Ok(result);
+        }
+
+        // PATCH: api/admin/users/{id}/role
+        [HttpPatch("{userId}/role")]
+        public async Task<IActionResult> ChangeRole(
+            Guid userId,
+            [FromBody] UserUpdateRoleDTO dto)
+        {
+            await _service.ChangeRoleAsync(userId, dto);
+            return NoContent();
+        }
+
+        // DELETE: api/admin/users/{id}
+        [HttpDelete("{userId}")]
+        public async Task<IActionResult> SoftDeleteUser(Guid userId)
+        {
+            await _service.SoftDeleteUserAsync(userId);
+            return NoContent();
+        }
+
+        // POST: api/admin/users/{id}/restore
+        [HttpPost("{userId}/restore")]
+        public async Task<IActionResult> RestoreUser(Guid userId)
+        {
+            await _service.RestoreUserAsync(userId);
+            return NoContent();
+        }
+
+        // GET: api/admin/users/stats
+        [HttpGet("stats")]
+        public async Task<ActionResult<AdminStatsDTO>> GetStats()
+        {
+            var stats = await _service.GetStatisticsAsync();
+            return Ok(stats);
+        }
+    }
+}

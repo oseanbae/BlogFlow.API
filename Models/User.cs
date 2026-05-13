@@ -61,14 +61,15 @@ namespace BlogFlow.API.Models
             PasswordHash = newHashedPassword;
             UpdatedAt = DateTime.UtcNow; 
         }
-        public void PromoteToAdmin()
+        public void UpdateRole(UserRole newRole)
         {
-            if (Role == UserRole.Admin) throw new InvalidOperationException("This user is already an admin.");
+            if (Role == newRole)
+                throw new InvalidOperationException($"User is already assigned the {newRole} role.");
 
-            Role = UserRole.Admin;
+            Role = newRole;
             UpdatedAt = DateTime.UtcNow;
         }
-       
+
         // Navigation properties
         [JsonIgnore]
         public ICollection<Post> Posts { get; set; } = [];

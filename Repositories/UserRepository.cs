@@ -13,6 +13,9 @@ namespace BlogFlow.API.Repositories
             _context = context;
         }
         
+        public  IQueryable<User> GetUsersQuery()
+            => _context.Users.AsQueryable();
+            
         public async Task CreateAsync(User user)
         {
             await _context.Users.AddAsync(user);
