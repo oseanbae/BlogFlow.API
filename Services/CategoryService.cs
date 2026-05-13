@@ -39,25 +39,24 @@ namespace BlogFlow.API.Services
             await _repo.CreateCategoryAsync(category);
             await _repo.SaveChangesAsync();
 
-            return await _repo.GetCategoryQuery(category.Id)
-                .AsDTO()
-                .FirstAsync();
+            return category.ToDTO();
         }
 
         public async Task<CategoryReadDTO> RenameCategoryAsync(Guid categoryId, string newName)
         {
             ValidateRequestSync(newName);
 
+            var category = await _repo.GetByIdAsync(categoryId)
+                ?? throw new KeyNotFoundException($"Category with ID {categoryId} not found.");
+
             if (await _repo.ExistsByNameAsync(newName, categoryId))
                 throw new InvalidOperationException("A category with this name already exists.");
 
-            await _repo.RenameCategoryAsync(categoryId, newName);
+            category.Rename(newName);
+
             await _repo.SaveChangesAsync();
 
-            return await _repo.GetCategoryQuery(categoryId)
-                .AsDTO()
-                .FirstOrDefaultAsync()
-                ?? throw new KeyNotFoundException("Updated category not found.");
+            return category.ToDTO();
         }
 
         private static void ValidateRequestSync(string name)

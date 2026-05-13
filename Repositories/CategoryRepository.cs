@@ -16,16 +16,10 @@ namespace BlogFlow.API.Repositories
         public IQueryable<Category> GetCategoryQuery(Guid id)
             => _context.Categories.AsNoTracking().Where(c => c.Id == id);
 
+        public async Task<Category?> GetByIdAsync(Guid id)
+            => await _context.Categories.FirstOrDefaultAsync(c => c.Id == id);
         public async Task CreateCategoryAsync(Category category)
             => await _context.Categories.AddAsync(category);
-
-        public async Task RenameCategoryAsync(Guid id, string newName)
-        {
-            var category = await _context.Categories.FindAsync(id)
-                ?? throw new KeyNotFoundException($"Category with ID {id} not found.");
-
-            category.Rename(newName);
-        }
 
         public async Task SaveChangesAsync() => await _context.SaveChangesAsync();
 

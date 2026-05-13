@@ -11,14 +11,20 @@ public class Category
 
     public Category(string displayName)
     {
-        ArgumentException.ThrowIfNullOrWhiteSpace(displayName);
+        if (string.IsNullOrWhiteSpace(displayName))
+            throw new ArgumentException("Category name cannot be empty or whitespace.", nameof(displayName));
+
         DisplayName = displayName.Trim();
         Name = Normalize(displayName);
     }
 
     public void Rename(string newName)
     {
-        ArgumentException.ThrowIfNullOrWhiteSpace(newName);
+        if (string.IsNullOrWhiteSpace(newName))
+            throw new ArgumentException("Category name cannot be empty or whitespace.", nameof(newName));
+
+        if (DisplayName == newName.Trim()) return;
+
         DisplayName = newName.Trim();
         Name = Normalize(newName);
     }

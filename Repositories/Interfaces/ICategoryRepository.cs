@@ -5,8 +5,8 @@
         IQueryable<Category> GetCategoriesQuery();
         IQueryable<Category> GetCategoryQuery(Guid id);
 
+        Task<Category?> GetByIdAsync(Guid id);
         Task CreateCategoryAsync(Category category);
-        Task RenameCategoryAsync(Guid id, string newName);
         Task SaveChangesAsync();
         Task<bool> ExistsByNameAsync(string name, Guid? excludeId = null);
     }

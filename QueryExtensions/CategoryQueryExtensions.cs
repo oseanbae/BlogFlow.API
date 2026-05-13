@@ -1,6 +1,5 @@
 ﻿using BlogFlow.API.DTOs.Categories;
 using Microsoft.EntityFrameworkCore;
-
 namespace BlogFlow.API.QueryExtensions
 {
     public static class CategoryQueryExtensions
@@ -14,6 +13,15 @@ namespace BlogFlow.API.QueryExtensions
                     Id = c.Id,
                     Name = c.Name,
                 });
+        }
+
+        public static CategoryReadDTO ToDTO(this Category category)
+        {
+            return new CategoryReadDTO
+            {
+                Id = category.Id,
+                Name = category.Name,
+            };
         }
     }
 }
