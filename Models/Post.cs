@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Components.Web;
+﻿using BlogFlow.API.Exceptions;
+using Microsoft.AspNetCore.Components.Web;
 using Microsoft.AspNetCore.Mvc.Razor.TagHelpers;
 
 namespace BlogFlow.API.Models
@@ -28,13 +29,13 @@ namespace BlogFlow.API.Models
         public Post(string title, string body, Guid authorId, Guid categoryId)
         {
             if (string.IsNullOrWhiteSpace(title))
-                throw new ArgumentException("Title is required");
+                throw new BadRequestException("Title is required", "EMPTY_POST_TITLE");
 
             if (string.IsNullOrWhiteSpace(body))
-                throw new ArgumentException("Body is required");
+                throw new BadRequestException("Body is required", "EMPTY_POST_BODY");
 
             if (authorId == Guid.Empty)
-                throw new ArgumentException("Invalid author");
+                throw new BadRequestException("Invalid author", "INVALID_AUTHOR_ID");
 
             Title = title.Trim();
             Body = body;
@@ -44,27 +45,28 @@ namespace BlogFlow.API.Models
 
         public void SoftDelete()
         {
-            if (DeletedAt != null) throw new InvalidOperationException("This post is already deleted.");
+            if (DeletedAt != null) throw new ConflictException($"Post '{Id}' is already deleted.", "POST_ALREADY_DELETED");
             DeletedAt = DateTime.UtcNow;
         }
+
         public void Restore()
         {
-            if (DeletedAt == null) throw new InvalidOperationException("This post is not deleted.");
+            if (DeletedAt == null) throw new ConflictException($"Post '{Id}' is not deleted.", "POST_NOT_DELETED");
             DeletedAt = null;
         }
         public void Update(string title, string body, Guid categoryId)
         {
             if (DeletedAt != null)
-                throw new InvalidOperationException("Cannot update a deleted post.");
+                throw new BadRequestException("Cannot update a deleted post.", "POST_ALREADY_DELETED");
 
             if (string.IsNullOrWhiteSpace(title))
-                throw new ArgumentException("Title is required");
+                throw new BadRequestException("Title is required", "EMPTY_POST_TITLE");
 
             if (string.IsNullOrWhiteSpace(body))
-                throw new ArgumentException("Body is required");
+                throw new BadRequestException("Body is required", "EMPTY_POST_BODY");
 
             if (categoryId == Guid.Empty)
-                throw new ArgumentException("Invalid category");
+                throw new BadRequestException("Invalid category", "INVALID_CATEGORY_ID");
 
             Title = title.Trim();
             Body = body;

@@ -1,4 +1,6 @@
-﻿namespace BlogFlow.API.Models
+﻿using BlogFlow.API.Exceptions;
+
+namespace BlogFlow.API.Models
 {
     public class Comment
     {
@@ -18,14 +20,16 @@
 
         public Comment(string body, Guid userId, Guid postId)
         {
-            if (userId == Guid.Empty) throw new ArgumentException("User ID is required.");
-            if (postId == Guid.Empty) throw new ArgumentException("Post ID is required.");
+            if (userId == Guid.Empty)
+                throw new BadRequestException("User ID is required.", "INVALID_USER_ID");
+
+            if (postId == Guid.Empty)
+                throw new BadRequestException("Post ID is required.", "INVALID_POST_ID");
 
             if (string.IsNullOrWhiteSpace(body))
-                throw new ArgumentException("Comment body cannot be empty.");
+                throw new BadRequestException("Comment body cannot be empty.", "EMPTY_COMMENT_BODY");
 
             Body = body.Trim();
-
             UserId = userId;
             PostId = postId;
         }
@@ -33,11 +37,11 @@
         public void UpdateBody(string newBody)
         {
             if (string.IsNullOrWhiteSpace(newBody))
-                throw new ArgumentException("Comment body cannot be empty.");
+                throw new BadRequestException("Comment body cannot be empty.", "EMPTY_COMMENT_BODY");
 
             var sanitizedBody = newBody.Trim();
 
-            //check if it actually changed
+            // Check if it actually changed
             if (Body == sanitizedBody) return;
 
             Body = sanitizedBody;
@@ -46,13 +50,14 @@
 
         public void SoftDelete()
         {
-            if (DeletedAt != null) throw new InvalidOperationException("This comment is already deleted.");
+            if (DeletedAt != null) throw new ConflictException($"Comment '{Id}' is already deleted.", "COMMENT_ALREADY_DELETED");
             DeletedAt = DateTime.UtcNow;
         }
-        public void Restore()
+
+        public void Restore()   
         {
-            if (DeletedAt == null) throw new InvalidOperationException("This comment is not deleted.");
+            if (DeletedAt == null) throw new ConflictException($"Comment '{Id}' is not deleted.", "COMMENT_NOT_DELETED");
             DeletedAt = null;
         }
     }
-}
+}   

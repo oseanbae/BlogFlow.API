@@ -1,4 +1,5 @@
-﻿using Microsoft.CodeAnalysis.Emit;
+﻿using BlogFlow.API.Exceptions;
+using Microsoft.CodeAnalysis.Emit;
 using Microsoft.EntityFrameworkCore.Query.Internal;
 using Newtonsoft.Json.Bson;
 using System.Text.Json.Serialization;
@@ -24,26 +25,26 @@ namespace BlogFlow.API.Models
         public DateTime? UpdatedAt { get; private set; }
         public void SoftDelete()
         {
-            if (DeletedAt != null) throw new InvalidOperationException("This user is already deleted.");
+            if (DeletedAt != null) throw new ConflictException($"User '{Username}' is already deleted.", "USER_ALREADY_DELETED");
             DeletedAt = DateTime.UtcNow;
         }
+
         public void Restore()
         {
-           if (DeletedAt == null) throw new InvalidOperationException("This user is not deleted.");
-           DeletedAt = null;
+            if (DeletedAt == null) throw new ConflictException($"User '{Username}' is not deleted.", "USER_NOT_DELETED");
+            DeletedAt = null;
         }
 
         public void UpdateIdentity(string newUsername, string newEmail)
         {
-           
             if (string.IsNullOrWhiteSpace(newUsername))
-                throw new ArgumentException("Username cannot be null or whitespace.", nameof(newUsername));
+                throw new BadRequestException("Username cannot be null or whitespace.", "EMPTY_USERNAME");
 
             if (string.IsNullOrWhiteSpace(newEmail))
-                throw new ArgumentException("Email cannot be null or whitespace.", nameof(newEmail));
+                throw new BadRequestException("Email cannot be null or whitespace.", "EMPTY_EMAIL");
 
             if (!newEmail.Contains('@'))
-                throw new ArgumentException("Invalid email format.", nameof(newEmail));
+                throw new BadRequestException("Invalid email format.", "INVALID_EMAIL_FORMAT");
 
             if (Username == newUsername && Email == newEmail)
                 return;
@@ -56,15 +57,14 @@ namespace BlogFlow.API.Models
         public void ChangePassword(string newHashedPassword)
         {
             if (string.IsNullOrWhiteSpace(newHashedPassword))
-                throw new ArgumentException("Password hash cannot be empty.", nameof(newHashedPassword));
+                throw new BadRequestException("Password hash cannot be empty.", "EMPTY_PASSWORD_HASH");
 
             PasswordHash = newHashedPassword;
-            UpdatedAt = DateTime.UtcNow; 
+            UpdatedAt = DateTime.UtcNow;
         }
         public void UpdateRole(UserRole newRole)
         {
-            if (Role == newRole)
-                throw new InvalidOperationException($"User is already assigned the {newRole} role.");
+            if (Role == newRole) throw new ConflictException($"User is already assigned the {newRole} role.", "ROLE_ALREADY_ASSIGNED");
 
             Role = newRole;
             UpdatedAt = DateTime.UtcNow;

@@ -1,4 +1,6 @@
-﻿namespace BlogFlow.API.Models
+﻿using BlogFlow.API.Exceptions;
+
+namespace BlogFlow.API.Models
 {
     public class Tag
     {
@@ -11,7 +13,9 @@
 
         public Tag(string displayName)
         {
-            ArgumentException.ThrowIfNullOrWhiteSpace(displayName);
+            if (string.IsNullOrWhiteSpace(displayName))
+                throw new BadRequestException("Tag name cannot be empty or whitespace.", "EMPTY_TAG_NAME");
+
             DisplayName = displayName.Trim();
             Name = Normalize(displayName);
         }

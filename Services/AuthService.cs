@@ -1,4 +1,5 @@
 ﻿using BlogFlow.API.DTOs.Auth;
+using BlogFlow.API.Exceptions;
 using BlogFlow.API.Models;
 using BlogFlow.API.Repositories.Interfaces;
 using BlogFlow.API.Services.Interfaces;
@@ -51,7 +52,7 @@ namespace BlogFlow.API.Services
             var user = await ResolveUserAsync(request.UsernameOrEmail);
 
             if (user == null || !BCrypt.Net.BCrypt.Verify(request.Password, user.PasswordHash))
-                throw new UnauthorizedAccessException("Invalid Credentials");
+                throw new UnauthorizedException("Invalid Credentials", "INVALID_CREDENTIALS");
 
             await _refreshTokenRepo.RemoveExpiredAsync(user.Id);
 
@@ -62,7 +63,7 @@ namespace BlogFlow.API.Services
             var hashed = HashToken(request.RefreshToken);
 
             var existingToken = await _refreshTokenRepo.GetByHashedTokenAsync(hashed)
-                ?? throw new UnauthorizedAccessException("Invalid refresh token.");
+                ?? throw new UnauthorizedException("Invalid refresh token.", "INVALID_REFRESH_TOKEN");
 
             // Check revocation before expiry — a revoked token could indicate theft.
             // If someone is reusing a revoked token, wipe all sessions.
@@ -72,11 +73,12 @@ namespace BlogFlow.API.Services
                     existingToken.UserId,
                     "Reuse of revoked token detected");
 
-                throw new UnauthorizedAccessException("Token reuse detected. All sessions revoked.");
+                throw new UnauthorizedException("Token reuse detected. All sessions revoked.", "TOKEN_REUSE_DETECTED");
             }
 
             if (existingToken.IsExpired)
-                throw new UnauthorizedAccessException("Expired refresh token.");
+                throw new UnauthorizedException("Expired refresh token.", "REFRESH_TOKEN_EXPIRED");
+
             // get user BEFORE generating new token
             var user = existingToken.User;
             // rotate refresh token
@@ -108,13 +110,13 @@ namespace BlogFlow.API.Services
             var hashed = HashToken(request.RefreshToken);
 
             var token = await _refreshTokenRepo.GetByHashedTokenAsync(hashed)
-                ?? throw new UnauthorizedAccessException("Invalid token");
+                ?? throw new UnauthorizedException("Invalid token.", "TOKEN_NOT_FOUND");
 
             if (!token.IsActive)
-                throw new UnauthorizedAccessException("Token expired or revoked");
+                throw new UnauthorizedException("Token already expired or revoked.", "TOKEN_INACTIVE");
 
             if (token.UserId != userId)
-                throw new UnauthorizedAccessException("Invalid token ownership");
+                throw new ForbiddenException("You do not have permission to revoke this token.", "NOT_TOKEN_OWNER");
 
             await _refreshTokenRepo.RevokeAsync(token, "Revoked by user", null);
 
@@ -216,10 +218,10 @@ namespace BlogFlow.API.Services
         private async Task ValidateUserDoesNotExist(string username, string email)
         {
             if (await _userRepo.GetByUsernameAsync(username) != null)
-                throw new InvalidOperationException("Username already exists.");
+                throw new ConflictException($"Username '{username}' already exists.", "USERNAME_ALREADY_EXISTS");
 
             if (await _userRepo.GetByEmailAsync(email) != null)
-                throw new InvalidOperationException("Email already exists.");
+                throw new ConflictException($"Email '{email}' already exists.", "EMAIL_ALREADY_EXISTS");
         }
 
         private async Task<AuthResponseDTO> IssueAuthResponseAsync(User user)

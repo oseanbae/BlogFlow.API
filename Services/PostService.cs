@@ -1,5 +1,6 @@
 ﻿using BlogFlow.API.DTOs.Common;
 using BlogFlow.API.DTOs.Post;
+using BlogFlow.API.Exceptions;
 using BlogFlow.API.Models;
 using BlogFlow.API.QueryExtensions;
 using BlogFlow.API.Repositories.Interfaces;
@@ -28,7 +29,7 @@ namespace BlogFlow.API.Services
                 .AsDTO()
                 .FirstOrDefaultAsync();
 
-            return postDto ?? throw new KeyNotFoundException("Post not found.");
+            return postDto ?? throw new NotFoundException("Post", postId);
         }
         public async Task<PaginatedResultDTO<PostReadDTO>> GetPostsAsync(
             PostQueryParams p,
@@ -46,11 +47,10 @@ namespace BlogFlow.API.Services
         public async Task<PostReadDTO> CreatePostAsync(PostCreateDTO dto, UserContext user)
         {
             if (!user.IsAuthor && !user.IsAdmin)
-                throw new UnauthorizedAccessException("Only authors or admins can create posts.");
+                throw new ForbiddenException("Only authors or admins can create posts.", "INSUFFICIENT_ROLE");
 
             var categoryExists = await _categoryRepo.GetCategoryQuery(dto.CategoryId).AnyAsync();
-            if (!categoryExists)
-                throw new KeyNotFoundException("Invalid category.");
+            if (!categoryExists) throw new NotFoundException("Category", dto.CategoryId);
 
             await ValidateTagsExistAsync(dto.TagIds);
 
@@ -67,25 +67,24 @@ namespace BlogFlow.API.Services
         public async Task<PostReadDTO> UpdatePostAsync(Guid postId, PostUpdateDTO dto, UserContext user)
         {
             if (!user.IsAuthor && !user.IsAdmin)
-                throw new UnauthorizedAccessException("Only authors or admins can update posts.");
+                throw new ForbiddenException("Only authors or admins can update posts.", "INSUFFICIENT_ROLE");
 
             var post = await _postRepo.GetTrackedByIdAsync(postId, includeDeleted: user.IsAdmin)
-                ?? throw new KeyNotFoundException("Post not found.");
+                ?? throw new NotFoundException("Post", postId);
 
             if (!user.IsAdmin && post.AuthorId != user.UserId)
-                throw new UnauthorizedAccessException("Not allowed.");
+                throw new ForbiddenException("You do not have permission to update this post.", "NOT_POST_OWNER");
 
             if (dto.CategoryId.HasValue)
             {
                 if (dto.CategoryId.Value == Guid.Empty)
-                    throw new ArgumentException("Invalid category.");
+                    throw new BadRequestException("Invalid category.", "INVALID_CATEGORY_ID");
 
                 var catExists = await _categoryRepo
                     .GetCategoryQuery(dto.CategoryId.Value)
                     .AnyAsync();
 
-                if (!catExists)
-                    throw new KeyNotFoundException("Invalid category.");
+                if (!catExists) throw new NotFoundException("Category", dto.CategoryId);
             }
 
             await ValidateTagsExistAsync(dto.TagIds);
@@ -107,13 +106,13 @@ namespace BlogFlow.API.Services
         public async Task SoftDeletePostAsync(Guid postId, UserContext user)
         {
             if (!user.IsAuthor && !user.IsAdmin)
-                throw new UnauthorizedAccessException("Only authors or admins can delete posts.");
+                throw new ForbiddenException("Only authors or admins can delete posts.", "INSUFFICIENT_ROLE");
 
             var post = await _postRepo.GetTrackedByIdAsync(postId, includeDeleted: user.IsAdmin)
-                ?? throw new KeyNotFoundException("Post not found.");
+                ?? throw new NotFoundException("Post", postId);
 
             if (!user.IsAdmin && post.AuthorId != user.UserId)
-                throw new UnauthorizedAccessException("Not allowed.");
+                throw new ForbiddenException("You do not have permission to delete this post.", "NOT_POST_OWNER");
 
             post.SoftDelete();
             await _postRepo.SaveChangesAsync();
@@ -122,10 +121,10 @@ namespace BlogFlow.API.Services
         public async Task RestorePostAsync(Guid postId, UserContext user)
         {
             if (!user.IsAdmin)
-                throw new UnauthorizedAccessException("Only admin can restore posts.");
+                throw new ForbiddenException("Only admins can restore posts.", "ADMIN_ONLY_ACTION");
 
             var post = await _postRepo.GetTrackedByIdAsync(postId, includeDeleted: true)
-                ?? throw new KeyNotFoundException("Post not found.");
+                ?? throw new NotFoundException("Post", postId);
 
             post.Restore();
             await _postRepo.SaveChangesAsync();
@@ -134,10 +133,10 @@ namespace BlogFlow.API.Services
         public async Task HardDeletePostAsync(Guid postId, UserContext user)
         {
             if (!user.IsAdmin)
-                throw new UnauthorizedAccessException("Only admin can hard delete posts.");
+                throw new ForbiddenException("Only admins can hard delete posts.", "ADMIN_ONLY_ACTION");
 
             var post = await _postRepo.GetTrackedByIdAsync(postId, includeDeleted: true)
-                ?? throw new KeyNotFoundException("Post not found.");
+                ?? throw new NotFoundException("Post", postId);
 
             await _postRepo.DeleteAsync(post);
             await _postRepo.SaveChangesAsync();

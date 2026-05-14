@@ -3,6 +3,7 @@ using BlogFlow.API.Repositories.Interfaces;
 using BlogFlow.API.Services.Interfaces;
 using Microsoft.EntityFrameworkCore;
 using BlogFlow.API.QueryExtensions;
+using BlogFlow.API.Exceptions;
 
 namespace BlogFlow.API.Services
 {
@@ -24,7 +25,7 @@ namespace BlogFlow.API.Services
             return await _repo.GetCategoryQuery(id)
                 .AsDTO()
                 .FirstOrDefaultAsync() ??
-                throw new KeyNotFoundException("Category not found");
+                throw new NotFoundException("Category", id);
         }
 
         public async Task<CategoryReadDTO> CreateCategoryAsync(CategoryCreateDTO dto)
@@ -32,7 +33,7 @@ namespace BlogFlow.API.Services
             ValidateRequestSync(dto.Name);
 
             if (await _repo.ExistsByNameAsync(dto.Name))
-                throw new InvalidOperationException("Category already exists.");
+                throw new ConflictException($"Category '{dto.Name}' already exists.", "CATEGORY_ALREADY_EXISTS");
 
             var category = new Category(dto.Name);
 
@@ -42,15 +43,15 @@ namespace BlogFlow.API.Services
             return category.ToDTO();
         }
 
-        public async Task<CategoryReadDTO> RenameCategoryAsync(Guid categoryId, string newName)
+        public async Task<CategoryReadDTO> RenameCategoryAsync(Guid id, string newName)
         {
             ValidateRequestSync(newName);
 
-            var category = await _repo.GetByIdAsync(categoryId)
-                ?? throw new KeyNotFoundException($"Category with ID {categoryId} not found.");
+            var category = await _repo.GetByIdAsync(id)
+                ?? throw new NotFoundException("Category", id);
 
-            if (await _repo.ExistsByNameAsync(newName, categoryId))
-                throw new InvalidOperationException("A category with this name already exists.");
+            if (await _repo.ExistsByNameAsync(newName, id))
+                throw new ConflictException($"A category with the name '{newName}' already exists.", "CATEGORY_NAME_CONFLICT");
 
             category.Rename(newName);
 
@@ -62,7 +63,7 @@ namespace BlogFlow.API.Services
         private static void ValidateRequestSync(string name)
         {
             if (string.IsNullOrWhiteSpace(name))
-                throw new ArgumentException("Category name is required.");
+                throw new BadRequestException("Category name is required.", "EMPTY_CATEGORY_NAME");
         }
     }
 }

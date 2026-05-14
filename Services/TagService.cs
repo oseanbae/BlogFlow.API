@@ -1,9 +1,10 @@
 ﻿using BlogFlow.API.DTOs.Tag;
+using BlogFlow.API.Exceptions;
 using BlogFlow.API.Models;
+using BlogFlow.API.QueryExtensions;
 using BlogFlow.API.Repositories.Interfaces;
 using BlogFlow.API.Services.Interfaces;
 using Microsoft.EntityFrameworkCore;
-using BlogFlow.API.QueryExtensions;
 
 namespace BlogFlow.API.Services
 {
@@ -18,14 +19,13 @@ namespace BlogFlow.API.Services
         public async Task<TagReadDTO> GetTagByIdAsync(Guid id)
         {
             return await _repo.GetTagQuery(id).AsDTO().FirstOrDefaultAsync()
-                ?? throw new KeyNotFoundException("Tag not found.");
+                ?? throw new NotFoundException("Tag", id);
         }
-
 
         public async Task<TagReadDTO> CreateTagAsync(TagCreateDTO dto)
         {
             if (await _repo.TagExistsAsync(dto.Name))
-                throw new InvalidOperationException("Tag already exists.");
+                throw new ConflictException($"Tag '{dto.Name}' already exists.", "TAG_ALREADY_EXISTS");
 
             var tag = new Tag(dto.Name);
             await _repo.CreateTagAsync(tag);
@@ -37,7 +37,7 @@ namespace BlogFlow.API.Services
         public async Task DeleteTagAsync(Guid id)
         {
             if (!await _repo.DeleteTagByIdAsync(id))
-                throw new KeyNotFoundException();
+                throw new NotFoundException("Tag", id);
 
             await _repo.SaveChangesAsync();
         }

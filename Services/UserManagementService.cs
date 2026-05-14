@@ -1,6 +1,7 @@
 ﻿using BlogFlow.API.DTOs.Admin;
 using BlogFlow.API.DTOs.Common;
 using BlogFlow.API.DTOs.User;
+using BlogFlow.API.Exceptions;
 using BlogFlow.API.Models;
 using BlogFlow.API.QueryExtensions;
 using BlogFlow.API.Repositories.Interfaces;
@@ -19,7 +20,7 @@ namespace BlogFlow.API.Services
         public async Task ChangeRoleAsync(Guid userId, UserUpdateRoleDTO dto)
         {
             var user = await _repo.GetTrackedByIdAsync(userId)
-                ?? throw new KeyNotFoundException("User does not exist");
+                ?? throw new NotFoundException("User", userId);
 
             user.UpdateRole(dto.Role);
             await _repo.SaveChangesAsync();
@@ -37,7 +38,7 @@ namespace BlogFlow.API.Services
         public async Task RestoreUserAsync(Guid userId)
         {
             var user = await _repo.GetTrackedByIdAsync(userId)
-                ?? throw new KeyNotFoundException("User does not exist");
+                ?? throw new NotFoundException("User", userId);
 
             user.Restore();
 
@@ -47,7 +48,7 @@ namespace BlogFlow.API.Services
         public async Task SoftDeleteUserAsync(Guid userId)
         {
             var user = await _repo.GetTrackedByIdAsync(userId)
-                ?? throw new KeyNotFoundException("User does not exist");
+                ?? throw new NotFoundException("User", userId);
 
             user.SoftDelete();
 

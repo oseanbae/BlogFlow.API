@@ -1,4 +1,6 @@
-﻿namespace BlogFlow.API.Models
+﻿using BlogFlow.API.Exceptions;
+
+namespace BlogFlow.API.Models
 {
     // Join entity for many-to-many relationship between Post and Tag
     public class PostTag
@@ -9,14 +11,14 @@
         public Post Post { get; private set; } = null!;
         public Tag Tag { get; private set; } = null!;
         private PostTag() { } // EF Core
-    
+
         public PostTag(Guid postId, Guid tagId)
         {
             if (postId == Guid.Empty)
-                throw new ArgumentException("Invalid PostId");
+                throw new BadRequestException("Invalid PostId", "INVALID_POST_ID");
 
             if (tagId == Guid.Empty)
-                throw new ArgumentException("Invalid TagId");
+                throw new BadRequestException("Invalid TagId", "INVALID_TAG_ID");
 
             PostId = postId;
             TagId = tagId;

@@ -1,4 +1,5 @@
-﻿using BlogFlow.API.Models;
+﻿using BlogFlow.API.Exceptions;
+using BlogFlow.API.Models;
 
 public class Category
 {
@@ -12,7 +13,7 @@ public class Category
     public Category(string displayName)
     {
         if (string.IsNullOrWhiteSpace(displayName))
-            throw new ArgumentException("Category name cannot be empty or whitespace.", nameof(displayName));
+            throw new BadRequestException("Category name cannot be empty or whitespace.", "EMPTY_CATEGORY_NAME");
 
         DisplayName = displayName.Trim();
         Name = Normalize(displayName);
@@ -21,11 +22,13 @@ public class Category
     public void Rename(string newName)
     {
         if (string.IsNullOrWhiteSpace(newName))
-            throw new ArgumentException("Category name cannot be empty or whitespace.", nameof(newName));
+            throw new BadRequestException("Category name cannot be empty or whitespace.", "EMPTY_CATEGORY_NAME");
 
-        if (DisplayName == newName.Trim()) return;
+        var sanitizedName = newName.Trim();
 
-        DisplayName = newName.Trim();
+        if (DisplayName == sanitizedName) return;
+
+        DisplayName = sanitizedName;
         Name = Normalize(newName);
     }
 

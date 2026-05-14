@@ -1,4 +1,5 @@
-﻿using BlogFlow.API.Models;
+﻿using BlogFlow.API.Exceptions;
+using BlogFlow.API.Models;
 using BlogFlow.API.Services.Interfaces;
 using System.Security.Claims;
 
@@ -62,8 +63,10 @@ namespace BlogFlow.API.Services
 
             if (!user.IsAuthenticated)
             {
-                throw new UnauthorizedAccessException(
-                    "Authentication required.");
+                throw new UnauthorizedException(
+                    "Authentication required.",
+                    "AUTH_REQUIRED"
+                );
             }
 
             return user;
@@ -87,10 +90,11 @@ namespace BlogFlow.API.Services
             var user = GetRequiredUser();
 
             if (user.Role is null)
-            {
-                throw new UnauthorizedAccessException(
-                    "User role claim is missing or invalid.");
-            }
+                throw new ForbiddenException(
+                    "User role claim is missing or invalid.",
+                    "INVALID_ROLE_CLAIM"
+                );
+            
 
             return user.Role.Value;
         }
