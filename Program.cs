@@ -34,6 +34,10 @@ builder.Services.AddAuthRateLimiting(builder.Configuration);
 //Fluent Validation for DTOs
 builder.Services.AddValidatorsFromAssemblyContaining<Program>();
 
+// Global Exception Handler
+builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
+builder.Services.AddProblemDetails();
+
 var app = builder.Build();
 
 // Development
@@ -44,6 +48,8 @@ if (app.Environment.IsDevelopment())
 }
 
 // Middleware
+app.UseExceptionHandler();
+
 app.UseHttpsRedirection();
 app.UseRouting();
 app.UseRateLimiter();
