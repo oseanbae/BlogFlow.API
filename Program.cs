@@ -3,6 +3,9 @@ using BlogFlow.API.Infrastructure;
 using FluentValidation;
 using Microsoft.EntityFrameworkCore;
 using Scalar.AspNetCore;
+using Serilog;
+using Serilog.Events;
+using Serilog.Formatting.Json;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -38,6 +41,19 @@ builder.Services.AddValidatorsFromAssemblyContaining<Program>();
 builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
 builder.Services.AddProblemDetails();
 
+// Serilog
+Log.Logger = new LoggerConfiguration()
+    .MinimumLevel.Information()
+    .MinimumLevel.Override("Microsoft", LogEventLevel.Warning)
+    .MinimumLevel.Override("System", LogEventLevel.Warning)
+    .WriteTo.Console()
+    .WriteTo.File(new JsonFormatter(), "Logs/log-json.json", rollingInterval: RollingInterval.Day)
+    .Enrich.FromLogContext()
+    .CreateLogger();
+
+
+builder.Host.UseSerilog();
+
 var app = builder.Build();
 
 // Development
@@ -48,6 +64,8 @@ if (app.Environment.IsDevelopment())
 }
 
 // Middleware
+app.UseSerilogRequestLogging();
+
 app.UseExceptionHandler();
 
 app.UseHttpsRedirection();
