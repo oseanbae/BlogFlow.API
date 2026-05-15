@@ -14,11 +14,17 @@ namespace BlogFlow.API.Services
         private readonly IPostRepository _postRepo;
         private readonly ICategoryRepository _categoryRepo;
         private readonly ITagRepository _tagRepo;
-        public PostService(IPostRepository postRepo, ICategoryRepository categoryRepo, ITagRepository tagRepo)
+        private readonly ILogger<PostService> _logger;
+        public PostService(
+            IPostRepository postRepo,
+            ICategoryRepository categoryRepo,
+            ITagRepository tagRepo,
+            ILogger<PostService> logger)
         {
             _postRepo = postRepo;
             _categoryRepo = categoryRepo;
             _tagRepo = tagRepo;
+            _logger = logger;
         }
 
         // --- READ OPERATIONS ---
@@ -47,19 +53,40 @@ namespace BlogFlow.API.Services
         public async Task<PostReadDTO> CreatePostAsync(PostCreateDTO dto, UserContext user)
         {
             if (!user.IsAuthor && !user.IsAdmin)
-                throw new ForbiddenException("Only authors or admins can create posts.", "INSUFFICIENT_ROLE");
+            {
+                _logger.LogWarning(
+                    "Unauthorized post creation attempt by user {UserId}",
+                    user.UserId);
 
-            var categoryExists = await _categoryRepo.GetCategoryQuery(dto.CategoryId).AnyAsync();
-            if (!categoryExists) throw new NotFoundException("Category", dto.CategoryId);
+                throw new ForbiddenException(
+                    "Only authors or admins can create posts.",
+                    "INSUFFICIENT_ROLE");
+            }
+
+            var categoryExists = await _categoryRepo
+                .GetCategoryQuery(dto.CategoryId)
+                .AnyAsync();
+
+            if (!categoryExists)
+                throw new NotFoundException("Category", dto.CategoryId);
 
             await ValidateTagsExistAsync(dto.TagIds);
 
-            var post = new Post(dto.Title, dto.Body, user.UserId, dto.CategoryId);
+            var post = new Post(
+                dto.Title,
+                dto.Body,
+                user.UserId,
+                dto.CategoryId);
 
             post.SetTags(dto.TagIds ?? []);
 
             await _postRepo.AddAsync(post);
             await _postRepo.SaveChangesAsync();
+
+            _logger.LogInformation(
+                "Post created: {PostId} by user {UserId}",
+                post.Id,
+                user.UserId);
 
             return await GetPostByIdAsync(post.Id, user);
         }
@@ -67,13 +94,30 @@ namespace BlogFlow.API.Services
         public async Task<PostReadDTO> UpdatePostAsync(Guid postId, PostUpdateDTO dto, UserContext user)
         {
             if (!user.IsAuthor && !user.IsAdmin)
-                throw new ForbiddenException("Only authors or admins can update posts.", "INSUFFICIENT_ROLE");
+            {
+                _logger.LogWarning(
+                    "Unauthorized post update attempt by user {UserId}",
+                    user.UserId);
+
+                throw new ForbiddenException(
+                    "Only authors or admins can update posts.",
+                    "INSUFFICIENT_ROLE");
+            }
 
             var post = await _postRepo.GetTrackedByIdAsync(postId, includeDeleted: user.IsAdmin)
                 ?? throw new NotFoundException("Post", postId);
 
             if (!user.IsAdmin && post.AuthorId != user.UserId)
-                throw new ForbiddenException("You do not have permission to update this post.", "NOT_POST_OWNER");
+            {
+                _logger.LogWarning(
+                    "User {UserId} attempted to update post {PostId} owned by another user",
+                    user.UserId,
+                    postId);
+
+                throw new ForbiddenException(
+                    "You do not have permission to update this post.",
+                    "NOT_POST_OWNER");
+            }
 
             if (dto.CategoryId.HasValue)
             {
@@ -99,47 +143,99 @@ namespace BlogFlow.API.Services
                 post.SetTags(dto.TagIds);
 
             await _postRepo.SaveChangesAsync();
-
+            _logger.LogInformation(
+                "Post updated: {PostId} by user {UserId}",
+                post.Id,
+                user.UserId);
             return await GetPostByIdAsync(post.Id, user);
         }
 
         public async Task SoftDeletePostAsync(Guid postId, UserContext user)
         {
             if (!user.IsAuthor && !user.IsAdmin)
-                throw new ForbiddenException("Only authors or admins can delete posts.", "INSUFFICIENT_ROLE");
+            {
+                _logger.LogWarning(
+                    "Unauthorized post delete attempt by user {UserId}",
+                    user.UserId);
+
+                throw new ForbiddenException(
+                    "Only authors or admins can delete posts.",
+                    "INSUFFICIENT_ROLE");
+            }
 
             var post = await _postRepo.GetTrackedByIdAsync(postId, includeDeleted: user.IsAdmin)
                 ?? throw new NotFoundException("Post", postId);
 
-            if (!user.IsAdmin && post.AuthorId != user.UserId)
-                throw new ForbiddenException("You do not have permission to delete this post.", "NOT_POST_OWNER");
+            if(!user.IsAdmin && post.AuthorId != user.UserId)
+{
+                _logger.LogWarning(
+                    "User {UserId} attempted to delete post {PostId} owned by another user",
+                    user.UserId,
+                    postId);
+
+                throw new ForbiddenException(
+                    "You do not have permission to delete this post.",
+                    "NOT_POST_OWNER");
+            }
 
             post.SoftDelete();
+
             await _postRepo.SaveChangesAsync();
+
+            _logger.LogInformation(
+                "Post soft deleted: {PostId} by user {UserId}",
+                post.Id,
+                user.UserId);
         }
 
         public async Task RestorePostAsync(Guid postId, UserContext user)
         {
             if (!user.IsAdmin)
-                throw new ForbiddenException("Only admins can restore posts.", "ADMIN_ONLY_ACTION");
+            {
+                _logger.LogWarning(
+                    "Unauthorized post restore attempt by user {UserId}",
+                    user.UserId);
+
+                throw new ForbiddenException(
+                    "Only admins can restore posts.",
+                    "ADMIN_ONLY_ACTION");
+            }
 
             var post = await _postRepo.GetTrackedByIdAsync(postId, includeDeleted: true)
                 ?? throw new NotFoundException("Post", postId);
 
             post.Restore();
             await _postRepo.SaveChangesAsync();
+
+            _logger.LogInformation(
+                "Post restored: {PostId} by admin {UserId}",
+                post.Id,
+                user.UserId);
         }
 
         public async Task HardDeletePostAsync(Guid postId, UserContext user)
         {
             if (!user.IsAdmin)
-                throw new ForbiddenException("Only admins can hard delete posts.", "ADMIN_ONLY_ACTION");
+            {
+                _logger.LogWarning(
+                    "Unauthorized hard delete attempt by user {UserId}",
+                    user.UserId);
+
+                throw new ForbiddenException(
+                    "Only admins can hard delete posts.",
+                    "ADMIN_ONLY_ACTION");
+            }
 
             var post = await _postRepo.GetTrackedByIdAsync(postId, includeDeleted: true)
                 ?? throw new NotFoundException("Post", postId);
 
             await _postRepo.DeleteAsync(post);
             await _postRepo.SaveChangesAsync();
+
+            _logger.LogInformation(
+                "Post permanently deleted: {PostId} by admin {UserId}",
+                post.Id,
+                user.UserId);
         }
 
         // --- PRIVATE HELPER ---
