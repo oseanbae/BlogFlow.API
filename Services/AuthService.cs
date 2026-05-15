@@ -18,14 +18,19 @@ namespace BlogFlow.API.Services
         private readonly JwtSettings _jwt;
         private readonly IRefreshTokenRepository _refreshTokenRepo;
         private readonly IUserRepository _userRepo;
+
+        private readonly ILogger<AuthService> _logger;
+
         public AuthService(
             IRefreshTokenRepository refrshTokenRepo,
             IUserRepository userRepo,
-            IOptions<JwtSettings> jwtOptions)
+            IOptions<JwtSettings> jwtOptions,
+            ILogger<AuthService> logger)
         {
             _refreshTokenRepo = refrshTokenRepo;
             _userRepo = userRepo;
             _jwt = jwtOptions.Value;
+            _logger = logger;
         }
 
         public async Task<AuthResponseDTO> RegisterAsync(RegisterRequestDTO request)
@@ -45,54 +50,105 @@ namespace BlogFlow.API.Services
             await _userRepo.CreateAsync(user);
             await _userRepo.SaveChangesAsync();
 
+            _logger.LogInformation(
+                "User registered successfully: {UserId} ({Username})",
+                user.Id,
+                user.Username);
+
             return await IssueAuthResponseAsync(user);
         }
+
         public async Task<AuthResponseDTO> LoginAsync(LoginRequestDTO request)
         {
             var user = await ResolveUserAsync(request.UsernameOrEmail);
 
             if (user == null || !BCrypt.Net.BCrypt.Verify(request.Password, user.PasswordHash))
-                throw new UnauthorizedException("Invalid Credentials", "INVALID_CREDENTIALS");
+            {
+                _logger.LogWarning(
+                    "Invalid login attempt for {UsernameOrEmail}",
+                    request.UsernameOrEmail);
+
+                throw new UnauthorizedException(
+                    "Invalid Credentials",
+                    "INVALID_CREDENTIALS");
+            }
+
+            _logger.LogInformation(
+                "User login successful: {UserId} ({Username})",
+                user.Id,
+                user.Username);
 
             await _refreshTokenRepo.RemoveExpiredAsync(user.Id);
 
             return await IssueAuthResponseAsync(user);
         }
+
         public async Task<AuthResponseDTO> RefreshAsync(RefreshTokenRequestDTO request)
         {
             var hashed = HashToken(request.RefreshToken);
 
-            var existingToken = await _refreshTokenRepo.GetByHashedTokenAsync(hashed)
-                ?? throw new UnauthorizedException("Invalid refresh token.", "INVALID_REFRESH_TOKEN");
+            var existingToken = await _refreshTokenRepo.GetByHashedTokenAsync(hashed);
+
+            if (existingToken is null)
+            {
+                _logger.LogWarning(
+                    "Invalid refresh token attempt");
+
+                throw new UnauthorizedException(
+                    "Invalid refresh token.",
+                    "INVALID_REFRESH_TOKEN");
+            }
 
             // Check revocation before expiry — a revoked token could indicate theft.
             // If someone is reusing a revoked token, wipe all sessions.
             if (existingToken.IsRevoked)
             {
+                _logger.LogWarning(
+                    "Refresh token reuse detected for user {UserId}. Revoking all sessions.",
+                    existingToken.UserId);
+
                 await _refreshTokenRepo.RevokeAllUserTokensAsync(
                     existingToken.UserId,
                     "Reuse of revoked token detected");
 
-                throw new UnauthorizedException("Token reuse detected. All sessions revoked.", "TOKEN_REUSE_DETECTED");
+                await _refreshTokenRepo.SaveChangesAsync();
+
+                throw new UnauthorizedException(
+                    "Token reuse detected. All sessions revoked.",
+                    "TOKEN_REUSE_DETECTED");
             }
 
             if (existingToken.IsExpired)
-                throw new UnauthorizedException("Expired refresh token.", "REFRESH_TOKEN_EXPIRED");
+            {
+                _logger.LogWarning(
+                    "Expired refresh token used for user {UserId}",
+                    existingToken.UserId);
+
+                throw new UnauthorizedException(
+                    "Expired refresh token.",
+                    "REFRESH_TOKEN_EXPIRED");
+            }
 
             // get user BEFORE generating new token
             var user = existingToken.User;
+
             // rotate refresh token
-            var (rawToken, refreshTokenEntity) = await GenerateRefreshTokenAsync(user.Id);
+            var (rawToken, refreshTokenEntity) =
+                await GenerateRefreshTokenAsync(user.Id);
 
             // revoke old token
             await _refreshTokenRepo.RevokeAsync(
                 existingToken,
                 "Rotated",
-                HashToken(rawToken));
+                refreshTokenEntity.Token);
 
             var accessToken = GenerateToken(user);
 
             await _refreshTokenRepo.SaveChangesAsync();
+
+            _logger.LogInformation(
+                "Refresh token rotated successfully for user {UserId}",
+                user.Id);
 
             return new AuthResponseDTO
             {
@@ -109,19 +165,53 @@ namespace BlogFlow.API.Services
         {
             var hashed = HashToken(request.RefreshToken);
 
-            var token = await _refreshTokenRepo.GetByHashedTokenAsync(hashed)
-                ?? throw new UnauthorizedException("Invalid token.", "TOKEN_NOT_FOUND");
+            var token = await _refreshTokenRepo.GetByHashedTokenAsync(hashed);
+
+            if (token is null)
+            {
+                _logger.LogWarning(
+                    "Invalid token revocation attempt by user {UserId}",
+                    userId);
+
+                throw new UnauthorizedException(
+                    "Invalid token.",
+                    "TOKEN_NOT_FOUND");
+            }
 
             if (!token.IsActive)
-                throw new UnauthorizedException("Token already expired or revoked.", "TOKEN_INACTIVE");
+            {
+                _logger.LogWarning(
+                    "Inactive token revocation attempt by user {UserId}",
+                    userId);
+
+                throw new UnauthorizedException(
+                    "Token already expired or revoked.",
+                    "TOKEN_INACTIVE");
+            }
 
             if (token.UserId != userId)
-                throw new ForbiddenException("You do not have permission to revoke this token.", "NOT_TOKEN_OWNER");
+            {
+                _logger.LogWarning(
+                    "User {UserId} attempted to revoke another user's token",
+                    userId);
 
-            await _refreshTokenRepo.RevokeAsync(token, "Revoked by user", null);
+                throw new ForbiddenException(
+                    "You do not have permission to revoke this token.",
+                    "NOT_TOKEN_OWNER");
+            }
+
+            await _refreshTokenRepo.RevokeAsync(
+                token,
+                "Revoked by user",
+                null);
 
             await _refreshTokenRepo.SaveChangesAsync();
+
+            _logger.LogInformation(
+                "Refresh token revoked successfully for user {UserId}",
+                userId);
         }
+
         private string GenerateToken(User user)
         {
             // Token lifetime configuration (in minutes)
@@ -218,10 +308,26 @@ namespace BlogFlow.API.Services
         private async Task ValidateUserDoesNotExist(string username, string email)
         {
             if (await _userRepo.GetByUsernameAsync(username) != null)
-                throw new ConflictException($"Username '{username}' already exists.", "USERNAME_ALREADY_EXISTS");
+            {
+                _logger.LogWarning(
+                    "Registration failed - username already exists: {Username}",
+                    username);
+
+                throw new ConflictException(
+                    $"Username '{username}' already exists.",
+                    "USERNAME_ALREADY_EXISTS");
+            }
 
             if (await _userRepo.GetByEmailAsync(email) != null)
-                throw new ConflictException($"Email '{email}' already exists.", "EMAIL_ALREADY_EXISTS");
+            {
+                _logger.LogWarning(
+                    "Registration failed - email already exists: {Email}",
+                    email);
+
+                throw new ConflictException(
+                    $"Email '{email}' already exists.",
+                    "EMAIL_ALREADY_EXISTS");
+            }
         }
 
         private async Task<AuthResponseDTO> IssueAuthResponseAsync(User user)
