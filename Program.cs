@@ -15,7 +15,10 @@ builder.Services.AddDbContext<AppDbContext>(options =>
         .UseSnakeCaseNamingConvention());
 
 // Controllers & JSON
-builder.Services.AddControllers()
+builder.Services.AddControllers(options =>
+    {
+        options.SuppressAsyncSuffixInActionNames = false;
+    })
     .AddJsonOptions(options =>
     {
         options.JsonSerializerOptions.Converters.Add(
@@ -49,8 +52,11 @@ Log.Logger = new LoggerConfiguration()
     .MinimumLevel.Information()
     .MinimumLevel.Override("Microsoft", LogEventLevel.Warning)
     .MinimumLevel.Override("System", LogEventLevel.Warning)
+    .MinimumLevel.Override("Microsoft.Hosting.Lifetime", LogEventLevel.Information)
     .WriteTo.Console()
-    .WriteTo.File(new JsonFormatter(), "Logs/log-json.json", rollingInterval: RollingInterval.Day)
+    .WriteTo.File(new JsonFormatter(),
+        "Logs/log.txt", 
+        rollingInterval: RollingInterval.Day)
     .Enrich.FromLogContext()
     .CreateLogger();
 
@@ -71,7 +77,7 @@ app.UseSerilogRequestLogging();
 
 app.UseExceptionHandler();
 
-app.UseHttpsRedirection();
+app.UseHttpsRedirection(); 
 app.UseRouting();
 app.UseRateLimiter();
 app.UseAuthentication();
