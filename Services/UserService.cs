@@ -3,45 +3,80 @@ using BlogFlow.API.Exceptions;
 using BlogFlow.API.Repositories.Interfaces;
 using BlogFlow.API.Services.Interfaces;
 
-
 namespace BlogFlow.API.Services
 {
     public class UserService : IUserService
     {
         private readonly IUserRepository _repo;
-        public UserService(IUserRepository repo) => _repo = repo;
-        public async Task ChangePasswordAsync(Guid id, UserChangePasswordDTO dto)
+        private readonly ILogger<UserService> _logger;
+
+        public UserService(
+            IUserRepository repo,
+            ILogger<UserService> logger)
+        {
+            _repo = repo;
+            _logger = logger;
+        }
+
+        public async Task ChangePasswordAsync(
+            Guid id,
+            UserChangePasswordDTO dto)
         {
             var user = await _repo.GetTrackedByIdAsync(id)
-                ?? throw new NotFoundException("User", id); ;
+                ?? throw new NotFoundException("User", id);
 
-            bool isCurrentPasswordValid = BCrypt.Net.BCrypt.Verify(dto.CurrentPassword, user.PasswordHash);
+            bool isCurrentPasswordValid =
+                BCrypt.Net.BCrypt.Verify(
+                    dto.CurrentPassword,
+                    user.PasswordHash);
 
             if (!isCurrentPasswordValid)
-                throw new UnauthorizedException("The current password provided is incorrect.", "INVALID_CURRENT_PASSWORD");
+            {
+                _logger.LogWarning(
+                    "Failed password change attempt for user {UserId} due to invalid current password",
+                    id);
+
+                throw new UnauthorizedException(
+                    "The current password provided is incorrect.",
+                    "INVALID_CURRENT_PASSWORD");
+            }
 
             if (dto.CurrentPassword == dto.NewPassword)
             {
+                _logger.LogWarning(
+                    "User {UserId} attempted to reuse current password",
+                    id);
+
                 throw new ConflictException(
                     "The new password must be different from your current password.",
                     "PASSWORD_ALREADY_IN_USE"
                 );
             }
 
-            var hashedPassword = BCrypt.Net.BCrypt.HashPassword(dto.NewPassword);
+            var hashedPassword =
+                BCrypt.Net.BCrypt.HashPassword(dto.NewPassword);
 
             user.ChangePassword(hashedPassword);
 
             await _repo.SaveChangesAsync();
+
+            _logger.LogInformation(
+                "Password changed successfully for user {UserId}",
+                id);
         }
 
         public async Task DeleteOwnAccountAsync(Guid userId)
         {
-            var user = await _repo.GetTrackedByIdAsync(userId) 
+            var user = await _repo.GetTrackedByIdAsync(userId)
                 ?? throw new NotFoundException("User", userId);
 
             user.SoftDelete();
+
             await _repo.SaveChangesAsync();
+
+            _logger.LogInformation(
+                "User account soft deleted: {UserId}",
+                userId);
         }
 
         public async Task<UserReadDTO> GetUserByIdAsync(Guid id)
@@ -59,14 +94,23 @@ namespace BlogFlow.API.Services
             };
         }
 
-        public async Task UpdateProfileAsync(UserUpdateDTO dto, Guid userId)
+        public async Task UpdateProfileAsync(
+            UserUpdateDTO dto,
+            Guid userId)
         {
-            var existingUser = await _repo.GetTrackedByIdAsync(userId)
+            var existingUser =
+                await _repo.GetTrackedByIdAsync(userId)
                 ?? throw new NotFoundException("User", userId);
 
-            existingUser.UpdateIdentity(dto.Username, dto.Email);
+            existingUser.UpdateIdentity(
+                dto.Username,
+                dto.Email);
 
             await _repo.SaveChangesAsync();
+
+            _logger.LogInformation(
+                "User profile updated: {UserId}",
+                userId);
         }
     }
 }
