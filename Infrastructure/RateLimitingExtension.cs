@@ -37,7 +37,17 @@ namespace BlogFlow.API.Infrastructure
 
                 limiterOptions.OnRejected = async (context, token) =>
                 {
+                    var logger = context.HttpContext.RequestServices
+                        .GetRequiredService<ILoggerFactory>()
+                        .CreateLogger("RateLimiting");
+
+                    logger.LogWarning(
+                        "Rate limit exceeded for IP {IP} on path {Path}",
+                        context.HttpContext.Connection.RemoteIpAddress?.ToString(),
+                        context.HttpContext.Request.Path);
+
                     context.HttpContext.Response.StatusCode = StatusCodes.Status429TooManyRequests;
+
                     await context.HttpContext.Response.WriteAsJsonAsync(new
                     {
                         error = config.Rejected.Error,
