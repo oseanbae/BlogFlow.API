@@ -13,17 +13,34 @@ namespace BlogFlow.API.Services
     public class UserManagementService : IUserManagementService
     {
         private readonly IUserRepository _repo;
+        private readonly ILogger<UserManagementService> _logger;
 
-        public UserManagementService(IUserRepository repo)
-            => _repo = repo;
+        public UserManagementService(
+            IUserRepository repo,
+            ILogger<UserManagementService> logger)
+        {
+            _repo = repo;
+            _logger = logger;
+        }
 
-        public async Task ChangeRoleAsync(Guid userId, UserUpdateRoleDTO dto)
+        public async Task ChangeRoleAsync(
+            Guid userId,
+            UserUpdateRoleDTO dto)
         {
             var user = await _repo.GetTrackedByIdAsync(userId)
                 ?? throw new NotFoundException("User", userId);
 
+            var previousRole = user.Role;
+
             user.UpdateRole(dto.Role);
+
             await _repo.SaveChangesAsync();
+
+            _logger.LogInformation(
+                "User role changed: {UserId} from {OldRole} to {NewRole}",
+                user.Id,
+                previousRole,
+                dto.Role);
         }
 
         public async Task<PaginatedResultDTO<AdminUserReadDTO>> GetUsersAsync(UserQueryParams p)
@@ -43,6 +60,10 @@ namespace BlogFlow.API.Services
             user.Restore();
 
             await _repo.SaveChangesAsync();
+
+            _logger.LogInformation(
+                "User restored: {UserId}",
+                user.Id);
         }
 
         public async Task SoftDeleteUserAsync(Guid userId)
@@ -53,6 +74,10 @@ namespace BlogFlow.API.Services
             user.SoftDelete();
 
             await _repo.SaveChangesAsync();
+
+            _logger.LogInformation(
+                "User soft deleted: {UserId}",
+                user.Id);
         }
 
         public async Task<AdminStatsDTO> GetStatisticsAsync()
