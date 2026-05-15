@@ -364,5 +364,7 @@ FodyWeavers.xsd
 
 PROJECT_SPEC.md
 EFCORE_MAPPING.md
+devlog.md
+
 appsettings.json
 appsettings.Development.json

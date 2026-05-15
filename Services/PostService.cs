@@ -84,7 +84,7 @@ namespace BlogFlow.API.Services
                     .GetCategoryQuery(dto.CategoryId.Value)
                     .AnyAsync();
 
-                if (!catExists) throw new NotFoundException("Category", dto.CategoryId);
+                if (!catExists) throw new NotFoundException("Category", dto.CategoryId.Value);
             }
 
             await ValidateTagsExistAsync(dto.TagIds);
