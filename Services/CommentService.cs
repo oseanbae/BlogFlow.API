@@ -13,25 +13,41 @@ namespace BlogFlow.API.Services
     {
         private readonly ICommentRepository _repo;
         private readonly IPostRepository _postRepo;
+        private readonly ILogger<CommentService> _logger;
 
-        public CommentService(ICommentRepository repo, IPostRepository postRepo)
+        public CommentService(
+            ICommentRepository repo,
+            IPostRepository postRepo,
+            ILogger<CommentService> logger)
         {
             _repo = repo;
             _postRepo = postRepo;
+            _logger = logger;
         }
 
-        public async Task<CommentReadDTO> CreateAsync(Guid postId, Guid userId, CommentCreateDTO dto)
+        public async Task<CommentReadDTO> CreateAsync(
+            Guid postId,
+            Guid userId,
+            CommentCreateDTO dto)
         {
             var postExists = await _postRepo.GetPostsQuery(includeDeleted: false)
                 .AnyAsync(p => p.Id == postId);
 
-            if (!postExists) throw new NotFoundException("Post", postId);
+            if (!postExists)
+                throw new NotFoundException("Post", postId);
 
             var comment = new Comment(dto.Body, userId, postId);
+
             await _repo.AddAsync(comment);
             await _repo.SaveChangesAsync();
 
-            return await _repo.GetQueryable() // Returns IQueryable<Comment>
+            _logger.LogInformation(
+                "Comment created: {CommentId} by user {UserId} on post {PostId}",
+                comment.Id,
+                userId,
+                postId);
+
+            return await _repo.GetQueryable()
                 .Where(c => c.Id == comment.Id)
                 .AsDTO()
                 .FirstOrDefaultAsync()
@@ -39,12 +55,24 @@ namespace BlogFlow.API.Services
         }
 
         //SOFT DELETE
-        public async Task DeleteAsync(Guid postId, Guid commentId, Guid userId)
+        public async Task DeleteAsync(
+            Guid postId,
+            Guid commentId,
+            Guid userId)
         {
-            var comment = await ValidateAsync(commentId, postId, userId);
+            var comment = await ValidateAsync(
+                commentId,
+                postId,
+                userId);
 
             comment.SoftDelete();
+
             await _repo.SaveChangesAsync();
+
+            _logger.LogInformation(
+                "Comment soft deleted: {CommentId} by user {UserId}",
+                commentId,
+                userId);
         }
 
         public async Task<PaginatedResultDTO<CommentReadDTO>> GetByPostAsync(Guid postId, int page, int pageSize)
@@ -63,12 +91,26 @@ namespace BlogFlow.API.Services
             };
         }
 
-        public async Task<CommentReadDTO> UpdateAsync(Guid postId, Guid commentId, Guid userId, string newBody)
+        public async Task<CommentReadDTO> UpdateAsync(
+            Guid postId,
+            Guid commentId,
+            Guid userId,
+            string newBody)
         {
-            var comment = await ValidateAsync(commentId, postId, userId);
+            var comment = await ValidateAsync(
+                commentId,
+                postId,
+                userId);
 
             comment.UpdateBody(newBody);
+
             await _repo.SaveChangesAsync();
+
+            _logger.LogInformation(
+                "Comment updated: {CommentId} by user {UserId}",
+                commentId,
+                userId);
+
             return comment.ToDTO();
         }
 
@@ -79,7 +121,10 @@ namespace BlogFlow.API.Services
             return comment.ToDTO();
         }
 
-        private async Task<Comment> ValidateAsync(Guid commentId, Guid postId, Guid? userId = null)
+        private async Task<Comment> ValidateAsync(
+            Guid commentId,
+            Guid postId,
+            Guid? userId = null)
         {
             var comment = await _repo.GetTrackedByIdAsync(commentId)
                 ?? throw new NotFoundException("Comment", commentId);
@@ -88,7 +133,16 @@ namespace BlogFlow.API.Services
                 throw new NotFoundException("Comment", commentId);
 
             if (userId.HasValue && comment.UserId != userId.Value)
-                throw new ForbiddenException("You do not have permission to modify this comment.", "NOT_COMMENT_OWNER");
+            {
+                _logger.LogWarning(
+                    "Unauthorized comment modification attempt. User {UserId} tried to modify comment {CommentId}",
+                    userId.Value,
+                    commentId);
+
+                throw new ForbiddenException(
+                    "You do not have permission to modify this comment.",
+                    "NOT_COMMENT_OWNER");
+            }
 
             return comment;
         }
