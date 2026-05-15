@@ -8,10 +8,14 @@ namespace BlogFlow.API.Services
     public class CurrentUserService : ICurrentUserService
     {
         private readonly IHttpContextAccessor _contextAccessor;
+        private readonly ILogger<CurrentUserService> _logger;
 
-        public CurrentUserService(IHttpContextAccessor contextAccessor)
+        public CurrentUserService(
+            IHttpContextAccessor contextAccessor,
+            ILogger<CurrentUserService> logger)
         {
             _contextAccessor = contextAccessor;
+            _logger = logger;
         }
 
         /// <summary>
@@ -33,6 +37,9 @@ namespace BlogFlow.API.Services
 
             if (!Guid.TryParse(userIdClaim, out var userId))
             {
+                _logger.LogWarning(
+                    "Authenticated request contains invalid user id claim");
+
                 return new UserContext();
             }
 
@@ -44,6 +51,12 @@ namespace BlogFlow.API.Services
             if (Enum.TryParse<UserRole>(roleClaim, true, out var role))
             {
                 parsedRole = role;
+            }
+            else if (!string.IsNullOrWhiteSpace(roleClaim))
+            {
+                _logger.LogWarning(
+                    "Authenticated request contains invalid role claim: {RoleClaim}",
+                    roleClaim);
             }
 
             return new UserContext
@@ -63,6 +76,9 @@ namespace BlogFlow.API.Services
 
             if (!user.IsAuthenticated)
             {
+                _logger.LogWarning(
+                    "Unauthorized access attempt to authenticated resource");
+
                 throw new UnauthorizedException(
                     "Authentication required.",
                     "AUTH_REQUIRED"
@@ -90,11 +106,16 @@ namespace BlogFlow.API.Services
             var user = GetRequiredUser();
 
             if (user.Role is null)
+            {
+                _logger.LogWarning(
+                    "Authenticated user {UserId} has missing or invalid role claim",
+                    user.UserId);
+
                 throw new ForbiddenException(
                     "User role claim is missing or invalid.",
                     "INVALID_ROLE_CLAIM"
                 );
-            
+            }
 
             return user.Role.Value;
         }
