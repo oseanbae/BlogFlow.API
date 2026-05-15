@@ -28,6 +28,9 @@ builder.Services.AddOpenApi();
 // Repositories & Services 
 builder.Services.AddApplicationServices();
 
+// HTTP CONTEXT
+builder.Services.AddHttpContextAccessor();
+
 // Authentication & Authorization
 builder.Services.AddJwtAuthentication(builder.Configuration);
 
