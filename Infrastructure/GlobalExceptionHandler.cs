@@ -2,7 +2,6 @@
 using BlogFlow.API.Exceptions;
 using BlogFlow.API.Exceptions.Base;
 using Microsoft.AspNetCore.Diagnostics;
-using Microsoft.Extensions.Logging;
 using System.Net.Mime;
 
 namespace BlogFlow.API.Infrastructure
