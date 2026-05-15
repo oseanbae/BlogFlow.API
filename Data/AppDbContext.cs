@@ -47,6 +47,8 @@ namespace BlogFlow.API.Data
                 entity.HasQueryFilter(u => u.DeletedAt == null);
 
                 entity.HasIndex(u => u.DeletedAt);
+
+                entity.Property(u => u.UpdatedAt);
             });
 
             // REFRESH TOKEN
