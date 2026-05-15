@@ -55,7 +55,7 @@ Log.Logger = new LoggerConfiguration()
     .MinimumLevel.Override("Microsoft.Hosting.Lifetime", LogEventLevel.Information)
     .WriteTo.Console()
     .WriteTo.File(new JsonFormatter(),
-        "Logs/log.txt", 
+        "Logs/log-.json", 
         rollingInterval: RollingInterval.Day)
     .Enrich.FromLogContext()
     .CreateLogger();
@@ -73,7 +73,17 @@ if (app.Environment.IsDevelopment())
 }
 
 // Middleware
-app.UseSerilogRequestLogging();
+app.UseSerilogRequestLogging(options =>
+{
+    options.EnrichDiagnosticContext = (diagnosticContext, httpContext) =>
+    {
+        diagnosticContext.Set("TraceId", httpContext.TraceIdentifier);
+        diagnosticContext.Set("Path", httpContext.Request.Path);
+        diagnosticContext.Set("Method", httpContext.Request.Method);
+        diagnosticContext.Set("IP", httpContext.Connection.RemoteIpAddress?.ToString() ?? "Unknown");
+    };
+});
+
 
 app.UseExceptionHandler();
 
