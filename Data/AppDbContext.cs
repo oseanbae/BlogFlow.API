@@ -188,6 +188,8 @@ namespace BlogFlow.API.Data
 
                 entity.HasIndex(pt => new { pt.TagId, pt.PostId });
 
+                entity.HasQueryFilter(pt => pt.Post.DeletedAt == null);
+
                 entity.HasOne(pt => pt.Post)
                     .WithMany(p => p.PostTags)
                     .HasForeignKey(pt => pt.PostId)
