@@ -12,6 +12,7 @@ namespace BlogFlow.API.Controllers
     {
         private readonly IAuthService _authService;
         private readonly ICurrentUserService _currentUser;
+
         public AuthController(IAuthService authServices, ICurrentUserService currentUser)
         {
             _authService = authServices;
@@ -20,36 +21,36 @@ namespace BlogFlow.API.Controllers
 
         [AllowAnonymous]
         [HttpPost("register")]
-        public async Task<ActionResult<AuthResponseDTO>> RegisterAsync(RegisterRequestDTO dto)
+        public async Task<ActionResult<AuthResponseDTO>> RegisterAsync(RegisterRequestDTO dto, CancellationToken cancellationToken)
         {
-            var result = await _authService.RegisterAsync(dto);
+            var result = await _authService.RegisterAsync(dto, cancellationToken);
             return Ok(result);
         }
 
         [AllowAnonymous]
         [EnableRateLimiting("login")]
         [HttpPost("login")]
-        public async Task<ActionResult<AuthResponseDTO>> LoginAsync(LoginRequestDTO dto)
+        public async Task<ActionResult<AuthResponseDTO>> LoginAsync(LoginRequestDTO dto, CancellationToken cancellationToken)
         {
-            var result = await _authService.LoginAsync(dto);
+            var result = await _authService.LoginAsync(dto, cancellationToken);
             return Ok(result);
         }
 
         [EnableRateLimiting("refresh")]
         [HttpPost("refresh")]
         [AllowAnonymous]
-        public async Task<ActionResult<AuthResponseDTO>> RefreshAsync([FromBody] RefreshTokenRequestDTO dto)
+        public async Task<ActionResult<AuthResponseDTO>> RefreshAsync([FromBody] RefreshTokenRequestDTO dto, CancellationToken cancellationToken)
         {
-            var result = await _authService.RefreshAsync(dto);
+            var result = await _authService.RefreshAsync(dto, cancellationToken);
             return Ok(result);
         }
 
         [EnableRateLimiting("revoke")]
         [HttpPost("revoke")]
         [Authorize]
-        public async Task<ActionResult> RevokeAsync([FromBody] RevokeRequestDTO request)
+        public async Task<ActionResult> RevokeAsync([FromBody] RevokeRequestDTO request, CancellationToken cancellationToken)
         {
-            await _authService.RevokeAsync(request, _currentUser.GetRequiredUserId());
+            await _authService.RevokeAsync(request, _currentUser.GetRequiredUserId(), cancellationToken);
             return NoContent();
         }
     }

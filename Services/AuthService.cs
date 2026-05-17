@@ -18,7 +18,6 @@ namespace BlogFlow.API.Services
         private readonly JwtSettings _jwt;
         private readonly IRefreshTokenRepository _refreshTokenRepo;
         private readonly IUserRepository _userRepo;
-
         private readonly ILogger<AuthService> _logger;
 
         public AuthService(
@@ -33,32 +32,32 @@ namespace BlogFlow.API.Services
             _logger = logger;
         }
 
-        public async Task<AuthResponseDTO> RegisterAsync(RegisterRequestDTO request)
+        public async Task<AuthResponseDTO> RegisterAsync(RegisterRequestDTO request, CancellationToken cancellationToken)
         {
             var username = request.Username.ToLowerInvariant();
             var email = request.Email.ToLowerInvariant();
 
-            await ValidateUserDoesNotExist(username, email);
+            await ValidateUserDoesNotExist(username, email, cancellationToken);
 
             var user = new User(
-                username, 
+                username,
                 email,
                 BCrypt.Net.BCrypt.HashPassword(request.Password));
 
-            await _userRepo.CreateAsync(user);
-            await _userRepo.SaveChangesAsync();
+            await _userRepo.CreateAsync(user, cancellationToken);
+            await _userRepo.SaveChangesAsync(cancellationToken);
 
             _logger.LogInformation(
                 "User registered successfully: {UserId} ({Username})",
                 user.Id,
                 user.Username);
 
-            return await IssueAuthResponseAsync(user);
+            return await IssueAuthResponseAsync(user, cancellationToken);
         }
 
-        public async Task<AuthResponseDTO> LoginAsync(LoginRequestDTO request)
+        public async Task<AuthResponseDTO> LoginAsync(LoginRequestDTO request, CancellationToken cancellationToken)
         {
-            var user = await ResolveUserAsync(request.UsernameOrEmail);
+            var user = await ResolveUserAsync(request.UsernameOrEmail, cancellationToken);
 
             if (user == null || !BCrypt.Net.BCrypt.Verify(request.Password, user.PasswordHash))
             {
@@ -76,16 +75,17 @@ namespace BlogFlow.API.Services
                 user.Id,
                 user.Username);
 
-            await _refreshTokenRepo.RemoveExpiredAsync(user.Id);
+            await _refreshTokenRepo.RemoveExpiredAsync(user.Id, cancellationToken);
+            await _refreshTokenRepo.SaveChangesAsync(cancellationToken);
 
-            return await IssueAuthResponseAsync(user);
+            return await IssueAuthResponseAsync(user, cancellationToken);
         }
 
-        public async Task<AuthResponseDTO> RefreshAsync(RefreshTokenRequestDTO request)
+        public async Task<AuthResponseDTO> RefreshAsync(RefreshTokenRequestDTO request, CancellationToken cancellationToken)
         {
             var hashed = HashToken(request.RefreshToken);
 
-            var existingToken = await _refreshTokenRepo.GetByHashedTokenAsync(hashed);
+            var existingToken = await _refreshTokenRepo.GetByHashedTokenAsync(hashed, cancellationToken);
 
             if (existingToken is null)
             {
@@ -107,9 +107,10 @@ namespace BlogFlow.API.Services
 
                 await _refreshTokenRepo.RevokeAllUserTokensAsync(
                     existingToken.UserId,
-                    "Reuse of revoked token detected");
+                    "Reuse of revoked token detected",
+                    cancellationToken);
 
-                await _refreshTokenRepo.SaveChangesAsync();
+                await _refreshTokenRepo.SaveChangesAsync(cancellationToken);
 
                 throw new UnauthorizedException(
                     "Token reuse detected. All sessions revoked.",
@@ -132,17 +133,18 @@ namespace BlogFlow.API.Services
 
             // rotate refresh token
             var (rawToken, refreshTokenEntity) =
-                await GenerateRefreshTokenAsync(user.Id);
+                await GenerateRefreshTokenAsync(user.Id, cancellationToken);
 
             // revoke old token
             await _refreshTokenRepo.RevokeAsync(
                 existingToken,
                 "Rotated",
-                refreshTokenEntity.Token);
+                refreshTokenEntity.Token,
+                cancellationToken);
 
             var accessToken = GenerateToken(user);
 
-            await _refreshTokenRepo.SaveChangesAsync();
+            await _refreshTokenRepo.SaveChangesAsync(cancellationToken);
 
             _logger.LogInformation(
                 "Refresh token rotated successfully for user {UserId}",
@@ -159,11 +161,12 @@ namespace BlogFlow.API.Services
                 RefreshTokenExpiry = refreshTokenEntity.ExpiresAt
             };
         }
-        public async Task RevokeAsync(RevokeRequestDTO request, Guid userId)
+
+        public async Task RevokeAsync(RevokeRequestDTO request, Guid userId, CancellationToken cancellationToken)
         {
             var hashed = HashToken(request.RefreshToken);
 
-            var token = await _refreshTokenRepo.GetByHashedTokenAsync(hashed);
+            var token = await _refreshTokenRepo.GetByHashedTokenAsync(hashed, cancellationToken);
 
             if (token is null)
             {
@@ -201,9 +204,10 @@ namespace BlogFlow.API.Services
             await _refreshTokenRepo.RevokeAsync(
                 token,
                 "Revoked by user",
-                null);
+                null,
+                cancellationToken);
 
-            await _refreshTokenRepo.SaveChangesAsync();
+            await _refreshTokenRepo.SaveChangesAsync(cancellationToken);
 
             _logger.LogInformation(
                 "Refresh token revoked successfully for user {UserId}",
@@ -272,7 +276,8 @@ namespace BlogFlow.API.Services
             // Serialize token into compact JWT string (header.payload.signature)
             return tokenHandler.WriteToken(securityToken);
         }
-        private async Task<(string RawToken, RefreshToken StoredToken)> GenerateRefreshTokenAsync(Guid userId)
+
+        private async Task<(string RawToken, RefreshToken StoredToken)> GenerateRefreshTokenAsync(Guid userId, CancellationToken cancellationToken)
         {
             var rawToken = Convert.ToBase64String(RandomNumberGenerator.GetBytes(64));
 
@@ -283,29 +288,30 @@ namespace BlogFlow.API.Services
                 ExpiresAt = DateTime.UtcNow.AddDays(_jwt.RefreshTokenExpiryDays)
             };
 
-            await _refreshTokenRepo.CreateAsync(refreshToken);
+            await _refreshTokenRepo.CreateAsync(refreshToken, cancellationToken);
 
             return (rawToken, refreshToken);
         }
+
         private static string HashToken(string token)
         {
             var bytes = SHA256.HashData(Encoding.UTF8.GetBytes(token));
             return Convert.ToBase64String(bytes);
         }
 
-        private async Task<User?> ResolveUserAsync(string input)
+        private async Task<User?> ResolveUserAsync(string input, CancellationToken cancellationToken)
         {
             var value = input.ToLowerInvariant();
 
             if (value.Contains('@'))
-                return await _userRepo.GetByEmailAsync(value);
+                return await _userRepo.GetByEmailAsync(value, cancellationToken);
 
-            return await _userRepo.GetByUsernameAsync(value);
+            return await _userRepo.GetByUsernameAsync(value, cancellationToken);
         }
 
-        private async Task ValidateUserDoesNotExist(string username, string email)
+        private async Task ValidateUserDoesNotExist(string username, string email, CancellationToken cancellationToken)
         {
-            if (await _userRepo.GetByUsernameAsync(username) != null)
+            if (await _userRepo.GetByUsernameAsync(username, cancellationToken) != null)
             {
                 _logger.LogWarning(
                     "Registration failed - username already exists: {Username}",
@@ -316,7 +322,7 @@ namespace BlogFlow.API.Services
                     "USERNAME_ALREADY_EXISTS");
             }
 
-            if (await _userRepo.GetByEmailAsync(email) != null)
+            if (await _userRepo.GetByEmailAsync(email, cancellationToken) != null)
             {
                 _logger.LogWarning(
                     "Registration failed - email already exists: {Email}",
@@ -328,12 +334,12 @@ namespace BlogFlow.API.Services
             }
         }
 
-        private async Task<AuthResponseDTO> IssueAuthResponseAsync(User user)
+        private async Task<AuthResponseDTO> IssueAuthResponseAsync(User user, CancellationToken cancellationToken)
         {
             var accessToken = GenerateToken(user);
 
             var (rawToken, storedToken) =
-                await GenerateRefreshTokenAsync(user.Id);
+                await GenerateRefreshTokenAsync(user.Id, cancellationToken);
 
             return new AuthResponseDTO
             {
