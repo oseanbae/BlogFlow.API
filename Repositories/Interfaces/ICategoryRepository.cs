@@ -5,9 +5,9 @@
         IQueryable<Category> GetCategoriesQuery();
         IQueryable<Category> GetCategoryQuery(Guid id);
 
-        Task<Category?> GetByIdAsync(Guid id);
-        Task CreateCategoryAsync(Category category);
-        Task SaveChangesAsync();
-        Task<bool> ExistsByNameAsync(string name, Guid? excludeId = null);
+        Task<Category?> GetByIdAsync(Guid id, CancellationToken cancellationToken);
+        Task CreateCategoryAsync(Category category, CancellationToken cancellationToken);
+        Task SaveChangesAsync(CancellationToken cancellationToken);
+        Task<bool> ExistsByNameAsync(string name, Guid? excludeId = null, CancellationToken cancellationToken = default);
     }
 }

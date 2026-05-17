@@ -16,20 +16,24 @@ namespace BlogFlow.API.Repositories
         public IQueryable<Category> GetCategoryQuery(Guid id)
             => _context.Categories.AsNoTracking().Where(c => c.Id == id);
 
-        public async Task<Category?> GetByIdAsync(Guid id)
-            => await _context.Categories.FirstOrDefaultAsync(c => c.Id == id);
-        public async Task CreateCategoryAsync(Category category)
-            => await _context.Categories.AddAsync(category);
+        public async Task<Category?> GetByIdAsync(Guid id, CancellationToken cancellationToken)
+            => await _context.Categories.FirstOrDefaultAsync(c => c.Id == id, cancellationToken);
 
-        public async Task SaveChangesAsync() => await _context.SaveChangesAsync();
+        public async Task CreateCategoryAsync(Category category, CancellationToken cancellationToken)
+            => await _context.Categories.AddAsync(category, cancellationToken);
 
-        public async Task<bool> ExistsByNameAsync(string name, Guid? excludeId = null)
+        public Task SaveChangesAsync(CancellationToken cancellationToken)
+            => _context.SaveChangesAsync(cancellationToken);
+
+        public async Task<bool> ExistsByNameAsync(string name, Guid? excludeId = null, CancellationToken cancellationToken = default)
         {
             var normalized = Category.Normalize(name);
 
-            return await _context.Categories.AnyAsync(c =>
-                c.Name == normalized &&
-                (!excludeId.HasValue || c.Id != excludeId.Value));
+            return await _context.Categories.AnyAsync(
+                c =>
+                    c.Name == normalized &&
+                    (!excludeId.HasValue || c.Id != excludeId.Value),
+                cancellationToken);
         }
     }
 }

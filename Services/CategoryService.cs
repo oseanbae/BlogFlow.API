@@ -18,26 +18,26 @@ namespace BlogFlow.API.Services
             _logger = logger;
         }
 
-        public async Task<IEnumerable<CategoryReadDTO>> GetCategoriesAsync()
+        public async Task<IEnumerable<CategoryReadDTO>> GetCategoriesAsync(CancellationToken cancellationToken)
         {
             _logger.LogInformation("Fetching all categories");
 
             var categories = await _repo.GetCategoriesQuery()
                 .AsDTO()
-                .ToListAsync();
+                .ToListAsync(cancellationToken);
 
             _logger.LogInformation("Fetched {Count} categories", categories.Count);
 
             return categories;
         }
 
-        public async Task<CategoryReadDTO?> GetCategoryByIdAsync(Guid id)
+        public async Task<CategoryReadDTO?> GetCategoryByIdAsync(Guid id, CancellationToken cancellationToken)
         {
             _logger.LogInformation("Fetching category by id {CategoryId}", id);
 
             var category = await _repo.GetCategoryQuery(id)
                 .AsDTO()
-                .FirstOrDefaultAsync();
+                .FirstOrDefaultAsync(cancellationToken);
 
             if (category is null)
             {
@@ -48,13 +48,13 @@ namespace BlogFlow.API.Services
             return category;
         }
 
-        public async Task<CategoryReadDTO> CreateCategoryAsync(CategoryCreateDTO dto)
+        public async Task<CategoryReadDTO> CreateCategoryAsync(CategoryCreateDTO dto, CancellationToken cancellationToken)
         {
             ValidateRequestSync(dto.Name);
 
             _logger.LogInformation("Creating category with name {CategoryName}", dto.Name);
 
-            if (await _repo.ExistsByNameAsync(dto.Name))
+            if (await _repo.ExistsByNameAsync(dto.Name, cancellationToken))
             {
                 _logger.LogWarning("Create category failed - name already exists: {CategoryName}", dto.Name);
                 throw new ConflictException(
@@ -64,8 +64,8 @@ namespace BlogFlow.API.Services
 
             var category = new Category(dto.Name);
 
-            await _repo.CreateCategoryAsync(category);
-            await _repo.SaveChangesAsync();
+            await _repo.CreateCategoryAsync(category, cancellationToken);
+            await _repo.SaveChangesAsync(cancellationToken);
 
             _logger.LogInformation(
                 "Category created successfully: {CategoryId} ({DisplayName})",
@@ -75,16 +75,16 @@ namespace BlogFlow.API.Services
             return category.ToDTO();
         }
 
-        public async Task<CategoryReadDTO> RenameCategoryAsync(Guid id, string newName)
+        public async Task<CategoryReadDTO> RenameCategoryAsync(Guid id, string newName, CancellationToken cancellationToken)
         {
             ValidateRequestSync(newName);
 
             _logger.LogInformation("Renaming category {CategoryId} to {NewName}", id, newName);
 
-            var category = await _repo.GetByIdAsync(id)
+            var category = await _repo.GetByIdAsync(id, cancellationToken)
                 ?? throw new NotFoundException("Category", id);
 
-            if (await _repo.ExistsByNameAsync(newName, id))
+            if (await _repo.ExistsByNameAsync(newName, id, cancellationToken))
             {
                 _logger.LogWarning(
                     "Rename failed - duplicate name {NewName} for category {CategoryId}",
@@ -100,7 +100,7 @@ namespace BlogFlow.API.Services
 
             category.Rename(newName);
 
-            await _repo.SaveChangesAsync();
+            await _repo.SaveChangesAsync(cancellationToken);
 
             _logger.LogInformation(
                 "Category renamed: {CategoryId} from '{OldName}' to '{NewName}'",
