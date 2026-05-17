@@ -54,7 +54,7 @@ namespace BlogFlow.API.Services
 
             _logger.LogInformation("Creating category with name {CategoryName}", dto.Name);
 
-            if (await _repo.ExistsByNameAsync(dto.Name, cancellationToken))
+            if (await _repo.ExistsByNameAsync(dto.Name, cancellationToken: cancellationToken))
             {
                 _logger.LogWarning("Create category failed - name already exists: {CategoryName}", dto.Name);
                 throw new ConflictException(
