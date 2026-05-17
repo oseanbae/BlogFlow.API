@@ -9,8 +9,8 @@ namespace BlogFlow.API.Repositories.Interfaces
         IQueryable<Comment> GetCommentsByPostQuery(Guid postId);
 
         // Actions (Returns Entities for state changes)
-        Task<Comment?> GetTrackedByIdAsync(Guid id);
-        Task AddAsync(Comment comment);
-        Task SaveChangesAsync();
+        Task<Comment?> GetTrackedByIdAsync(Guid id, CancellationToken cancellationToken);
+        Task AddAsync(Comment comment, CancellationToken cancellationToken);
+        Task SaveChangesAsync(CancellationToken cancellationToken);
     }
 }

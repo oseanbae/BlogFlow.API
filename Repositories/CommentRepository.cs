@@ -14,7 +14,6 @@ namespace BlogFlow.API.Repositories
             _context = context;
         }
 
-
         public IQueryable<Comment> GetQueryable()
             => _context.Comments.AsNoTracking();
 
@@ -24,21 +23,22 @@ namespace BlogFlow.API.Repositories
                 .Where(c => c.PostId == postId)
                 .AsNoTracking();
         }
-        public async Task<Comment?> GetTrackedByIdAsync(Guid id)
+
+        public async Task<Comment?> GetTrackedByIdAsync(Guid id, CancellationToken cancellationToken)
         {
             return await _context.Comments
                 .Include(c => c.User)
-                .FirstOrDefaultAsync(c => c.Id == id);
+                .FirstOrDefaultAsync(c => c.Id == id, cancellationToken);
         }
 
-        public async Task AddAsync(Comment comment)
+        public async Task AddAsync(Comment comment, CancellationToken cancellationToken)
         {
-            await _context.Comments.AddAsync(comment);
+            await _context.Comments.AddAsync(comment, cancellationToken);
         }
 
-        public async Task SaveChangesAsync()
+        public Task SaveChangesAsync(CancellationToken cancellationToken)
         {
-            await _context.SaveChangesAsync();
+            return _context.SaveChangesAsync(cancellationToken);
         }
     }
 }

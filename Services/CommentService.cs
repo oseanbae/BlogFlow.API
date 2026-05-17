@@ -28,18 +28,19 @@ namespace BlogFlow.API.Services
         public async Task<CommentReadDTO> CreateAsync(
             Guid postId,
             Guid userId,
-            CommentCreateDTO dto)
+            CommentCreateDTO dto,
+            CancellationToken cancellationToken)
         {
             var postExists = await _postRepo.GetPostsQuery(includeDeleted: false)
-                .AnyAsync(p => p.Id == postId);
+                .AnyAsync(p => p.Id == postId, cancellationToken);
 
             if (!postExists)
                 throw new NotFoundException("Post", postId);
 
             var comment = new Comment(dto.Body, userId, postId);
 
-            await _repo.AddAsync(comment);
-            await _repo.SaveChangesAsync();
+            await _repo.AddAsync(comment, cancellationToken);
+            await _repo.SaveChangesAsync(cancellationToken);
 
             _logger.LogInformation(
                 "Comment created: {CommentId} by user {UserId} on post {PostId}",
@@ -50,24 +51,21 @@ namespace BlogFlow.API.Services
             return await _repo.GetQueryable()
                 .Where(c => c.Id == comment.Id)
                 .AsDTO()
-                .FirstOrDefaultAsync()
+                .FirstOrDefaultAsync(cancellationToken)
                 ?? throw new Exception("Failed to load created comment.");
         }
 
-        //SOFT DELETE
         public async Task DeleteAsync(
             Guid postId,
             Guid commentId,
-            Guid userId)
+            Guid userId,
+            CancellationToken cancellationToken)
         {
-            var comment = await ValidateAsync(
-                commentId,
-                postId,
-                userId);
+            var comment = await ValidateAsync(commentId, postId, userId, cancellationToken);
 
             comment.SoftDelete();
 
-            await _repo.SaveChangesAsync();
+            await _repo.SaveChangesAsync(cancellationToken);
 
             _logger.LogInformation(
                 "Comment soft deleted: {CommentId} by user {UserId}",
@@ -75,12 +73,16 @@ namespace BlogFlow.API.Services
                 userId);
         }
 
-        public async Task<PaginatedResultDTO<CommentReadDTO>> GetByPostAsync(Guid postId, int page, int pageSize)
+        public async Task<PaginatedResultDTO<CommentReadDTO>> GetByPostAsync(
+            Guid postId,
+            int page,
+            int pageSize,
+            CancellationToken cancellationToken)
         {
             var query = _repo.GetCommentsByPostQuery(postId)
                              .OrderByDescending(c => c.CreatedAt);
 
-            var pagedEntities = await query.ToPaginatedResultAsync(page, pageSize);
+            var pagedEntities = await query.ToPaginatedResultAsync(page, pageSize, cancellationToken);
 
             return new PaginatedResultDTO<CommentReadDTO>
             {
@@ -95,16 +97,14 @@ namespace BlogFlow.API.Services
             Guid postId,
             Guid commentId,
             Guid userId,
-            string newBody)
+            string newBody,
+            CancellationToken cancellationToken)
         {
-            var comment = await ValidateAsync(
-                commentId,
-                postId,
-                userId);
+            var comment = await ValidateAsync(commentId, postId, userId, cancellationToken);
 
             comment.UpdateBody(newBody);
 
-            await _repo.SaveChangesAsync();
+            await _repo.SaveChangesAsync(cancellationToken);
 
             _logger.LogInformation(
                 "Comment updated: {CommentId} by user {UserId}",
@@ -114,19 +114,22 @@ namespace BlogFlow.API.Services
             return comment.ToDTO();
         }
 
-
-        public async Task<CommentReadDTO> GetByIdAsync(Guid postId, Guid commentId)
+        public async Task<CommentReadDTO> GetByIdAsync(
+            Guid postId,
+            Guid commentId,
+            CancellationToken cancellationToken)
         {
-            var comment = await ValidateAsync(commentId, postId);
+            var comment = await ValidateAsync(commentId, postId, null, cancellationToken);
             return comment.ToDTO();
         }
 
         private async Task<Comment> ValidateAsync(
             Guid commentId,
             Guid postId,
-            Guid? userId = null)
+            Guid? userId,
+            CancellationToken cancellationToken)
         {
-            var comment = await _repo.GetTrackedByIdAsync(commentId)
+            var comment = await _repo.GetTrackedByIdAsync(commentId, cancellationToken)
                 ?? throw new NotFoundException("Comment", commentId);
 
             if (comment.PostId != postId)
