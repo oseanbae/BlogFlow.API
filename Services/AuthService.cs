@@ -40,12 +40,10 @@ namespace BlogFlow.API.Services
 
             await ValidateUserDoesNotExist(username, email);
 
-            var user = new User
-            {
-                Username = username,
-                Email = email,
-                PasswordHash = BCrypt.Net.BCrypt.HashPassword(request.Password)
-            };
+            var user = new User(
+                username, 
+                email,
+                BCrypt.Net.BCrypt.HashPassword(request.Password));
 
             await _userRepo.CreateAsync(user);
             await _userRepo.SaveChangesAsync();

@@ -1,7 +1,4 @@
 ﻿using BlogFlow.API.Exceptions;
-using Microsoft.CodeAnalysis.Emit;
-using Microsoft.EntityFrameworkCore.Query.Internal;
-using Newtonsoft.Json.Bson;
 using System.Text.Json.Serialization;
 
 namespace BlogFlow.API.Models
@@ -15,14 +12,42 @@ namespace BlogFlow.API.Models
 
     public class User
     {
-        public Guid Id { get; set; } = Guid.NewGuid();
-        public required string Username { get; set; }
-        public required string Email { get; set; }
-        public required string PasswordHash { get; set; }
+        public Guid Id { get; private set; } = Guid.NewGuid();
+        public string Username { get; private set; } = null!;
+        public string Email { get; private set; } = null!;
+        public string PasswordHash { get; private set; } = null!;
         public UserRole Role { get; set; } = UserRole.Reader;
         public DateTime CreatedAt { get; private set; } = DateTime.UtcNow;
         public DateTime? DeletedAt { get; private set; }
         public DateTime? UpdatedAt { get; private set; }
+
+        public User(string username, string email, string passwordHash)
+        {
+            if (string.IsNullOrWhiteSpace(username))
+                throw new BadRequestException("Username cannot be null or whitespace.", "EMPTY_USERNAME");
+
+            if (string.IsNullOrWhiteSpace(email))
+                throw new BadRequestException("Email cannot be null or whitespace.", "EMPTY_EMAIL");
+
+            if (!email.Contains('@'))
+                throw new BadRequestException("Invalid email format.", "INVALID_EMAIL_FORMAT");
+
+            if (string.IsNullOrWhiteSpace(passwordHash))
+                throw new BadRequestException("Password hash cannot be empty.", "EMPTY_PASSWORD_HASH");
+
+            Username = username.Trim();
+            Email = email.Trim();
+            PasswordHash = passwordHash;
+        }
+
+        // SEED Constructor
+        public User(Guid id, string username, string email, string passwordHash, UserRole role)
+        : this(username, email, passwordHash)
+        {
+            Id = id;
+            Role = role;
+        }
+
         public void SoftDelete()
         {
             if (DeletedAt != null) throw new ConflictException($"User '{Username}' is already deleted.", "USER_ALREADY_DELETED");
