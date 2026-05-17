@@ -1,6 +1,4 @@
 ﻿using BlogFlow.API.Exceptions;
-using Microsoft.AspNetCore.Components.Web;
-using Microsoft.AspNetCore.Mvc.Razor.TagHelpers;
 
 namespace BlogFlow.API.Models
 {
@@ -41,6 +39,13 @@ namespace BlogFlow.API.Models
             Body = body;
             AuthorId = authorId;
             CategoryId = categoryId;
+        }
+
+        // SEED constructor
+        public Post(Guid id, string title, string body, Guid authorId, Guid categoryId)
+            : this(title, body, authorId, categoryId)
+        {
+            Id = id;
         }
 
         public void SoftDelete()

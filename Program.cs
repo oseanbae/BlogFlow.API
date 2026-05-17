@@ -1,4 +1,5 @@
 using BlogFlow.API.Data;
+using BlogFlow.API.Data.Seeding;
 using BlogFlow.API.Infrastructure;
 using FluentValidation;
 using Microsoft.EntityFrameworkCore;
@@ -65,11 +66,25 @@ builder.Host.UseSerilog();
 
 var app = builder.Build();
 
+// Always run migrations
+using (var scope = app.Services.CreateScope())
+{
+    var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+    await db.Database.MigrateAsync();
+}
+
 // Development
 if (app.Environment.IsDevelopment())
 {
+    //API Testing
     app.MapOpenApi();
     app.MapScalarApiReference();
+
+    //Seeding
+    using var scope = app.Services.CreateScope();
+    var seeder = scope.ServiceProvider.GetRequiredService<DatabaseSeeder>();
+    await seeder.SeedAsync();
+
 }
 
 // Middleware
@@ -83,7 +98,6 @@ app.UseSerilogRequestLogging(options =>
         diagnosticContext.Set("IP", httpContext.Connection.RemoteIpAddress?.ToString() ?? "Unknown");
     };
 });
-
 
 app.UseExceptionHandler();
 

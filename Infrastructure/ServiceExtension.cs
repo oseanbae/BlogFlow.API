@@ -2,6 +2,8 @@
 using BlogFlow.API.Repositories.Interfaces;
 using BlogFlow.API.Services;
 using BlogFlow.API.Services.Interfaces;
+using BlogFlow.API.Data.Seeding;
+using BlogFlow.API.Data.Seeding.Seeds;
 
 namespace BlogFlow.API.Infrastructure
 {
@@ -26,6 +28,14 @@ namespace BlogFlow.API.Infrastructure
             services.AddScoped<ITagService, TagService>();
             services.AddScoped<ICommentService, CommentService>();
             services.AddScoped<IUserManagementService, UserManagementService>();
+
+            // --- Seeder Services ---
+            services.AddScoped<ISeeder, UserSeed>();
+            services.AddScoped<ISeeder, CategorySeed>();
+            services.AddScoped<ISeeder, TagSeed>();
+            services.AddScoped<ISeeder, PostSeed>();
+            services.AddScoped<ISeeder, CommentSeed>();
+            services.AddScoped<DatabaseSeeder>();
 
             return services;
         }

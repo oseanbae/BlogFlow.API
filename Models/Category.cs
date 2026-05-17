@@ -3,7 +3,7 @@ using BlogFlow.API.Models;
 
 public class Category
 {
-    public Guid Id { get; init; } = Guid.NewGuid();
+    public Guid Id { get; private set; } = Guid.NewGuid();
     public string DisplayName { get; private set; } = null!;
     public string Name { get; private set; } = null!;
     public ICollection<Post> Posts { get; private set; } = [];
@@ -17,6 +17,13 @@ public class Category
 
         DisplayName = displayName.Trim();
         Name = Normalize(displayName);
+    }
+
+    // SEED constructor
+    public Category(Guid id, string displayName)
+        : this(displayName)
+    {
+        Id = id;
     }
 
     public void Rename(string newName)

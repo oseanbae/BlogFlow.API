@@ -4,12 +4,12 @@ namespace BlogFlow.API.Models
 {
     public class Tag
     {
-        public Guid Id { get; init; } = Guid.NewGuid();
+        public Guid Id { get; private set; } = Guid.NewGuid();
         public string DisplayName { get; private set; } = null!;
         public string Name { get; private set; } = null!;
         public ICollection<PostTag> PostTags { get; private set; } = [];
 
-        public Tag() { }
+        private Tag() { } // EF Core
 
         public Tag(string displayName)
         {
@@ -18,6 +18,13 @@ namespace BlogFlow.API.Models
 
             DisplayName = displayName.Trim();
             Name = Normalize(displayName);
+        }
+
+        // SEED constructor
+        public Tag(Guid id, string displayName)
+            : this(displayName)
+        {
+            Id = id;
         }
 
         public static string Normalize(string name)

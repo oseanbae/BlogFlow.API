@@ -34,6 +34,13 @@ namespace BlogFlow.API.Models
             PostId = postId;
         }
 
+        // Seed constructor
+        public Comment(Guid id, string body, Guid userId, Guid postId)
+            : this(body, userId, postId)
+        {
+            Id = id;
+        }
+
         public void UpdateBody(string newBody)
         {
             if (string.IsNullOrWhiteSpace(newBody))
