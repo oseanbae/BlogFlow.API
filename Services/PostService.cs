@@ -15,6 +15,7 @@ namespace BlogFlow.API.Services
         private readonly ICategoryRepository _categoryRepo;
         private readonly ITagRepository _tagRepo;
         private readonly ILogger<PostService> _logger;
+
         public PostService(
             IPostRepository postRepo,
             ICategoryRepository categoryRepo,
@@ -28,29 +29,41 @@ namespace BlogFlow.API.Services
         }
 
         // --- READ OPERATIONS ---
-        public async Task<PostReadDTO> GetPostByIdAsync(Guid postId, UserContext user)
+        public async Task<PostReadDTO> GetPostByIdAsync(
+            Guid postId,
+            UserContext user,
+            CancellationToken cancellationToken)
         {
             var postDto = await _postRepo.GetPostsQuery(includeDeleted: user.IsAdmin)
                 .Where(p => p.Id == postId)
                 .AsDTO()
-                .FirstOrDefaultAsync();
+                .FirstOrDefaultAsync(cancellationToken);
 
             return postDto ?? throw new NotFoundException("Post", postId);
         }
+
         public async Task<PaginatedResultDTO<PostReadDTO>> GetPostsAsync(
             PostQueryParams p,
-            UserContext user)
+            UserContext user,
+            CancellationToken cancellationToken)
         {
             var query = _postRepo.GetPostsQuery(includeDeleted: user.IsAdmin);
 
             query = ApplyFilters(query, p);
 
-            return await ExecutePagedQueryAsync(query, p.Page, p.PageSize);
+            _logger.LogInformation(
+                "Fetching posts with filters for user {UserId}",
+                user.UserId);
+
+            return await ExecutePagedQueryAsync(query, p.Page, p.PageSize, cancellationToken);
         }
 
         // --- WRITE OPERATIONS ---
 
-        public async Task<PostReadDTO> CreatePostAsync(PostCreateDTO dto, UserContext user)
+        public async Task<PostReadDTO> CreatePostAsync(
+            PostCreateDTO dto,
+            UserContext user,
+            CancellationToken cancellationToken)
         {
             if (!user.IsAuthor && !user.IsAdmin)
             {
@@ -65,12 +78,12 @@ namespace BlogFlow.API.Services
 
             var categoryExists = await _categoryRepo
                 .GetCategoryQuery(dto.CategoryId)
-                .AnyAsync();
+                .AnyAsync(cancellationToken);
 
             if (!categoryExists)
                 throw new NotFoundException("Category", dto.CategoryId);
 
-            await ValidateTagsExistAsync(dto.TagIds);
+            await ValidateTagsExistAsync(dto.TagIds, cancellationToken);
 
             var post = new Post(
                 dto.Title,
@@ -88,50 +101,34 @@ namespace BlogFlow.API.Services
                 post.Id,
                 user.UserId);
 
-            return await GetPostByIdAsync(post.Id, user);
+            return await GetPostByIdAsync(post.Id, user, cancellationToken);
         }
 
-        public async Task<PostReadDTO> UpdatePostAsync(Guid postId, PostUpdateDTO dto, UserContext user)
+        public async Task<PostReadDTO> UpdatePostAsync(
+            Guid postId,
+            PostUpdateDTO dto,
+            UserContext user,
+            CancellationToken cancellationToken)
         {
-            if (!user.IsAuthor && !user.IsAdmin)
-            {
-                _logger.LogWarning(
-                    "Unauthorized post update attempt by user {UserId}",
-                    user.UserId);
-
-                throw new ForbiddenException(
-                    "Only authors or admins can update posts.",
-                    "INSUFFICIENT_ROLE");
-            }
-
             var post = await _postRepo.GetTrackedByIdAsync(postId, includeDeleted: user.IsAdmin)
                 ?? throw new NotFoundException("Post", postId);
 
             if (!user.IsAdmin && post.AuthorId != user.UserId)
-            {
-                _logger.LogWarning(
-                    "User {UserId} attempted to update post {PostId} owned by another user",
-                    user.UserId,
-                    postId);
-
-                throw new ForbiddenException(
-                    "You do not have permission to update this post.",
-                    "NOT_POST_OWNER");
-            }
+                throw new ForbiddenException("NOT_POST_OWNER", "NOT_POST_OWNER");
 
             if (dto.CategoryId.HasValue)
             {
                 if (dto.CategoryId.Value == Guid.Empty)
                     throw new BadRequestException("Invalid category.", "INVALID_CATEGORY_ID");
-
                 var catExists = await _categoryRepo
                     .GetCategoryQuery(dto.CategoryId.Value)
-                    .AnyAsync();
+                    .AnyAsync(cancellationToken);
 
-                if (!catExists) throw new NotFoundException("Category", dto.CategoryId.Value);
+                if (!catExists)
+                    throw new NotFoundException("Category", dto.CategoryId.Value);
             }
 
-            await ValidateTagsExistAsync(dto.TagIds);
+            await ValidateTagsExistAsync(dto.TagIds, cancellationToken);
 
             post.Update(
                 dto.Title ?? post.Title,
@@ -147,10 +144,11 @@ namespace BlogFlow.API.Services
                 "Post updated: {PostId} by user {UserId}",
                 post.Id,
                 user.UserId);
-            return await GetPostByIdAsync(post.Id, user);
+
+            return await GetPostByIdAsync(post.Id, user, cancellationToken);
         }
 
-        public async Task SoftDeletePostAsync(Guid postId, UserContext user)
+        public async Task SoftDeletePostAsync(Guid postId, UserContext user, CancellationToken cancellationToken)
         {
             if (!user.IsAuthor && !user.IsAdmin)
             {
@@ -167,7 +165,7 @@ namespace BlogFlow.API.Services
                 ?? throw new NotFoundException("Post", postId);
 
             if(!user.IsAdmin && post.AuthorId != user.UserId)
-{
+            {
                 _logger.LogWarning(
                     "User {UserId} attempted to delete post {PostId} owned by another user",
                     user.UserId,
@@ -180,7 +178,7 @@ namespace BlogFlow.API.Services
 
             post.SoftDelete();
 
-            await _postRepo.SaveChangesAsync();
+            await _postRepo.SaveChangesAsync(cancellationToken);
 
             _logger.LogInformation(
                 "Post soft deleted: {PostId} by user {UserId}",
@@ -188,7 +186,7 @@ namespace BlogFlow.API.Services
                 user.UserId);
         }
 
-        public async Task RestorePostAsync(Guid postId, UserContext user)
+        public async Task RestorePostAsync(Guid postId, UserContext user, CancellationToken cancellationToken)
         {
             if (!user.IsAdmin)
             {
@@ -205,7 +203,7 @@ namespace BlogFlow.API.Services
                 ?? throw new NotFoundException("Post", postId);
 
             post.Restore();
-            await _postRepo.SaveChangesAsync();
+            await _postRepo.SaveChangesAsync(cancellationToken);
 
             _logger.LogInformation(
                 "Post restored: {PostId} by admin {UserId}",
@@ -213,7 +211,7 @@ namespace BlogFlow.API.Services
                 user.UserId);
         }
 
-        public async Task HardDeletePostAsync(Guid postId, UserContext user)
+        public async Task HardDeletePostAsync(Guid postId, UserContext user, CancellationToken cancellationToken)
         {
             if (!user.IsAdmin)
             {
@@ -225,12 +223,11 @@ namespace BlogFlow.API.Services
                     "Only admins can hard delete posts.",
                     "ADMIN_ONLY_ACTION");
             }
-
             var post = await _postRepo.GetTrackedByIdAsync(postId, includeDeleted: true)
                 ?? throw new NotFoundException("Post", postId);
 
             await _postRepo.DeleteAsync(post);
-            await _postRepo.SaveChangesAsync();
+            await _postRepo.SaveChangesAsync(cancellationToken);
 
             _logger.LogInformation(
                 "Post permanently deleted: {PostId} by admin {UserId}",
@@ -238,15 +235,18 @@ namespace BlogFlow.API.Services
                 user.UserId);
         }
 
-        // --- PRIVATE HELPER ---
+        // --- PRIVATE HELPERS ---
 
         private static async Task<PaginatedResultDTO<PostReadDTO>> ExecutePagedQueryAsync(
-            IQueryable<Post> query, int page, int pageSize)
+            IQueryable<Post> query,
+            int page,
+            int pageSize,
+            CancellationToken cancellationToken)
         {
             var pagedResult = await query
                 .OrderByDescending(p => p.CreatedAt)
                 .AsDTO()
-                .ToPaginatedResultAsync(page, pageSize);
+                .ToPaginatedResultAsync(page, pageSize, cancellationToken);
 
             return new PaginatedResultDTO<PostReadDTO>
             {
@@ -257,7 +257,7 @@ namespace BlogFlow.API.Services
             };
         }
 
-        private async Task ValidateTagsExistAsync(IEnumerable<Guid>? tagIds)
+        private async Task ValidateTagsExistAsync(IEnumerable<Guid>? tagIds, CancellationToken cancellationToken)
         {
             if (tagIds == null || !tagIds.Any()) return;
 
@@ -265,12 +265,10 @@ namespace BlogFlow.API.Services
 
             var validTagCount = await _tagRepo.GetTagsQuery()
                 .Where(t => uniqueTagIds.Contains(t.Id))
-                .CountAsync();
+                .CountAsync(cancellationToken);
 
             if (validTagCount != uniqueTagIds.Count)
-            {
                 throw new KeyNotFoundException("One or more tags are invalid.");
-            }
         }
 
         private static IQueryable<Post> ApplyFilters(IQueryable<Post> query, PostQueryParams p)

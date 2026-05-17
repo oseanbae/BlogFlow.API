@@ -20,35 +20,35 @@ namespace BlogFlow.API.Controllers
 
         [HttpGet("{userId}")] // GET    api/v1/users/{userId}
         [AllowAnonymous]
-        public async Task<ActionResult<UserReadDTO>> GetProfileAsync(Guid userId)
+        public async Task<ActionResult<UserReadDTO>> GetProfileAsync(Guid userId, CancellationToken cancellationToken)
         {
-            var result = await _service.GetUserByIdAsync(userId);
+            var result = await _service.GetUserByIdAsync(userId, cancellationToken);
             return Ok(result);
         }
 
         [HttpPut("me")] // PUT    api/v1/users/me 
         [Authorize]
-        public async Task<ActionResult> UpdateProfile(UserUpdateDTO dto)
+        public async Task<ActionResult> UpdateProfile(UserUpdateDTO dto, CancellationToken cancellationToken)
         {
             var user = _currentUser.GetCurrentUser();
-            await _service.UpdateProfileAsync(dto, _currentUser.GetRequiredUserId());
+            await _service.UpdateProfileAsync(dto, _currentUser.GetRequiredUserId(), cancellationToken);
             return NoContent();
         }
 
         [HttpPatch("me/password")]  // PATCH  api/v1/users/me/password
         [Authorize]
-        public async Task<ActionResult> ChangePassword([FromBody] UserChangePasswordDTO dto)
+        public async Task<ActionResult> ChangePassword([FromBody] UserChangePasswordDTO dto, CancellationToken cancellationToken)
         {
             var id = _currentUser.GetRequiredUserId();
-            await _service.ChangePasswordAsync(id, dto);
+            await _service.ChangePasswordAsync(id, dto, cancellationToken);
             return NoContent();
         }
 
         [HttpDelete("me")] // DELETE api/v1/users/me
         [Authorize]
-        public async Task<ActionResult> DeleteAccount()
+        public async Task<ActionResult> DeleteAccount(CancellationToken cancellationToken)
         {
-            await _service.DeleteOwnAccountAsync(_currentUser.GetRequiredUserId());
+            await _service.DeleteOwnAccountAsync(_currentUser.GetRequiredUserId(), cancellationToken);
             return NoContent();
         }
     }

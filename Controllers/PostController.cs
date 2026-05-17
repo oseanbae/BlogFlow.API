@@ -23,64 +23,78 @@ namespace BlogFlow.API.Controllers
         [HttpGet] // GET api/v1/posts
         [AllowAnonymous]
         public async Task<ActionResult<PaginatedResultDTO<PostReadDTO>>> GetPostsAsync(
-        [FromQuery] PostQueryParams p)
+            [FromQuery] PostQueryParams p,
+            CancellationToken cancellationToken)
         {
             var user = _currentUser.GetCurrentUser();
-            var result = await _postService.GetPostsAsync(p, user);
+            var result = await _postService.GetPostsAsync(p, user, cancellationToken);
             return Ok(result);
         }
 
         [HttpGet("{postId}")] // GET api/v1/posts/{postId}
         [AllowAnonymous]
-        public async Task<ActionResult<PostReadDTO>> GetPostAsync(Guid postId)
+        public async Task<ActionResult<PostReadDTO>> GetPostAsync(
+            Guid postId,
+            CancellationToken cancellationToken)
         {
             var user = _currentUser.GetCurrentUser();
-            var result = await _postService.GetPostByIdAsync(postId, user);
+            var result = await _postService.GetPostByIdAsync(postId, user, cancellationToken);
             return Ok(result);
         }
 
         [HttpPost] // POST api/v1/posts
         [Authorize(Roles = "Author")]
-        public async Task<ActionResult<PostReadDTO>> CreatePostAsync(PostCreateDTO dto)
+        public async Task<ActionResult<PostReadDTO>> CreatePostAsync(
+            PostCreateDTO dto,
+            CancellationToken cancellationToken)
         {
             var user = _currentUser.GetCurrentUser();
-            var result = await _postService.CreatePostAsync(dto, user);
+            var result = await _postService.CreatePostAsync(dto, user, cancellationToken);
             return CreatedAtAction(nameof(GetPostAsync), new { postId = result.Id }, result);
         }
 
         [HttpPut("{postId}")] // PUT api/v1/posts/{postId}
-        [Authorize(Roles = "Author,Admin")] 
-        public async Task<ActionResult<PostReadDTO>> UpdatePostAsync(Guid postId, PostUpdateDTO dto)
+        [Authorize(Roles = "Author,Admin")]
+        public async Task<ActionResult<PostReadDTO>> UpdatePostAsync(
+            Guid postId,
+            PostUpdateDTO dto,
+            CancellationToken cancellationToken)
         {
             var user = _currentUser.GetCurrentUser();
-            var result = await _postService.UpdatePostAsync(postId, dto, user);
+            var result = await _postService.UpdatePostAsync(postId, dto, user, cancellationToken);
             return Ok(result);
         }
 
         [HttpDelete("{postId}")] // DELETE api/v1/posts/{postId}
         [Authorize(Roles = "Author,Admin")]
-        public async Task<ActionResult> SoftDeletePostAsync(Guid postId)
+        public async Task<ActionResult> SoftDeletePostAsync(
+            Guid postId,
+            CancellationToken cancellationToken)
         {
             var user = _currentUser.GetCurrentUser();
-            await _postService.SoftDeletePostAsync(postId, user);
+            await _postService.SoftDeletePostAsync(postId, user, cancellationToken);
             return NoContent();
         }
 
         [HttpPatch("{postId}/restore")] // PATCH api/v1/posts/{postId}/restore
         [Authorize(Roles = "Admin")]
-        public async Task<ActionResult> RestorePostAsync(Guid postId)
+        public async Task<ActionResult> RestorePostAsync(
+            Guid postId,
+            CancellationToken cancellationToken)
         {
             var user = _currentUser.GetCurrentUser();
-            await _postService.RestorePostAsync(postId, user);
+            await _postService.RestorePostAsync(postId, user, cancellationToken);
             return NoContent();
         }
 
         [HttpDelete("{postId}/hard")] // DELETE api/v1/posts/{postId}/hard
         [Authorize(Roles = "Admin")]
-        public async Task<ActionResult> HardDeletePostAsync(Guid postId)
+        public async Task<ActionResult> HardDeletePostAsync(
+            Guid postId,
+            CancellationToken cancellationToken)
         {
             var user = _currentUser.GetCurrentUser();
-            await _postService.HardDeletePostAsync(postId, user);
+            await _postService.HardDeletePostAsync(postId, user, cancellationToken);
             return NoContent();
         }
     }

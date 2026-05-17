@@ -20,9 +20,10 @@ namespace BlogFlow.API.Services
 
         public async Task ChangePasswordAsync(
             Guid id,
-            UserChangePasswordDTO dto)
+            UserChangePasswordDTO dto,
+            CancellationToken cancellationToken)
         {
-            var user = await _repo.GetTrackedByIdAsync(id)
+            var user = await _repo.GetTrackedByIdAsync(id, cancellationToken)
                 ?? throw new NotFoundException("User", id);
 
             bool isCurrentPasswordValid =
@@ -58,30 +59,34 @@ namespace BlogFlow.API.Services
 
             user.ChangePassword(hashedPassword);
 
-            await _repo.SaveChangesAsync();
+            await _repo.SaveChangesAsync(cancellationToken);
 
             _logger.LogInformation(
                 "Password changed successfully for user {UserId}",
                 id);
         }
 
-        public async Task DeleteOwnAccountAsync(Guid userId)
+        public async Task DeleteOwnAccountAsync(
+            Guid userId,
+            CancellationToken cancellationToken)
         {
-            var user = await _repo.GetTrackedByIdAsync(userId)
+            var user = await _repo.GetTrackedByIdAsync(userId, cancellationToken)
                 ?? throw new NotFoundException("User", userId);
 
             user.SoftDelete();
 
-            await _repo.SaveChangesAsync();
+            await _repo.SaveChangesAsync(cancellationToken);
 
             _logger.LogInformation(
                 "User account soft deleted: {UserId}",
                 userId);
         }
 
-        public async Task<UserReadDTO> GetUserByIdAsync(Guid id)
+        public async Task<UserReadDTO> GetUserByIdAsync(
+            Guid id,
+            CancellationToken cancellationToken)
         {
-            var existingUser = await _repo.GetTrackedByIdAsync(id)
+            var existingUser = await _repo.GetTrackedByIdAsync(id, cancellationToken)
                 ?? throw new NotFoundException("User", id);
 
             return new UserReadDTO
@@ -96,17 +101,18 @@ namespace BlogFlow.API.Services
 
         public async Task UpdateProfileAsync(
             UserUpdateDTO dto,
-            Guid userId)
+            Guid userId,
+            CancellationToken cancellationToken)
         {
             var existingUser =
-                await _repo.GetTrackedByIdAsync(userId)
+                await _repo.GetTrackedByIdAsync(userId, cancellationToken)
                 ?? throw new NotFoundException("User", userId);
 
             existingUser.UpdateIdentity(
                 dto.Username,
                 dto.Email);
 
-            await _repo.SaveChangesAsync();
+            await _repo.SaveChangesAsync(cancellationToken);
 
             _logger.LogInformation(
                 "User profile updated: {UserId}",

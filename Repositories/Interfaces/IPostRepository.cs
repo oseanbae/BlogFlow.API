@@ -8,11 +8,11 @@ namespace BlogFlow.API.Repositories.Interfaces
         IQueryable<Post> GetPostsQuery(bool includeDeleted = false);
 
         // For Writing/Updating: Provides a tracked entity from the DB
-        Task<Post?> GetTrackedByIdAsync(Guid postId, bool includeDeleted = false);
+        Task<Post?> GetTrackedByIdAsync(Guid postId, bool includeDeleted = false, CancellationToken cancellationToken = default);
 
         // CRUD Operations
-        Task AddAsync(Post post);
+        Task AddAsync(Post post, CancellationToken cancellationToken = default);
         Task DeleteAsync(Post post);
-        Task SaveChangesAsync();
+        Task SaveChangesAsync(CancellationToken cancellationToken = default);
     }
 }

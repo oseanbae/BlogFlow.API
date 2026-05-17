@@ -22,7 +22,7 @@ namespace BlogFlow.API.Repositories
                 : _context.Posts.AsQueryable();
         }
 
-        public async Task<Post?> GetTrackedByIdAsync(Guid postId, bool includeDeleted = false)
+        public async Task<Post?> GetTrackedByIdAsync(Guid postId, bool includeDeleted = false, CancellationToken cancellationToken = default)
         {
             var query = includeDeleted
                 ? _context.Posts.IgnoreQueryFilters()
@@ -30,12 +30,12 @@ namespace BlogFlow.API.Repositories
 
             return await query
                 .Include(p => p.PostTags)
-                .FirstOrDefaultAsync(p => p.Id == postId);
+                .FirstOrDefaultAsync(p => p.Id == postId, cancellationToken);
         }
 
-        public async Task AddAsync(Post post)
+        public async Task AddAsync(Post post, CancellationToken cancellationToken = default)
         {
-            await _context.Posts.AddAsync(post);
+            await _context.Posts.AddAsync(post, cancellationToken);
         }
 
         public async Task DeleteAsync(Post post)
@@ -43,9 +43,9 @@ namespace BlogFlow.API.Repositories
             _context.Posts.Remove(post);
         }
 
-        public async Task SaveChangesAsync()
+        public Task SaveChangesAsync(CancellationToken cancellationToken = default)
         {
-            await _context.SaveChangesAsync();
+            return _context.SaveChangesAsync(cancellationToken);
         }
     }
 }
