@@ -4,9 +4,9 @@ namespace BlogFlow.API.Services.Interfaces
 {
     public interface ITagService
     {
-        Task<IEnumerable<TagReadDTO>> GetAllTagsAsync();
-        Task<TagReadDTO> GetTagByIdAsync(Guid id);
-        Task<TagReadDTO> CreateTagAsync(TagCreateDTO dto);
-        Task DeleteTagAsync(Guid id);
+        Task<IEnumerable<TagReadDTO>> GetAllTagsAsync(CancellationToken cancellationToken);
+        Task<TagReadDTO> GetTagByIdAsync(Guid id, CancellationToken cancellationToken);
+        Task<TagReadDTO> CreateTagAsync(TagCreateDTO dto, CancellationToken cancellationToken);
+        Task DeleteTagAsync(Guid id, CancellationToken cancellationToken);
     }
 }

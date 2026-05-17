@@ -18,27 +18,27 @@ namespace BlogFlow.API.Controllers
 
         [HttpGet] // GET    api/v1/tags
         [AllowAnonymous]
-        public async Task<ActionResult<IEnumerable<TagReadDTO>>> GetAllTagsAsync()
+        public async Task<ActionResult<IEnumerable<TagReadDTO>>> GetAllTagsAsync(CancellationToken cancellationToken)
         {
-            var tags = await _service.GetAllTagsAsync();
+            var tags = await _service.GetAllTagsAsync(cancellationToken);
             return Ok(tags);
         }
 
         [HttpGet("{tagId}")] // GET    api/v1/tags/{tagId}
         [AllowAnonymous]
-        public async Task<ActionResult<TagReadDTO>> GetTagByIdAsync(Guid tagId)
+        public async Task<ActionResult<TagReadDTO>> GetTagByIdAsync(Guid tagId, CancellationToken cancellationToken)
         {
-            var result = await _service.GetTagByIdAsync(tagId);
+            var result = await _service.GetTagByIdAsync(tagId, cancellationToken);
             return Ok(result);
         }
 
         [HttpPost] // POST   api/v1/tags
         [Authorize(Roles = "Author,Admin")]
-        public async Task<ActionResult<TagReadDTO>> CreateTagAsync(TagCreateDTO dto)
+        public async Task<ActionResult<TagReadDTO>> CreateTagAsync(TagCreateDTO dto, CancellationToken cancellationToken)
         {
-            var result = await _service.CreateTagAsync(dto);
-            return CreatedAtAction
-            (
+            var result = await _service.CreateTagAsync(dto, cancellationToken);
+
+            return CreatedAtAction(
                 nameof(GetTagByIdAsync),
                 new { tagId = result.Id },
                 result
@@ -47,11 +47,10 @@ namespace BlogFlow.API.Controllers
 
         [HttpDelete("{tagId}")] // DELETE api/v1/tags/{tagId}
         [Authorize(Roles = "Admin")]
-        public async Task<ActionResult> DeleteTagAsync(Guid tagId)
+        public async Task<ActionResult> DeleteTagAsync(Guid tagId, CancellationToken cancellationToken)
         {
-            await _service.DeleteTagAsync(tagId);
+            await _service.DeleteTagAsync(tagId, cancellationToken);
             return NoContent();
         }
-
     }
 }

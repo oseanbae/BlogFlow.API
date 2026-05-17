@@ -21,22 +21,20 @@ namespace BlogFlow.API.Services
             _logger = logger;
         }
 
-        public async Task<IEnumerable<TagReadDTO>> GetAllTagsAsync()
+        public async Task<IEnumerable<TagReadDTO>> GetAllTagsAsync(CancellationToken cancellationToken)
             => await _repo.GetTagsQuery()
                 .AsDTO()
-                .ToListAsync();
+                .ToListAsync(cancellationToken);
 
-        public async Task<TagReadDTO> GetTagByIdAsync(Guid id)
-        {
-            return await _repo.GetTagQuery(id)
+        public async Task<TagReadDTO> GetTagByIdAsync(Guid id, CancellationToken cancellationToken)
+            => await _repo.GetTagQuery(id)
                 .AsDTO()
-                .FirstOrDefaultAsync()
+                .FirstOrDefaultAsync(cancellationToken)
                 ?? throw new NotFoundException("Tag", id);
-        }
 
-        public async Task<TagReadDTO> CreateTagAsync(TagCreateDTO dto)
+        public async Task<TagReadDTO> CreateTagAsync(TagCreateDTO dto, CancellationToken cancellationToken)
         {
-            if (await _repo.TagExistsAsync(dto.Name))
+            if (await _repo.TagExistsAsync(dto.Name, cancellationToken))
             {
                 _logger.LogWarning(
                     "Tag creation failed - duplicate tag name: {TagName}",
@@ -49,8 +47,9 @@ namespace BlogFlow.API.Services
 
             var tag = new Tag(dto.Name);
 
-            await _repo.CreateTagAsync(tag);
-            await _repo.SaveChangesAsync();
+            await _repo.CreateTagAsync(tag, cancellationToken);
+
+            await _repo.SaveChangesAsync(cancellationToken);
 
             _logger.LogInformation(
                 "Tag created: {TagId} ({TagName})",
@@ -59,15 +58,15 @@ namespace BlogFlow.API.Services
 
             return await _repo.GetTagQuery(tag.Id)
                 .AsDTO()
-                .FirstAsync();
+                .FirstAsync(cancellationToken);
         }
 
-        public async Task DeleteTagAsync(Guid id)
+        public async Task DeleteTagAsync(Guid id, CancellationToken cancellationToken)
         {
-            if (!await _repo.DeleteTagByIdAsync(id))
+            if (!await _repo.DeleteTagByIdAsync(id, cancellationToken))
                 throw new NotFoundException("Tag", id);
 
-            await _repo.SaveChangesAsync();
+            await _repo.SaveChangesAsync(cancellationToken);
 
             _logger.LogInformation(
                 "Tag deleted: {TagId}",

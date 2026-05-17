@@ -10,28 +10,34 @@ namespace BlogFlow.API.Repositories
         private readonly AppDbContext _context;
         public TagRepository(AppDbContext context) => _context = context;
 
-        public IQueryable<Tag> GetTagsQuery() => _context.Tags.AsNoTracking();
+        public IQueryable<Tag> GetTagsQuery()
+            => _context.Tags.AsNoTracking();
 
         public IQueryable<Tag> GetTagQuery(Guid id)
             => _context.Tags.AsNoTracking().Where(t => t.Id == id);
 
-        public async Task CreateTagAsync(Tag newTag) => await _context.Tags.AddAsync(newTag);
+        public async Task CreateTagAsync(Tag newTag, CancellationToken cancellationToken)
+            => await _context.Tags.AddAsync(newTag, cancellationToken);
 
-        public async Task SaveChangesAsync() => await _context.SaveChangesAsync();
-
-        public async Task<bool> TagExistsAsync(string tagName)
+        public async Task<bool> TagExistsAsync(string tagName, CancellationToken cancellationToken)
         {
             var normalized = Tag.Normalize(tagName);
-            return await _context.Tags.AnyAsync(t => t.Name == normalized);
+
+            return await _context.Tags.AnyAsync(
+                t => t.Name == normalized,
+                cancellationToken);
         }
 
-        public async Task<bool> DeleteTagByIdAsync(Guid id)
+        public async Task<bool> DeleteTagByIdAsync(Guid id, CancellationToken cancellationToken)
         {
-            var tag = await _context.Tags.FindAsync(id);
+            var tag = await _context.Tags.FindAsync([id], cancellationToken);
             if (tag == null) return false;
 
             _context.Tags.Remove(tag);
             return true;
         }
+
+        public Task SaveChangesAsync(CancellationToken cancellationToken)
+            => _context.SaveChangesAsync(cancellationToken);
     }
 }
