@@ -7,10 +7,10 @@ namespace BlogFlow.API.Services.Interfaces
 {
     public interface IUserManagementService
     {
-        Task<PaginatedResultDTO<AdminUserReadDTO>> GetUsersAsync(UserQueryParams filter);
-        Task ChangeRoleAsync(Guid userId, UserUpdateRoleDTO dto);
-        Task SoftDeleteUserAsync(Guid userId);
-        Task RestoreUserAsync(Guid userId);
-        Task<AdminStatsDTO> GetStatisticsAsync();
+        Task<PaginatedResultDTO<AdminUserReadDTO>> GetUsersAsync(UserQueryParams filter, CancellationToken cancellationToken);
+        Task ChangeRoleAsync(Guid userId, UserUpdateRoleDTO dto, CancellationToken cancellationToken);
+        Task SoftDeleteUserAsync(Guid userId, CancellationToken cancellationToken);
+        Task RestoreUserAsync(Guid userId, CancellationToken cancellationToken);
+        Task<AdminStatsDTO> GetStatisticsAsync(CancellationToken cancellationToken);
     }
 }

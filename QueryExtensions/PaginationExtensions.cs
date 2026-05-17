@@ -8,17 +8,18 @@ namespace BlogFlow.API.QueryExtensions
         public static async Task<PaginatedResultDTO<T>> ToPaginatedResultAsync<T>(
             this IQueryable<T> query,
             int page,
-            int pageSize)
+            int pageSize,
+            CancellationToken cancellationToken)
         {
             if (page < 1) page = 1;
             if (pageSize < 1) pageSize = 10;
 
-            var totalCount = await query.CountAsync();
+            var totalCount = await query.CountAsync(cancellationToken);
 
             var items = await query
                 .Skip((page - 1) * pageSize)
                 .Take(pageSize)
-                .ToListAsync();
+                .ToListAsync(cancellationToken);
 
             return new PaginatedResultDTO<T>
             {

@@ -15,26 +15,22 @@ namespace BlogFlow.API.Services
         private readonly IUserRepository _repo;
         private readonly ILogger<UserManagementService> _logger;
 
-        public UserManagementService(
-            IUserRepository repo,
-            ILogger<UserManagementService> logger)
+        public UserManagementService(IUserRepository repo, ILogger<UserManagementService> logger)
         {
             _repo = repo;
             _logger = logger;
         }
 
-        public async Task ChangeRoleAsync(
-            Guid userId,
-            UserUpdateRoleDTO dto)
+        public async Task ChangeRoleAsync(Guid userId, UserUpdateRoleDTO dto, CancellationToken cancellationToken)
         {
-            var user = await _repo.GetTrackedByIdAsync(userId)
+            var user = await _repo.GetTrackedByIdAsync(userId, cancellationToken)
                 ?? throw new NotFoundException("User", userId);
 
             var previousRole = user.Role;
 
             user.UpdateRole(dto.Role);
 
-            await _repo.SaveChangesAsync();
+            await _repo.SaveChangesAsync(cancellationToken);
 
             _logger.LogInformation(
                 "User role changed: {UserId} from {OldRole} to {NewRole}",
@@ -43,49 +39,49 @@ namespace BlogFlow.API.Services
                 dto.Role);
         }
 
-        public async Task<PaginatedResultDTO<AdminUserReadDTO>> GetUsersAsync(UserQueryParams p)
+        public async Task<PaginatedResultDTO<AdminUserReadDTO>> GetUsersAsync(UserQueryParams p, CancellationToken cancellationToken)
         {
             var query = _repo.GetUsersQuery();
 
             query = ApplyFilters(query, p);
 
-            return await ExecutePagedQueryAsync(query, p.Page, p.PageSize);
+            return await ExecutePagedQueryAsync(query, p.Page, p.PageSize, cancellationToken);
         }
 
-        public async Task RestoreUserAsync(Guid userId)
+        public async Task RestoreUserAsync(Guid userId, CancellationToken cancellationToken)
         {
-            var user = await _repo.GetTrackedByIdAsync(userId)
+            var user = await _repo.GetTrackedByIdAsync(userId, cancellationToken)
                 ?? throw new NotFoundException("User", userId);
 
             user.Restore();
 
-            await _repo.SaveChangesAsync();
+            await _repo.SaveChangesAsync(cancellationToken);
 
             _logger.LogInformation(
                 "User restored: {UserId}",
                 user.Id);
         }
 
-        public async Task SoftDeleteUserAsync(Guid userId)
+        public async Task SoftDeleteUserAsync(Guid userId, CancellationToken cancellationToken)
         {
-            var user = await _repo.GetTrackedByIdAsync(userId)
+            var user = await _repo.GetTrackedByIdAsync(userId, cancellationToken)
                 ?? throw new NotFoundException("User", userId);
 
             user.SoftDelete();
 
-            await _repo.SaveChangesAsync();
+            await _repo.SaveChangesAsync(cancellationToken);
 
             _logger.LogInformation(
                 "User soft deleted: {UserId}",
                 user.Id);
         }
 
-        public async Task<AdminStatsDTO> GetStatisticsAsync()
+        public async Task<AdminStatsDTO> GetStatisticsAsync(CancellationToken cancellationToken)
         {
             DateTime weekBeforeUTC = DateTime.UtcNow.AddDays(-7);
             DateTime monthBeforeUTC = DateTime.UtcNow.AddMonths(-1);
 
-           return await _repo
+            return await _repo
                 .GetUsersQuery()
                 // Project only required field
                 .Select(u => new
@@ -109,18 +105,15 @@ namespace BlogFlow.API.Services
                 })
                 // Since GroupBy(u => 1) produces exactly one group, we take the single result from the query
                 // FirstAsync ensures execution of the query and returns that single aggregated result
-                .FirstAsync();
+                .FirstAsync(cancellationToken);
         }
 
-        private async Task<PaginatedResultDTO<AdminUserReadDTO>> ExecutePagedQueryAsync(
-            IQueryable<User> query,
-            int page,
-            int pageSize)
+        private async Task<PaginatedResultDTO<AdminUserReadDTO>> ExecutePagedQueryAsync(IQueryable<User> query, int page, int pageSize, CancellationToken cancellationToken)
         {
             var pagedResult = await query
                 .OrderByDescending(p => p.CreatedAt)
                 .AsDTO()
-                .ToPaginatedResultAsync(page, pageSize);
+                .ToPaginatedResultAsync(page, pageSize, cancellationToken);
 
             return new PaginatedResultDTO<AdminUserReadDTO>
             {

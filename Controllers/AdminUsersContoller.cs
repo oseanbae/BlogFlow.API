@@ -10,7 +10,7 @@ namespace BlogFlow.API.Controllers
 {
     [ApiController]
     [Route("api/admin/users")]
-    [Authorize (Roles ="Admin")]
+    [Authorize(Roles = "Admin")]
     public class AdminUsersController : ControllerBase
     {
         private readonly IUserManagementService _service;
@@ -22,44 +22,41 @@ namespace BlogFlow.API.Controllers
 
         // GET: api/admin/users
         [HttpGet]
-        public async Task<ActionResult<PaginatedResultDTO<AdminUserReadDTO>>> GetUsers(
-            [FromQuery] UserQueryParams query)
+        public async Task<ActionResult<PaginatedResultDTO<AdminUserReadDTO>>> GetUsers([FromQuery] UserQueryParams query, CancellationToken cancellationToken)
         {
-            var result = await _service.GetUsersAsync(query);
+            var result = await _service.GetUsersAsync(query, cancellationToken);
             return Ok(result);
         }
 
         // PATCH: api/admin/users/{id}/role
         [HttpPatch("{userId}/role")]
-        public async Task<IActionResult> ChangeRole(
-            Guid userId,
-            [FromBody] UserUpdateRoleDTO dto)
+        public async Task<IActionResult> ChangeRole(Guid userId, [FromBody] UserUpdateRoleDTO dto, CancellationToken cancellationToken)
         {
-            await _service.ChangeRoleAsync(userId, dto);
+            await _service.ChangeRoleAsync(userId, dto, cancellationToken);
             return NoContent();
         }
 
         // DELETE: api/admin/users/{id}
         [HttpDelete("{userId}")]
-        public async Task<IActionResult> SoftDeleteUser(Guid userId)
+        public async Task<IActionResult> SoftDeleteUser(Guid userId, CancellationToken cancellationToken)
         {
-            await _service.SoftDeleteUserAsync(userId);
+            await _service.SoftDeleteUserAsync(userId, cancellationToken);
             return NoContent();
         }
 
         // POST: api/admin/users/{id}/restore
         [HttpPost("{userId}/restore")]
-        public async Task<IActionResult> RestoreUser(Guid userId)
+        public async Task<IActionResult> RestoreUser(Guid userId, CancellationToken cancellationToken)
         {
-            await _service.RestoreUserAsync(userId);
+            await _service.RestoreUserAsync(userId, cancellationToken);
             return NoContent();
         }
 
         // GET: api/admin/users/stats
         [HttpGet("stats")]
-        public async Task<ActionResult<AdminStatsDTO>> GetStats()
+        public async Task<ActionResult<AdminStatsDTO>> GetStats(CancellationToken cancellationToken)
         {
-            var stats = await _service.GetStatisticsAsync();
+            var stats = await _service.GetStatisticsAsync(cancellationToken);
             return Ok(stats);
         }
     }
