@@ -80,17 +80,12 @@ namespace BlogFlow.API.Services
             CancellationToken cancellationToken)
         {
             var query = _repo.GetCommentsByPostQuery(postId)
-                             .OrderByDescending(c => c.CreatedAt);
+                             .OrderByDescending(c => c.CreatedAt)
+                             .AsDTO();
 
             var pagedEntities = await query.ToPaginatedResultAsync(page, pageSize, cancellationToken);
 
-            return new PaginatedResultDTO<CommentReadDTO>
-            {
-                TotalCount = pagedEntities.TotalCount,
-                Page = pagedEntities.Page,
-                PageSize = pagedEntities.PageSize,
-                Items = pagedEntities.Items.AsDTO().ToList()
-            };
+            return pagedEntities;
         }
 
         public async Task<CommentReadDTO> UpdateAsync(
