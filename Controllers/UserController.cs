@@ -30,7 +30,6 @@ namespace BlogFlow.API.Controllers
         [Authorize]
         public async Task<ActionResult> UpdateProfile(UserUpdateDTO dto, CancellationToken cancellationToken)
         {
-            var user = _currentUser.GetCurrentUser();
             await _service.UpdateProfileAsync(dto, _currentUser.GetRequiredUserId(), cancellationToken);
             return NoContent();
         }
@@ -39,8 +38,7 @@ namespace BlogFlow.API.Controllers
         [Authorize]
         public async Task<ActionResult> ChangePassword([FromBody] UserChangePasswordDTO dto, CancellationToken cancellationToken)
         {
-            var id = _currentUser.GetRequiredUserId();
-            await _service.ChangePasswordAsync(id, dto, cancellationToken);
+            await _service.ChangePasswordAsync(_currentUser.GetRequiredUserId(), dto, cancellationToken);
             return NoContent();
         }
 

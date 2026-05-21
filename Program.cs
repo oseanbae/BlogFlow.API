@@ -2,6 +2,7 @@ using BlogFlow.API.Data;
 using BlogFlow.API.Data.Seeding;
 using BlogFlow.API.Infrastructure;
 using FluentValidation;
+using FluentValidation.AspNetCore;
 using Microsoft.EntityFrameworkCore;
 using Scalar.AspNetCore;
 using Serilog;
@@ -42,6 +43,7 @@ builder.Services.AddJwtAuthentication(builder.Configuration);
 builder.Services.AddAuthRateLimiting(builder.Configuration);
 
 //Fluent Validation for DTOs
+builder.Services.AddFluentValidationAutoValidation();
 builder.Services.AddValidatorsFromAssemblyContaining<Program>();
 
 // Global Exception Handler
