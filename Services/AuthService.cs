@@ -45,7 +45,6 @@ namespace BlogFlow.API.Services
                 BCrypt.Net.BCrypt.HashPassword(request.Password));
 
             await _userRepo.CreateAsync(user, cancellationToken);
-            await _userRepo.SaveChangesAsync(cancellationToken);
 
             _logger.LogInformation(
                 "User registered successfully: {UserId} ({Username})",
@@ -76,7 +75,6 @@ namespace BlogFlow.API.Services
                 user.Username);
 
             await _refreshTokenRepo.RemoveExpiredAsync(user.Id, cancellationToken);
-            await _refreshTokenRepo.SaveChangesAsync(cancellationToken);
 
             return await IssueAuthResponseAsync(user, cancellationToken);
         }
@@ -340,6 +338,8 @@ namespace BlogFlow.API.Services
 
             var (rawToken, storedToken) =
                 await GenerateRefreshTokenAsync(user.Id, cancellationToken);
+
+            await _refreshTokenRepo.SaveChangesAsync(cancellationToken);
 
             return new AuthResponseDTO
             {
