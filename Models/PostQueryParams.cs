@@ -18,7 +18,6 @@
         public Guid? CategoryId { get; set; }
         public Guid? TagId { get; set; }
         public Guid? AuthorId { get; set; }
-
         public string? Keyword { get; set; }
     }
 }

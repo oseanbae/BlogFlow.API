@@ -43,7 +43,7 @@ namespace BlogFlow.API.Controllers
         }
 
         [HttpPost] // POST api/v1/posts
-        [Authorize(Roles = "Author")]
+        [Authorize(Roles = "Author, Admin")]
         public async Task<ActionResult<PostReadDTO>> CreatePostAsync(
             PostCreateDTO dto,
             CancellationToken cancellationToken)

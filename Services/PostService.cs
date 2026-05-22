@@ -50,6 +50,7 @@ namespace BlogFlow.API.Services
             var query = _postRepo.GetPostsQuery(includeDeleted: user.IsAdmin);
 
             query = ApplyFilters(query, p);
+            query = ApplySorting(query);
 
             _logger.LogInformation(
                 "Fetching posts with filters for user {UserId}",
@@ -93,8 +94,8 @@ namespace BlogFlow.API.Services
 
             post.SetTags(dto.TagIds ?? []);
 
-            await _postRepo.AddAsync(post);
-            await _postRepo.SaveChangesAsync();
+            await _postRepo.AddAsync(post, cancellationToken);
+            await _postRepo.SaveChangesAsync(cancellationToken);
 
             _logger.LogInformation(
                 "Post created: {PostId} by user {UserId}",
@@ -114,7 +115,7 @@ namespace BlogFlow.API.Services
                 ?? throw new NotFoundException("Post", postId);
 
             if (!user.IsAdmin && post.AuthorId != user.UserId)
-                throw new ForbiddenException("NOT_POST_OWNER", "NOT_POST_OWNER");
+                throw new ForbiddenException("You do not have permission to edit this post.", "NOT_POST_OWNER");
 
             if (dto.CategoryId.HasValue)
             {
@@ -139,7 +140,7 @@ namespace BlogFlow.API.Services
             if (dto.TagIds != null)
                 post.SetTags(dto.TagIds);
 
-            await _postRepo.SaveChangesAsync();
+            await _postRepo.SaveChangesAsync(cancellationToken);
             _logger.LogInformation(
                 "Post updated: {PostId} by user {UserId}",
                 post.Id,
@@ -243,18 +244,12 @@ namespace BlogFlow.API.Services
             int pageSize,
             CancellationToken cancellationToken)
         {
-            var pagedResult = await query
-                .OrderByDescending(p => p.CreatedAt)
+            return await query
                 .AsDTO()
-                .ToPaginatedResultAsync(page, pageSize, cancellationToken);
-
-            return new PaginatedResultDTO<PostReadDTO>
-            {
-                TotalCount = pagedResult.TotalCount,
-                Page = pagedResult.Page,
-                PageSize = pagedResult.PageSize,
-                Items = pagedResult.Items
-            };
+                .ToPaginatedResultAsync(
+                    page,
+                    pageSize,
+                    cancellationToken);
         }
 
         private async Task ValidateTagsExistAsync(IEnumerable<Guid>? tagIds, CancellationToken cancellationToken)
@@ -268,7 +263,7 @@ namespace BlogFlow.API.Services
                 .CountAsync(cancellationToken);
 
             if (validTagCount != uniqueTagIds.Count)
-                throw new KeyNotFoundException("One or more tags are invalid.");
+                throw new NotFoundException("Tag", uniqueTagIds);
         }
 
         private static IQueryable<Post> ApplyFilters(IQueryable<Post> query, PostQueryParams p)
@@ -286,6 +281,13 @@ namespace BlogFlow.API.Services
                 query = query.Where(post => post.Title.Contains(p.Keyword));
 
             return query;
+        }
+
+        private static IQueryable<Post> ApplySorting(IQueryable<Post> query)
+        {
+            // TODO: extend to support dynamic sorting
+            // (e.g., createdAt, updatedAt, ascending/descending via query params)
+            return query.OrderByDescending(u => u.CreatedAt);
         }
     }
 }
