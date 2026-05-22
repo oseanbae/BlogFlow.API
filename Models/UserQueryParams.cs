@@ -7,7 +7,7 @@
         public int Page 
         {
             get => _page;
-            set => _page = Page < 1 ? value : 1;
+            set => _page = value < 1 ? 1 : value;
         }
 
         private int _pageSize = 10;

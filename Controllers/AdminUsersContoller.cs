@@ -9,7 +9,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace BlogFlow.API.Controllers
 {
     [ApiController]
-    [Route("api/admin/users")]
+    [Route("api/v1/admin/users")]
     [Authorize(Roles = "Admin")]
     public class AdminUsersController : ControllerBase
     {
@@ -20,7 +20,7 @@ namespace BlogFlow.API.Controllers
             _service = service;
         }
 
-        // GET: api/admin/users
+        // GET: api/v1/admin/users
         [HttpGet]
         public async Task<ActionResult<PaginatedResultDTO<AdminUserReadDTO>>> GetUsers([FromQuery] UserQueryParams query, CancellationToken cancellationToken)
         {
@@ -28,7 +28,7 @@ namespace BlogFlow.API.Controllers
             return Ok(result);
         }
 
-        // PATCH: api/admin/users/{id}/role
+        // PATCH: api//v1/admin/users/{id}/role
         [HttpPatch("{userId}/role")]
         public async Task<IActionResult> ChangeRole(Guid userId, [FromBody] UserUpdateRoleDTO dto, CancellationToken cancellationToken)
         {
@@ -36,7 +36,7 @@ namespace BlogFlow.API.Controllers
             return NoContent();
         }
 
-        // DELETE: api/admin/users/{id}
+        // DELETE: api/v1/admin/users/{id}
         [HttpDelete("{userId}")]
         public async Task<IActionResult> SoftDeleteUser(Guid userId, CancellationToken cancellationToken)
         {
@@ -44,7 +44,7 @@ namespace BlogFlow.API.Controllers
             return NoContent();
         }
 
-        // POST: api/admin/users/{id}/restore
+        // POST: api/v1/admin/users/{id}/restore
         [HttpPost("{userId}/restore")]
         public async Task<IActionResult> RestoreUser(Guid userId, CancellationToken cancellationToken)
         {
@@ -52,7 +52,7 @@ namespace BlogFlow.API.Controllers
             return NoContent();
         }
 
-        // GET: api/admin/users/stats
+        // GET: api/v1/admin/users/stats
         [HttpGet("stats")]
         public async Task<ActionResult<AdminStatsDTO>> GetStats(CancellationToken cancellationToken)
         {

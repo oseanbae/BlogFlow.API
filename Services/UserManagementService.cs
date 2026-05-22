@@ -44,6 +44,7 @@ namespace BlogFlow.API.Services
             var query = _repo.GetUsersQuery();
 
             query = ApplyFilters(query, p);
+            query = ApplySorting(query);
 
             return await ExecutePagedQueryAsync(query, p.Page, p.PageSize, cancellationToken);
         }
@@ -110,18 +111,12 @@ namespace BlogFlow.API.Services
 
         private async Task<PaginatedResultDTO<AdminUserReadDTO>> ExecutePagedQueryAsync(IQueryable<User> query, int page, int pageSize, CancellationToken cancellationToken)
         {
-            var pagedResult = await query
-                .OrderByDescending(p => p.CreatedAt)
+            return await query
                 .AsDTO()
-                .ToPaginatedResultAsync(page, pageSize, cancellationToken);
-
-            return new PaginatedResultDTO<AdminUserReadDTO>
-            {
-                TotalCount = pagedResult.TotalCount,
-                Page = pagedResult.Page,
-                PageSize = pagedResult.PageSize,
-                Items = pagedResult.Items
-            };
+                .ToPaginatedResultAsync(
+                    page,
+                    pageSize,
+                    cancellationToken);
         }
 
         private static IQueryable<User> ApplyFilters(IQueryable<User> query, UserQueryParams p)
@@ -148,9 +143,27 @@ namespace BlogFlow.API.Services
             }
 
             if (p.CreatedAfter.HasValue)
-                query = query.Where(u => u.CreatedAt >= p.CreatedAfter.Value);
+            {
+                query = query.Where(u => u.CreatedAt >= NormalizeToUtc(p.CreatedAfter.Value));
+            }
 
             return query;
+        }
+
+        // Normalizes incoming DateTime values to UTC
+        // to prevent Npgsql timestamp with time zone exceptions.
+        private static DateTime NormalizeToUtc(DateTime dateTime)
+        {
+            return DateTime.SpecifyKind(dateTime, DateTimeKind.Utc);
+        }
+
+        // Future: extend to support dynamic sorting
+        // (e.g., username, role, createdAt, updatedAt,
+        // ascending/descending direction via query params).
+        private static IQueryable<User> ApplySorting(
+            IQueryable<User> query)
+        {
+            return query.OrderByDescending(u => u.CreatedAt);
         }
     }
 }

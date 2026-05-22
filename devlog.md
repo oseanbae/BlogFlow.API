@@ -1,135 +1,40 @@
-# Development Log
 <details>
-  <summary>May 13, 2026</summary>
+<summary>📅 May 21, 2025</summary>
 
-  ### Goal
-  - Improve backend architecture and optimize queries
+## 🐛 Bug Fixes
 
-  ### What I did
-  - Added admin user management system
-  - Refactored category service layer
-  - Applied AsNoTracking to queries
+### 🔴 Resolved: Refresh token always invalid after login
+* **The Bug:** Every `POST /api/v1/auth/refresh` request returned a `401 INVALID_REFRESH_TOKEN` error, even right after logging in.
+* **The Cause:** `LoginAsync` fired `SaveChangesAsync` *before* `IssueAuthResponseAsync` ran. The new token was tracked in memory but never actually flushed to the database, leaving the client with an un-lookupable token.
+* **The Fix:** Moved `SaveChangesAsync` to the very end of both `LoginAsync` and `RegisterAsync`. Token rotation, database persistence, and token replacements are now fully working end-to-end.
 
-  ### Notes / Learnings
-  - Service layer should contain business logic
-  - Repository should only handle persistence
-  - AsNoTracking improves read performance
+---
 
-  ### Next step
-  - Standardize service pattern across modules
-  - 
+### 🔴 Resolved: PATCH /api/v1/users/me/password returns 204 with whitespace-only password
+* **The Bug:** `PATCH /api/v1/users/me/password` returned `204 No Content` even when `newPassword` was a whitespace-only string like `" "`, bypassing all validation entirely.
+* **The Cause:** Two problems combined. First, `AddValidatorsFromAssemblyContaining<Program>()` only registers validators in DI but never invokes them — `AddFluentValidationAutoValidation()` was missing, so validators never ran during model binding. Second, `.When(x => !string.IsNullOrWhiteSpace(x.NewPassword))` was accidentally guarding the entire rule chain, meaning validation was skipped precisely when the password was whitespace — the exact case it needed to catch.
+* **The Fix:** Added `AddFluentValidationAutoValidation()` in `Program.cs` to hook FluentValidation into the model binding pipeline. Fixed `UserChangePasswordValidator` by replacing the incorrect `.When()` with `Must(p => !string.IsNullOrWhiteSpace(p))` and `Cascade(CascadeMode.Stop)` to correctly reject whitespace-only input and stop at the first failure. Added `[JsonRequired]` to `UserChangePasswordDTO` to reject missing fields at deserialization.
+
+---
+
+## 🏗️ Infrastructure
+
+### ✅ Postman API Testing DAY 1
+* Set up a Postman collection covering all existing endpoints for manual and automated API testing.
+* Organized requests by resource with environment variables for base URL and auth tokens, making it easy to test across different environments without hardcoding values.
+
 </details>
 
 <details>
-  <summary>May 14, 2026</summary>
+<summary>📅 May 22, 2025</summary>
 
-### Goal
+## 🐛 Bug Fixes
 
-Build a robust backend error-handling and observability system for BlogFlow API using:
+### 🔴 Resolved: GET /api/v1/admin/users pagination, UTC, sorting, and routing issues
 
-* Custom exception hierarchy
-* Centralized global exception handling
-* Structured logging with Serilog
-* Consistent API error responses
+* **The Bug:** The user listing endpoint had unstable pagination behavior, failed on `CreatedAfter` date filtering, used hardcoded sorting inside pagination, and returned 404 due to route mismatch.
 
+* **The Cause:** Pagination lacked strict input normalization, date filters were passed to PostgreSQL without UTC handling, sorting was embedded in `ExecutePagedQueryAsync` instead of being separated, and controller routing didn’t match `/api/v1` requests.
 
-### What I did
-
-#### 1. Refactored domain/service layer (foundation step)
-
-* Moved business logic into service layer
-* Introduced DTO projection optimization
-* Centralized validation logic in `CommentService`
-* Replaced generic exceptions with domain-specific exceptions
-
----
-
-#### 2. Implemented custom exception system
-
-* Created `AppException` base abstraction
-* Added domain exceptions:
-
-  * `NotFoundException`
-  * `BadRequestException`
-  * `ConflictException`
-  * `UnauthorizedException`
-  * `ForbiddenException`
-* Standardized:
-
-  * Status codes
-  * Error codes
-  * Trace IDs
-  * Validation error support
-* Refactored exception messages to be context-aware
-
----
-
-#### 3. Built global exception handling layer
-
-* Implemented `GlobalExceptionHandler` using `IExceptionHandler`
-* Centralized all unhandled exception processing
-* Added fallback handling for unexpected errors (500)
-* Standardized JSON error response DTO
-* Ensured all API errors follow consistent structure:
-
-  * statusCode
-  * message
-  * errorCode
-  * timestamp
-  * traceId
-  * validation errors (if present)
-* Improved API consistency and separation of concerns
-
----
-
-#### 4. Integrated structured logging with Serilog
-
-* Configured Serilog with:
-
-  * Console sink (development visibility)
-  * File sink (JSON format for persistence)
-* Enabled Serilog as primary logging provider
-* Added request logging via middleware (`UseSerilogRequestLogging`)
-* Integrated `ILogger` into `GlobalExceptionHandler`
-* Implemented log level mapping:
-
-  * NotFound → Information
-  * Unauthorized → Warning
-  * Forbidden → Warning
-  * BadRequest → Warning
-  * Unexpected → Error
-* Added structured logging with:
-
-  * StatusCode
-  * ErrorCode
-  * TraceId
-  * Exception stack traces
-* Improved system observability for debugging and monitoring
-
----
-
-### Notes / Learnings
-
-* Exception handling should be centralized, not scattered across controllers/services
-* Custom exceptions are most useful when paired with a global handler
-* Logging is most valuable when structured (not plain strings)
-* Logging responsibility should be separated:
-
-  * Middleware → request lifecycle
-  * Exception handler → errors
-  * Services → business events
-* TraceId is critical for debugging real request flows
-* Default-safe responses prevent leaking internal system details
-
----
-
-### Next step
-
-* Add **business-level logging inside service layer** (audit events like post creation, deletion, and updates)
-* Enhance logs with user context (UserId, IP address)
-* Improve request observability with enriched Serilog context
-* Optional: introduce correlation ID middleware for deeper tracing across services
-
----
-
+* **The Fix:** Added pagination safety (`page < 1 ? 1 : value`), introduced UTC normalization for date filters, extracted sorting into `ApplySorting()` to enforce SRP, and corrected API routing to match the expected endpoint structure.
 </details>
