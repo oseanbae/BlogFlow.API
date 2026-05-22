@@ -34,10 +34,13 @@ namespace BlogFlow.API.Repositories
                 .FirstOrDefaultAsync(u => u.Email == email, cancellationToken);
         }
 
-        public async Task<User?> GetTrackedByIdAsync(Guid id, CancellationToken cancellationToken)
+        public async Task<User?> GetByIdAsync(Guid id, bool includeDeleted,  CancellationToken cancellationToken)
         {
-            return await _context.Users
-                .FirstOrDefaultAsync(u => u.Id == id, cancellationToken);
+            var query = _context.Users.AsQueryable();
+            
+            if (includeDeleted)
+                query = query.IgnoreQueryFilters();
+            return await query.FirstOrDefaultAsync(u => u.Id == id, cancellationToken);
         }
 
         public async Task<User?> GetByUsernameOrEmailAsync(string value, CancellationToken cancellationToken)

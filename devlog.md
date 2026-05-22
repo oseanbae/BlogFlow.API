@@ -28,13 +28,12 @@
 <details>
 <summary>📅 May 22, 2025</summary>
 
-## 🐛 Bug Fixes
-
 ### 🔴 Resolved: GET /api/v1/admin/users pagination, UTC, sorting, and routing issues
-
 * **The Bug:** The user listing endpoint had unstable pagination behavior, failed on `CreatedAfter` date filtering, used hardcoded sorting inside pagination, and returned 404 due to route mismatch.
-
 * **The Cause:** Pagination lacked strict input normalization, date filters were passed to PostgreSQL without UTC handling, sorting was embedded in `ExecutePagedQueryAsync` instead of being separated, and controller routing didn’t match `/api/v1` requests.
-
 * **The Fix:** Added pagination safety (`page < 1 ? 1 : value`), introduced UTC normalization for date filters, extracted sorting into `ApplySorting()` to enforce SRP, and corrected API routing to match the expected endpoint structure.
+### 🟢 Refactor: Support soft-deleted lookup for restore flow
+* **The Change:** Updated GetByIdAsync to optionally include soft-deleted records using a parameter-controlled IgnoreQueryFilters() behavior.
+* **The Reason:** Restore operations require access to entities marked as deleted (DeletedAt != null), which were previously excluded by default query filters.
+* **The Result:** The repository now supports both normal lookups (active users only) and restore scenarios without duplicating methods or breaking existing query behavior.
 </details>

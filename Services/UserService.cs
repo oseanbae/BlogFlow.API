@@ -1,5 +1,6 @@
 ﻿using BlogFlow.API.DTOs.User;
 using BlogFlow.API.Exceptions;
+using BlogFlow.API.Models;
 using BlogFlow.API.Repositories.Interfaces;
 using BlogFlow.API.Services.Interfaces;
 
@@ -23,7 +24,7 @@ namespace BlogFlow.API.Services
             UserChangePasswordDTO dto,
             CancellationToken cancellationToken)
         {
-            var user = await _repo.GetTrackedByIdAsync(id, cancellationToken)
+            var user = await _repo.GetByIdAsync(id, includeDeleted: false, cancellationToken)
                 ?? throw new NotFoundException("User", id);
 
             bool isCurrentPasswordValid =
@@ -70,7 +71,7 @@ namespace BlogFlow.API.Services
             Guid userId,
             CancellationToken cancellationToken)
         {
-            var user = await _repo.GetTrackedByIdAsync(userId, cancellationToken)
+            var user = await _repo.GetByIdAsync(userId, includeDeleted: false, cancellationToken)
                 ?? throw new NotFoundException("User", userId);
 
             user.SoftDelete();
@@ -86,7 +87,7 @@ namespace BlogFlow.API.Services
             Guid id,
             CancellationToken cancellationToken)
         {
-            var existingUser = await _repo.GetTrackedByIdAsync(id, cancellationToken)
+            var existingUser = await _repo.GetByIdAsync(id, includeDeleted: false, cancellationToken)
                 ?? throw new NotFoundException("User", id);
 
             return new UserReadDTO
@@ -105,7 +106,7 @@ namespace BlogFlow.API.Services
             CancellationToken cancellationToken)
         {
             var existingUser =
-                await _repo.GetTrackedByIdAsync(userId, cancellationToken)
+                await _repo.GetByIdAsync(userId, includeDeleted: false, cancellationToken)
                 ?? throw new NotFoundException("User", userId);
 
             existingUser.UpdateIdentity(

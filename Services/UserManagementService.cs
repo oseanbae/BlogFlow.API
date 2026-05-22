@@ -23,7 +23,7 @@ namespace BlogFlow.API.Services
 
         public async Task ChangeRoleAsync(Guid userId, UserUpdateRoleDTO dto, CancellationToken cancellationToken)
         {
-            var user = await _repo.GetTrackedByIdAsync(userId, cancellationToken)
+            var user = await _repo.GetByIdAsync(userId, includeDeleted: false, cancellationToken)
                 ?? throw new NotFoundException("User", userId);
 
             var previousRole = user.Role;
@@ -51,7 +51,7 @@ namespace BlogFlow.API.Services
 
         public async Task RestoreUserAsync(Guid userId, CancellationToken cancellationToken)
         {
-            var user = await _repo.GetTrackedByIdAsync(userId, cancellationToken)
+            var user = await _repo.GetByIdAsync(userId, includeDeleted: true, cancellationToken)
                 ?? throw new NotFoundException("User", userId);
 
             user.Restore();
@@ -65,7 +65,7 @@ namespace BlogFlow.API.Services
 
         public async Task SoftDeleteUserAsync(Guid userId, CancellationToken cancellationToken)
         {
-            var user = await _repo.GetTrackedByIdAsync(userId, cancellationToken)
+            var user = await _repo.GetByIdAsync(userId, includeDeleted: false ,  cancellationToken)
                 ?? throw new NotFoundException("User", userId);
 
             user.SoftDelete();
@@ -109,7 +109,7 @@ namespace BlogFlow.API.Services
                 .FirstAsync(cancellationToken);
         }
 
-        private async Task<PaginatedResultDTO<AdminUserReadDTO>> ExecutePagedQueryAsync(IQueryable<User> query, int page, int pageSize, CancellationToken cancellationToken)
+        private static async Task<PaginatedResultDTO<AdminUserReadDTO>> ExecutePagedQueryAsync(IQueryable<User> query, int page, int pageSize, CancellationToken cancellationToken)
         {
             return await query
                 .AsDTO()
