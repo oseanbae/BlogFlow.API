@@ -1,4 +1,5 @@
 ﻿using BlogFlow.API.Exceptions;
+using System.Text.RegularExpressions;
 
 namespace BlogFlow.API.Models
 {
@@ -28,6 +29,9 @@ namespace BlogFlow.API.Models
         }
 
         public static string Normalize(string name)
-            => name.Trim().ToLowerInvariant();
+        {
+            var collapsed = Regex.Replace(name.Trim(), @"\s+", " ");
+            return collapsed.ToLowerInvariant().Replace(" ", "-");
+        }
     }
 }

@@ -1,5 +1,6 @@
 ﻿using BlogFlow.API.Exceptions;
 using BlogFlow.API.Models;
+using System.Text.RegularExpressions;
 
 public class Category
 {
@@ -40,5 +41,8 @@ public class Category
     }
 
     public static string Normalize(string name)
-        => name.Trim().ToLowerInvariant();
+    {
+        var collapsed = Regex.Replace(name.Trim(), @"\s+", " ");
+        return collapsed.ToLowerInvariant().Replace(" ", "-");
+    }
 }

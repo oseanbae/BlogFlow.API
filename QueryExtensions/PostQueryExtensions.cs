@@ -28,7 +28,8 @@ namespace BlogFlow.API.QueryExtensions
                     Tags = p.PostTags.Select(pt => new TagReadDTO
                     {
                         Id = pt.Tag.Id,
-                        Name = pt.Tag.Name
+                        Name = pt.Tag.Name,
+                        DisplayName = pt.Tag.DisplayName
                     })
                 });
         }
@@ -55,7 +56,8 @@ namespace BlogFlow.API.QueryExtensions
                     .Select(pt => new TagReadDTO
                     {
                         Id = pt.Tag.Id,
-                        Name = pt.Tag.Name
+                        Name = pt.Tag.Name,
+                        DisplayName = pt.Tag.DisplayName 
                     }).ToList() ?? []
             };
         }
