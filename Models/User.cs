@@ -52,12 +52,14 @@ namespace BlogFlow.API.Models
         {
             if (DeletedAt != null) throw new ConflictException($"User '{Username}' is already deleted.", "USER_ALREADY_DELETED");
             DeletedAt = DateTime.UtcNow;
+            UpdatedAt = DateTime.UtcNow;
         }
 
         public void Restore()
         {
             if (DeletedAt == null) throw new ConflictException($"User '{Username}' is not deleted.", "USER_NOT_DELETED");
             DeletedAt = null;
+            UpdatedAt = DateTime.UtcNow;
         }
 
         public void UpdateIdentity(string newUsername, string newEmail)

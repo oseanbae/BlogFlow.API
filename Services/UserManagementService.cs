@@ -84,6 +84,7 @@ namespace BlogFlow.API.Services
 
             return await _repo
                 .GetUsersQuery()
+                .IgnoreQueryFilters()
                 // Project only required field
                 .Select(u => new
                 {
