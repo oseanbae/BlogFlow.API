@@ -12,6 +12,7 @@ namespace BlogFlow.API.QueryExtensions
                 {
                     Id = c.Id,
                     Name = c.Name,
+                    DisplayName = c.DisplayName
                 });
         }
 
@@ -21,6 +22,7 @@ namespace BlogFlow.API.QueryExtensions
             {
                 Id = category.Id,
                 Name = category.Name,
+                DisplayName = category.DisplayName
             };
         }
     }
