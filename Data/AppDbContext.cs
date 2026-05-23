@@ -127,16 +127,6 @@ namespace BlogFlow.API.Data
                     .WithMany(c => c.Posts)
                     .HasForeignKey(p => p.CategoryId)
                     .OnDelete(DeleteBehavior.Restrict);
-
-                // Post -> Comments
-                entity.HasMany(p => p.Comments)
-                    .WithOne(c => c.Post)
-                    .HasForeignKey(c => c.PostId)
-                    .OnDelete(DeleteBehavior.Restrict);
-
-                entity.HasMany(p => p.PostTags)
-                    .WithOne(pt => pt.Post)
-                    .HasForeignKey(pt => pt.PostId);
             });
 
             // CATEGORY
@@ -205,6 +195,7 @@ namespace BlogFlow.API.Data
             builder.Entity<Comment>(entity =>
             {   
                 entity.HasKey(c => c.Id);
+                entity.HasIndex(c => new { c.PostId, c.DeletedAt });
 
                 entity.Property(c => c.Body)
                     .IsRequired()

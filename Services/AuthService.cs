@@ -135,7 +135,7 @@ namespace BlogFlow.API.Services
                 await GenerateRefreshTokenAsync(user.Id, cancellationToken);
 
             // revoke old token
-            existingToken.Revoke("Revoked by user");
+            existingToken.Revoke("Rotated", refreshTokenEntity.Token);
 
             var accessToken = GenerateToken(user);
 
@@ -196,7 +196,7 @@ namespace BlogFlow.API.Services
                     "NOT_TOKEN_OWNER");
             }
 
-            token.Revoke("Rotated", token.Token);
+            token.Revoke("Revoked by user");
 
             await _refreshTokenRepo.SaveChangesAsync(cancellationToken);
 

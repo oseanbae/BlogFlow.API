@@ -132,15 +132,15 @@ namespace BlogFlow.API.Services
             if (p.Role is UserRole role)
                 query = query.Where(u => u.Role == role);
 
-            if (!p.IsDeleted.HasValue)
-            {
-                query = query.Where(u => u.DeletedAt == null);
-            }
-            else
+            if (p.IsDeleted.HasValue)
             {
                 query = p.IsDeleted.Value
                     ? query.Where(u => u.DeletedAt != null)
                     : query.Where(u => u.DeletedAt == null);
+            }
+            else
+            {
+                query = query.Where(u => u.DeletedAt == null); // default: active only
             }
 
             if (p.CreatedAfter.HasValue)
