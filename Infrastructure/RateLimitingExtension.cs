@@ -1,5 +1,7 @@
-﻿using BlogFlow.API.Settings;
+﻿using BlogFlow.API.DTOs.Common;
+using BlogFlow.API.Settings;
 using Microsoft.AspNetCore.RateLimiting;
+using Microsoft.Extensions.Options;
 using System.Threading.RateLimiting;
 
 namespace BlogFlow.API.Infrastructure
@@ -26,9 +28,10 @@ namespace BlogFlow.API.Infrastructure
 
             services.AddRateLimiter(limiterOptions =>
             {
-                var config = configuration
-                    .GetSection(RateLimitOptions.SectionName)
-                    .Get<RateLimitOptions>()!;
+                var config = services
+                    .BuildServiceProvider()
+                    .GetRequiredService<IOptions<RateLimitOptions>>()
+                    .Value;
 
                 CreateLimiter(limiterOptions, REGISTER_POLICY, config.Register);
                 CreateLimiter(limiterOptions, LOGIN_POLICY, config.Login);
@@ -48,11 +51,14 @@ namespace BlogFlow.API.Infrastructure
 
                     context.HttpContext.Response.StatusCode = StatusCodes.Status429TooManyRequests;
 
-                    await context.HttpContext.Response.WriteAsJsonAsync(new
+                    await context.HttpContext.Response.WriteAsJsonAsync(new ErrorResponseDTO
                     {
-                        error = config.Rejected.Error,
-                        message = config.Rejected.Message,
-                        retryAfter = TimeSpan.FromSeconds(config.Rejected.WindowSecond)
+                        StatusCode = StatusCodes.Status429TooManyRequests,
+                        Message = config.Rejected.Message,
+                        ErrorCode = config.Rejected.Error,
+                        Timestamp = DateTimeOffset.UtcNow,
+                        TraceId = context.HttpContext.TraceIdentifier,
+                        Errors = null
                     }, cancellationToken: token);
                 };
             });

@@ -2,6 +2,7 @@
 using BlogFlow.API.Exceptions;
 using BlogFlow.API.Exceptions.Base;
 using Microsoft.AspNetCore.Diagnostics;
+using Microsoft.EntityFrameworkCore;
 using System.Net.Mime;
 
 namespace BlogFlow.API.Infrastructure
@@ -32,6 +33,14 @@ namespace BlogFlow.API.Infrastructure
                 message = appEx.Message;
                 errorCode = appEx.ErrorCode;
                 errors = appEx.Errors;
+            }
+
+            // DB Exception
+            if (exception is DbUpdateException dbEx)
+            {
+                statusCode = StatusCodes.Status409Conflict;
+                message = "A database conflict occurred.";
+                errorCode = "DATABASE_CONFLICT";
             }
 
             // Standardized API error response

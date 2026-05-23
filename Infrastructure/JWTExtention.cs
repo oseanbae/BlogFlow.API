@@ -89,6 +89,24 @@ public static class JWTExtension
                         };
 
                         await context.Response.WriteAsJsonAsync(response);
+                    },
+
+                    OnForbidden = async context =>
+                    {
+                        context.Response.StatusCode = StatusCodes.Status403Forbidden;
+                        context.Response.ContentType = "application/json";
+
+                        var response = new ErrorResponseDTO
+                        {
+                            StatusCode = StatusCodes.Status403Forbidden,
+                            Message = "You do not have permission to access this resource.",
+                            ErrorCode = "FORBIDDEN",
+                            Timestamp = DateTimeOffset.UtcNow,
+                            TraceId = context.HttpContext.TraceIdentifier,
+                            Errors = null
+                        };
+
+                        await context.Response.WriteAsJsonAsync(response);
                     }
                 };
             });
