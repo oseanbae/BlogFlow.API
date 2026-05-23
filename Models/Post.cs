@@ -19,7 +19,7 @@ namespace BlogFlow.API.Models
         public User Author { get; private set; } = null!;
         public Category Category { get; private set; } = null!;
         public ICollection<PostTag> PostTags { get; private set; } = [];
-        public ICollection<Comment> Comments { get; set; } = [];
+        public ICollection<Comment> Comments { get; private set; } = [];
 
         //Constructor for EF Core to load data from db
         private Post() { }
@@ -34,6 +34,9 @@ namespace BlogFlow.API.Models
 
             if (authorId == Guid.Empty)
                 throw new BadRequestException("Invalid author", "INVALID_AUTHOR_ID");
+
+            if (categoryId == Guid.Empty)
+                throw new BadRequestException("Invalid category", "INVALID_CATEGORY_ID");
 
             Title = title.Trim();
             Body = body;
@@ -52,12 +55,14 @@ namespace BlogFlow.API.Models
         {
             if (DeletedAt != null) throw new ConflictException($"Post '{Id}' is already deleted.", "POST_ALREADY_DELETED");
             DeletedAt = DateTime.UtcNow;
+            UpdatedAt = DateTime.UtcNow;
         }
 
         public void Restore()
         {
             if (DeletedAt == null) throw new ConflictException($"Post '{Id}' is not deleted.", "POST_NOT_DELETED");
             DeletedAt = null;
+            UpdatedAt = DateTime.UtcNow;
         }
         public void Update(string title, string body, Guid categoryId)
         {
@@ -69,6 +74,9 @@ namespace BlogFlow.API.Models
 
             if (string.IsNullOrWhiteSpace(body))
                 throw new BadRequestException("Body is required", "EMPTY_POST_BODY");
+
+            if (categoryId == Guid.Empty)
+                throw new BadRequestException("Invalid category", "INVALID_CATEGORY_ID");
 
             if (categoryId == Guid.Empty)
                 throw new BadRequestException("Invalid category", "INVALID_CATEGORY_ID");

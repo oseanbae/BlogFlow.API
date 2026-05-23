@@ -16,7 +16,7 @@ namespace BlogFlow.API.Models
         public User User { get; } = null!; 
         public Post Post { get; } = null!;
 
-        public Comment() { } //EF Core
+        private Comment() { } //EF Core
 
         public Comment(string body, Guid userId, Guid postId)
         {
@@ -59,12 +59,14 @@ namespace BlogFlow.API.Models
         {
             if (DeletedAt != null) throw new ConflictException($"Comment '{Id}' is already deleted.", "COMMENT_ALREADY_DELETED");
             DeletedAt = DateTime.UtcNow;
+            UpdatedAt = DateTime.UtcNow;
         }
 
         public void Restore()   
         {
             if (DeletedAt == null) throw new ConflictException($"Comment '{Id}' is not deleted.", "COMMENT_NOT_DELETED");
             DeletedAt = null;
+            UpdatedAt = DateTime.UtcNow;    
         }
     }
 }   

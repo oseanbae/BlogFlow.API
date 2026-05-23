@@ -16,7 +16,7 @@ namespace BlogFlow.API.Models
         public string Username { get; private set; } = null!;
         public string Email { get; private set; } = null!;
         public string PasswordHash { get; private set; } = null!;
-        public UserRole Role { get; set; } = UserRole.Reader;
+        public UserRole Role { get; private set; } = UserRole.Reader;
         public DateTime CreatedAt { get; private set; } = DateTime.UtcNow;
         public DateTime? DeletedAt { get; private set; }
         public DateTime? UpdatedAt { get; private set; }
