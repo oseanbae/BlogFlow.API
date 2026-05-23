@@ -26,6 +26,14 @@ namespace BlogFlow.API.Controllers
             return Ok(result);
         }
 
+        [HttpGet("me")] // GET api/v1/users/me
+        [Authorize]
+        public async Task<ActionResult<UserReadDTO>> GetMyProfileAsync(CancellationToken cancellationToken)
+        {
+            var result = await _service.GetUserByIdAsync(_currentUser.GetRequiredUserId(), cancellationToken);
+            return Ok(result);
+        }
+
         [HttpPut("me")] // PUT    api/v1/users/me 
         [Authorize]
         public async Task<ActionResult> UpdateProfile(UserUpdateDTO dto, CancellationToken cancellationToken)

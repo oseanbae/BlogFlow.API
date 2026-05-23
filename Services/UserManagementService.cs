@@ -158,9 +158,6 @@ namespace BlogFlow.API.Services
             return DateTime.SpecifyKind(dateTime, DateTimeKind.Utc);
         }
 
-        // Future: extend to support dynamic sorting
-        // (e.g., username, role, createdAt, updatedAt,
-        // ascending/descending direction via query params).
         private static IQueryable<User> ApplySorting(
             IQueryable<User> query)
         {

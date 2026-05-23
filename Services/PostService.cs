@@ -293,8 +293,6 @@ namespace BlogFlow.API.Services
 
         private static IQueryable<Post> ApplySorting(IQueryable<Post> query)
         {
-            // TODO: extend to support dynamic sorting
-            // (e.g., createdAt, updatedAt, ascending/descending via query params)
             return query.OrderByDescending(u => u.CreatedAt);
         }
     }
