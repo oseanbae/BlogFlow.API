@@ -9,6 +9,6 @@ namespace BlogFlow.API.Services.Interfaces
         Task<CommentReadDTO> GetByIdAsync(Guid postId, Guid commentId, CancellationToken cancellationToken);
         Task<PaginatedResultDTO<CommentReadDTO>> GetByPostAsync(Guid postId, int page, int pageSize, CancellationToken cancellationToken);
         Task<CommentReadDTO> UpdateAsync(Guid postId, Guid commentId, Guid userId, string newBody, CancellationToken cancellationToken);
-        Task DeleteAsync(Guid postId, Guid commentId, Guid userId, CancellationToken cancellationToken);
+        Task DeleteAsync(Guid postId, Guid commentId, Guid userId, bool isAdmin, bool isAuthor, CancellationToken cancellationToken);
     }
 }

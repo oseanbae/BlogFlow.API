@@ -65,12 +65,15 @@ namespace BlogFlow.API.Controllers
             Guid commentId,
             [FromBody] CommentUpdateDTO dto,
             CancellationToken cancellationToken)
-            => Ok(await _service.UpdateAsync(
-                postId,
-                commentId,
-                _currentUser.GetRequiredUserId(),
-                dto.Body,
-                cancellationToken));
+        {
+            var user = _currentUser.GetCurrentUser();
+            return Ok(await _service.UpdateAsync(
+                    postId,
+                    commentId,
+                    user.UserId,
+                    dto.Body,
+                    cancellationToken));
+        }
 
         [HttpDelete("{postId}/comments/{commentId}")] // DELETE
         [Authorize]
@@ -79,7 +82,8 @@ namespace BlogFlow.API.Controllers
             Guid commentId,
             CancellationToken cancellationToken)
         {
-            await _service.DeleteAsync(postId, commentId, _currentUser.GetRequiredUserId(), cancellationToken);
+            var user = _currentUser.GetCurrentUser();
+            await _service.DeleteAsync(postId, commentId, user.UserId, user.IsAdmin, user.IsAuthor, cancellationToken);
             return NoContent();
         }
     }
