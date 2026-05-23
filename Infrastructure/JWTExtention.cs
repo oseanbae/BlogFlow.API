@@ -1,4 +1,5 @@
-﻿using BlogFlow.API.Settings;
+﻿using BlogFlow.API.DTOs.Common;
+using BlogFlow.API.Settings;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
@@ -66,8 +67,32 @@ public static class JWTExtension
                     IssuerSigningKey = new SymmetricSecurityKey(
                         Encoding.UTF8.GetBytes(s.Secret))
                 };
-            });
 
+                bearerOptions.Events = new JwtBearerEvents
+                {
+                    OnChallenge = async context =>
+                    {
+                        // Prevents default empty response
+                        context.HandleResponse();
+
+                        context.Response.StatusCode = StatusCodes.Status401Unauthorized;
+                        context.Response.ContentType = "application/json";
+
+                        var response = new ErrorResponseDTO
+                        {
+                            StatusCode = StatusCodes.Status401Unauthorized,
+                            Message = "Authentication failed. Please provide a valid access token.",
+                            ErrorCode = "UNAUTHORIZED",
+                            Timestamp = DateTimeOffset.UtcNow,
+                            TraceId = context.HttpContext.TraceIdentifier,
+                            Errors = null
+                        };
+
+                        await context.Response.WriteAsJsonAsync(response);
+                    }
+                };
+            });
+            
         // Register authorization services (used with [Authorize] attributes)
         services.AddAuthorization();
 
