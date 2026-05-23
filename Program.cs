@@ -68,13 +68,6 @@ builder.Host.UseSerilog();
 
 var app = builder.Build();
 
-// Always run migrations
-using (var scope = app.Services.CreateScope())
-{
-    var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-    await db.Database.MigrateAsync();
-}
-
 // Development
 if (app.Environment.IsDevelopment())
 {
