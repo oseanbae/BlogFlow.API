@@ -13,7 +13,7 @@ namespace BlogFlow.API.Validators
                 .When(p => p.Title != null);
 
             RuleFor(p => p.Body)
-                .MinimumLength(3)
+                .MinimumLength(10)
                 .MaximumLength(10000)
                 .When(p => p.Body != null);
 

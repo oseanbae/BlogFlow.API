@@ -11,9 +11,7 @@ namespace BlogFlow.API.Validators
             RuleFor(p => p.Title)
                 .NotEmpty()
                 .MinimumLength(3)
-                .MaximumLength(255)
-                .Must(t => t.Trim() == t)
-                .WithMessage("Title must not have leading or trailing spaces.");
+                .MaximumLength(255);
 
             RuleFor(p => p.Body)
                 .NotEmpty()

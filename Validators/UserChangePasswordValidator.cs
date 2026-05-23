@@ -11,11 +11,10 @@ namespace BlogFlow.API.Validators
                 .NotEmpty();
 
             RuleFor(x => x.NewPassword)
-                .Cascade(CascadeMode.Stop) //stop rule whenever a validation fails
+                .Cascade(CascadeMode.Stop)
                 .NotEmpty()
-                .Must(p => !string.IsNullOrWhiteSpace(p))
                 .MinimumLength(4);
-          
+
         }
     }
 }

@@ -2,11 +2,11 @@
 {
     public sealed class ErrorResponseDTO
     {
-        public int StatusCode { get; set; }
-        public string Message { get; set; } = default!;
-        public string? ErrorCode { get; set; }
-        public DateTimeOffset Timestamp { get; set; }
-        public string? TraceId { get; set; }
-        public IEnumerable<string>? Errors { get; set; }
+        public int StatusCode { get; init; }
+        public string Message { get; init; } = default!;
+        public string? ErrorCode { get; init; }
+        public DateTimeOffset Timestamp { get; init; }
+        public string? TraceId { get; init; }
+        public IEnumerable<string>? Errors { get; init; }
     }
 }

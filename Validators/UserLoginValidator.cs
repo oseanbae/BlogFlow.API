@@ -9,27 +9,19 @@ namespace BlogFlow.API.Validators
         {
             RuleFor(x => x.UsernameOrEmail)
                 .NotEmpty()
-                .WithMessage("Please enter your username or email.");
-
-            RuleFor(x => x.Password)
-                .NotEmpty()
-                .WithMessage("Please enter your password.");
-
-            // Username or Email field
-            RuleFor(x => x.UsernameOrEmail)
-                .NotEmpty()
-                .WithMessage("Username or Email is required.")
+                    .WithMessage("Username or Email is required.")
                 .MinimumLength(3)
+                    .WithMessage("Username or Email must be at least 3 characters.")
                 .MaximumLength(100)
-                .WithMessage("Username or Email must be between 3 and 100 characters.");
+                    .WithMessage("Username or Email must not exceed 100 characters.");
 
-            // Password
             RuleFor(x => x.Password)
                 .NotEmpty()
-                .WithMessage("Password is required.")
+                    .WithMessage("Password is required.")
                 .MinimumLength(6)
+                    .WithMessage("Password must be at least 6 characters.")
                 .MaximumLength(100)
-                .WithMessage("Password must be between 6 and 100 characters.");
+                    .WithMessage("Password must not exceed 100 characters.");
         }
     }
 }
