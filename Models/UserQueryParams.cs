@@ -20,7 +20,7 @@
 
         public string? Search { get; set; }
         public UserRole? Role { get; set; }
-        public bool? IsDeleted { get; set; } = false;
+        public bool? IsDeleted { get; set; }
         public DateTime? CreatedAfter { get; set; }
     }
 }

@@ -11,9 +11,6 @@ namespace BlogFlow.API.QueryExtensions
             int pageSize,
             CancellationToken cancellationToken)
         {
-            if (page < 1) page = 1;
-            if (pageSize < 1) pageSize = 10;
-
             var totalCount = await query.CountAsync(cancellationToken);
 
             var items = await query

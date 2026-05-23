@@ -44,8 +44,8 @@ namespace BlogFlow.API.Controllers
         [Authorize(Roles = "Admin")]
         public async Task<ActionResult> RenameCategoryAsync(Guid categoryId, CategoryRenameDTO dto, CancellationToken cancellationToken)
         {
-            await _categoryService.RenameCategoryAsync(categoryId, dto.Name, cancellationToken);
-            return NoContent();
+            var result = await _categoryService.RenameCategoryAsync(categoryId, dto.Name, cancellationToken);
+            return Ok(result);
         }
     }
 }

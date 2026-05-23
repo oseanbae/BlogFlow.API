@@ -50,8 +50,6 @@ namespace BlogFlow.API.Services
 
         public async Task<CategoryReadDTO> CreateCategoryAsync(CategoryCreateDTO dto, CancellationToken cancellationToken)
         {
-            ValidateRequestSync(dto.Name);
-
             _logger.LogInformation("Creating category with name {CategoryName}", dto.Name);
 
             if (await _repo.ExistsByNameAsync(dto.Name, cancellationToken: cancellationToken))
@@ -77,7 +75,6 @@ namespace BlogFlow.API.Services
 
         public async Task<CategoryReadDTO> RenameCategoryAsync(Guid id, string newName, CancellationToken cancellationToken)
         {
-            ValidateRequestSync(newName);
 
             _logger.LogInformation("Renaming category {CategoryId} to {NewName}", id, newName);
 
@@ -109,12 +106,6 @@ namespace BlogFlow.API.Services
                 newName);
 
             return category.ToDTO();
-        }
-
-        private static void ValidateRequestSync(string name)
-        {
-            if (string.IsNullOrWhiteSpace(name))
-                throw new BadRequestException("Category name is required.", "EMPTY_CATEGORY_NAME");
         }
     }
 }
