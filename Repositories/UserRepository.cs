@@ -14,8 +14,12 @@ namespace BlogFlow.API.Repositories
             _context = context;
         }
 
-        public IQueryable<User> GetUsersQuery()
-            => _context.Users.AsQueryable();
+        public IQueryable<User> GetUsersQuery(bool includeDeleted = false)
+        {
+            return includeDeleted
+                ? _context.Users.IgnoreQueryFilters()
+                : _context.Users.AsQueryable();
+        }
 
         public async Task CreateAsync(User user, CancellationToken cancellationToken)
         {

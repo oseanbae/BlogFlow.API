@@ -1,8 +1,10 @@
 ﻿using BlogFlow.API.DTOs.User;
 using BlogFlow.API.Exceptions;
 using BlogFlow.API.Models;
+using BlogFlow.API.QueryExtensions;
 using BlogFlow.API.Repositories.Interfaces;
 using BlogFlow.API.Services.Interfaces;
+using Microsoft.EntityFrameworkCore;
 
 namespace BlogFlow.API.Services
 {
@@ -24,15 +26,21 @@ namespace BlogFlow.API.Services
             UserChangePasswordDTO dto,
             CancellationToken cancellationToken)
         {
+            if (dto.CurrentPassword == dto.NewPassword)
+            {
+                _logger.LogWarning(
+                    "User {UserId} attempted to reuse current password",
+                    id);
+
+                throw new ConflictException(
+                    "The new password must be different from your current password.",
+                    "PASSWORD_ALREADY_IN_USE");
+            }
+
             var user = await _repo.GetByIdAsync(id, includeDeleted: false, cancellationToken)
                 ?? throw new NotFoundException("User", id);
 
-            bool isCurrentPasswordValid =
-                BCrypt.Net.BCrypt.Verify(
-                    dto.CurrentPassword,
-                    user.PasswordHash);
-
-            if (!isCurrentPasswordValid)
+            if (!BCrypt.Net.BCrypt.Verify(dto.CurrentPassword, user.PasswordHash))
             {
                 _logger.LogWarning(
                     "Failed password change attempt for user {UserId} due to invalid current password",
@@ -43,22 +51,7 @@ namespace BlogFlow.API.Services
                     "INVALID_CURRENT_PASSWORD");
             }
 
-            if (dto.CurrentPassword == dto.NewPassword)
-            {
-                _logger.LogWarning(
-                    "User {UserId} attempted to reuse current password",
-                    id);
-
-                throw new ConflictException(
-                    "The new password must be different from your current password.",
-                    "PASSWORD_ALREADY_IN_USE"
-                );
-            }
-
-            var hashedPassword =
-                BCrypt.Net.BCrypt.HashPassword(dto.NewPassword);
-
-            user.ChangePassword(hashedPassword);
+            user.ChangePassword(BCrypt.Net.BCrypt.HashPassword(dto.NewPassword));
 
             await _repo.SaveChangesAsync(cancellationToken);
 
@@ -87,17 +80,11 @@ namespace BlogFlow.API.Services
             Guid id,
             CancellationToken cancellationToken)
         {
-            var existingUser = await _repo.GetByIdAsync(id, includeDeleted: false, cancellationToken)
+            return await _repo.GetUsersQuery()
+                .Where(u => u.Id == id)
+                .AsDTO()
+                .FirstOrDefaultAsync(cancellationToken)
                 ?? throw new NotFoundException("User", id);
-
-            return new UserReadDTO
-            {
-                Id = existingUser.Id,
-                Username = existingUser.Username,
-                Email = existingUser.Email,
-                Role = existingUser.Role,
-                CreatedAt = existingUser.CreatedAt,
-            };
         }
 
         public async Task UpdateProfileAsync(
@@ -105,13 +92,25 @@ namespace BlogFlow.API.Services
             Guid userId,
             CancellationToken cancellationToken)
         {
-            var existingUser =
-                await _repo.GetByIdAsync(userId, includeDeleted: false, cancellationToken)
+            var normalizedUsername = dto.Username.ToLowerInvariant();
+            var normalizedEmail = dto.Email.ToLowerInvariant();
+
+            var existingUsername = await _repo.GetByUsernameAsync(normalizedUsername, cancellationToken);
+            if (existingUsername != null && existingUsername.Id != userId)
+                throw new ConflictException(
+                    $"Username '{dto.Username}' is already taken.",
+                    "USERNAME_ALREADY_EXISTS");
+
+            var existingEmail = await _repo.GetByEmailAsync(normalizedEmail, cancellationToken);
+            if (existingEmail != null && existingEmail.Id != userId)
+                throw new ConflictException(
+                    $"Email '{dto.Email}' is already taken.",
+                    "EMAIL_ALREADY_EXISTS");
+
+            var user = await _repo.GetByIdAsync(userId, includeDeleted: false, cancellationToken)
                 ?? throw new NotFoundException("User", userId);
 
-            existingUser.UpdateIdentity(
-                dto.Username,
-                dto.Email);
+            user.UpdateIdentity(normalizedUsername, normalizedEmail);
 
             await _repo.SaveChangesAsync(cancellationToken);
 

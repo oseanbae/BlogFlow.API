@@ -1,4 +1,5 @@
 ﻿using BlogFlow.API.DTOs.Admin;
+using BlogFlow.API.DTOs.User;
 using BlogFlow.API.Models;
 using Microsoft.EntityFrameworkCore;
 
@@ -6,7 +7,8 @@ namespace BlogFlow.API.QueryExtensions
 {
     public static class UserQueryExtensions
     {
-        public static IQueryable<AdminUserReadDTO> AsDTO(this IQueryable<User> query)
+        // Admin projection — includes sensitive fields
+        public static IQueryable<AdminUserReadDTO> AsAdminDTO(this IQueryable<User> query)
         {
             return query
                 .AsNoTracking()
@@ -19,6 +21,21 @@ namespace BlogFlow.API.QueryExtensions
                     CreatedAt = u.CreatedAt,
                     UpdatedAt = u.UpdatedAt,
                     DeletedAt = u.DeletedAt,
+                });
+        }
+
+        // Public projection — excludes sensitive fields
+        public static IQueryable<UserReadDTO> AsDTO(this IQueryable<User> query)
+        {
+            return query
+                .AsNoTracking()
+                .Select(u => new UserReadDTO
+                {
+                    Id = u.Id,
+                    Username = u.Username,
+                    Email = u.Email,
+                    Role = u.Role,
+                    CreatedAt = u.CreatedAt,
                 });
         }
     }

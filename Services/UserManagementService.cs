@@ -113,7 +113,7 @@ namespace BlogFlow.API.Services
         private static async Task<PaginatedResultDTO<AdminUserReadDTO>> ExecutePagedQueryAsync(IQueryable<User> query, int page, int pageSize, CancellationToken cancellationToken)
         {
             return await query
-                .AsDTO()
+                .AsAdminDTO()
                 .ToPaginatedResultAsync(
                     page,
                     pageSize,
