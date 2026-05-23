@@ -45,6 +45,7 @@ namespace BlogFlow.API.Services
                 BCrypt.Net.BCrypt.HashPassword(request.Password));
 
             await _userRepo.CreateAsync(user, cancellationToken);
+            await _userRepo.SaveChangesAsync(cancellationToken);
 
             _logger.LogInformation(
                 "User registered successfully: {UserId} ({Username})",
