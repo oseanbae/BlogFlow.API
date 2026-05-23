@@ -5,7 +5,6 @@
         public int StatusCode { get; }
         public string ErrorCode { get; }
         public DateTimeOffset Timestamp { get; }
-        public string? TraceId { get; set; }
         public IEnumerable<string>? Errors { get; }
 
         protected AppException(
