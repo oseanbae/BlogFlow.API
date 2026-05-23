@@ -193,7 +193,7 @@ namespace BlogFlow.API.Data
                 entity.HasOne(pt => pt.Post)
                     .WithMany(p => p.PostTags)
                     .HasForeignKey(pt => pt.PostId)
-                    .OnDelete(DeleteBehavior.Restrict);
+                    .OnDelete(DeleteBehavior.Cascade);
 
                 entity.HasOne(pt => pt.Tag)
                     .WithMany(t => t.PostTags)

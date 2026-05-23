@@ -111,7 +111,7 @@ namespace BlogFlow.API.Services
             UserContext user,
             CancellationToken cancellationToken)
         {
-            var post = await _postRepo.GetTrackedByIdAsync(postId, includeDeleted: user.IsAdmin)
+            var post = await _postRepo.GetTrackedByIdAsync(postId, includeDeleted: false)
                 ?? throw new NotFoundException("Post", postId);
 
             if (!user.IsAdmin && post.AuthorId != user.UserId)
@@ -165,7 +165,10 @@ namespace BlogFlow.API.Services
             var post = await _postRepo.GetTrackedByIdAsync(postId, includeDeleted: user.IsAdmin)
                 ?? throw new NotFoundException("Post", postId);
 
-            if(!user.IsAdmin && post.AuthorId != user.UserId)
+            if (post.DeletedAt != null)
+                throw new BadRequestException("Post is already deleted.", "POST_ALREADY_DELETED");
+
+            if (!user.IsAdmin && post.AuthorId != user.UserId)
             {
                 _logger.LogWarning(
                     "User {UserId} attempted to delete post {PostId} owned by another user",
@@ -224,8 +227,13 @@ namespace BlogFlow.API.Services
                     "Only admins can hard delete posts.",
                     "ADMIN_ONLY_ACTION");
             }
-            var post = await _postRepo.GetTrackedByIdAsync(postId, includeDeleted: true)
+            var post = await _postRepo.GetTrackedByIdAsync(postId, includeDeleted: true, cancellationToken)
                 ?? throw new NotFoundException("Post", postId);
+
+            if (post.DeletedAt == null)
+                throw new BadRequestException(
+                    "Post must be soft deleted before it can be permanently deleted.",
+                    "POST_NOT_DELETED");
 
             await _postRepo.DeleteAsync(post);
             await _postRepo.SaveChangesAsync(cancellationToken);
