@@ -8,12 +8,6 @@ namespace BlogFlow.API.Repositories.Interfaces
 
         Task<RefreshToken> CreateAsync(RefreshToken refreshToken, CancellationToken cancellationToken);
 
-        Task RevokeAsync(
-            RefreshToken token,
-            string reason,
-            string? replacedByToken = null,
-            CancellationToken cancellationToken = default);
-
         Task RevokeAllUserTokensAsync(Guid userId, string reason, CancellationToken cancellationToken);
 
         Task RemoveExpiredAsync(Guid userId, CancellationToken cancellationToken);

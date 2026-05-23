@@ -31,16 +31,6 @@ namespace BlogFlow.API.Repositories
                     cancellationToken);
         }
 
-        // REVOKE SINGLE TOKEN
-        public Task RevokeAsync(RefreshToken token, string reason, string? replacedByToken = null, CancellationToken cancellationToken = default)
-        {
-            token.RevokedAt = DateTime.UtcNow;
-            token.RevokeReason = reason;
-            token.ReplacedByToken = replacedByToken;
-
-            return Task.CompletedTask;
-        }
-
         // CLEAN EXPIRED TOKENS
         public async Task RemoveExpiredAsync(Guid userId, CancellationToken cancellationToken)
         {
@@ -65,8 +55,7 @@ namespace BlogFlow.API.Repositories
 
             foreach (var token in activeTokens)
             {
-                token.RevokedAt = now;
-                token.RevokeReason = reason;
+                token.Revoke(reason);
             }
         }
 

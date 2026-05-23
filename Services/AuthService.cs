@@ -135,11 +135,7 @@ namespace BlogFlow.API.Services
                 await GenerateRefreshTokenAsync(user.Id, cancellationToken);
 
             // revoke old token
-            await _refreshTokenRepo.RevokeAsync(
-                existingToken,
-                "Rotated",
-                refreshTokenEntity.Token,
-                cancellationToken);
+            existingToken.Revoke("Revoked by user");
 
             var accessToken = GenerateToken(user);
 
@@ -200,11 +196,7 @@ namespace BlogFlow.API.Services
                     "NOT_TOKEN_OWNER");
             }
 
-            await _refreshTokenRepo.RevokeAsync(
-                token,
-                "Revoked by user",
-                null,
-                cancellationToken);
+            token.Revoke("Rotated", token.Token);
 
             await _refreshTokenRepo.SaveChangesAsync(cancellationToken);
 
@@ -280,12 +272,11 @@ namespace BlogFlow.API.Services
         {
             var rawToken = Convert.ToBase64String(RandomNumberGenerator.GetBytes(64));
 
-            var refreshToken = new RefreshToken
-            {
-                Token = HashToken(rawToken),
-                UserId = userId,
-                ExpiresAt = DateTime.UtcNow.AddDays(_jwt.RefreshTokenExpiryDays)
-            };
+            var refreshToken = new RefreshToken(
+                userId,
+                HashToken(rawToken),
+                DateTime.UtcNow.AddDays(_jwt.RefreshTokenExpiryDays)
+            );
 
             await _refreshTokenRepo.CreateAsync(refreshToken, cancellationToken);
 
