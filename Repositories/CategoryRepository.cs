@@ -1,4 +1,5 @@
 ﻿using BlogFlow.API.Data;
+using BlogFlow.API.Helper;
 using BlogFlow.API.Repositories.Interfaces;
 using Microsoft.EntityFrameworkCore;
 
@@ -27,7 +28,7 @@ namespace BlogFlow.API.Repositories
 
         public async Task<bool> ExistsByNameAsync(string name, Guid? excludeId = null, CancellationToken cancellationToken = default)
         {
-            var normalized = Category.Normalize(name);
+            var normalized = SlugHelper.Normalize(name);
 
             return await _context.Categories.AnyAsync(
                 c =>

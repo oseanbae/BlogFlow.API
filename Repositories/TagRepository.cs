@@ -1,4 +1,5 @@
 ﻿using BlogFlow.API.Data;
+using BlogFlow.API.Helper;
 using BlogFlow.API.Models;
 using BlogFlow.API.Repositories.Interfaces;
 using Microsoft.EntityFrameworkCore;
@@ -21,7 +22,7 @@ namespace BlogFlow.API.Repositories
 
         public async Task<bool> TagExistsAsync(string tagName, CancellationToken cancellationToken)
         {
-            var normalized = Tag.Normalize(tagName);
+            var normalized = SlugHelper.Normalize(tagName);
 
             return await _context.Tags.AnyAsync(
                 t => t.Name == normalized,

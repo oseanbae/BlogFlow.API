@@ -1,4 +1,5 @@
 ﻿using BlogFlow.API.Exceptions;
+using BlogFlow.API.Helper;
 using BlogFlow.API.Models;
 using System.Text.RegularExpressions;
 
@@ -17,7 +18,7 @@ public class Category
             throw new BadRequestException("Category name cannot be empty or whitespace.", "EMPTY_CATEGORY_NAME");
 
         DisplayName = displayName.Trim();
-        Name = Normalize(displayName);
+        Name = SlugHelper.Normalize(displayName);
     }
 
     // SEED constructor
@@ -37,12 +38,6 @@ public class Category
         if (DisplayName == sanitizedName) return;
 
         DisplayName = sanitizedName;
-        Name = Normalize(newName);
-    }
-
-    public static string Normalize(string name)
-    {
-        var collapsed = Regex.Replace(name.Trim(), @"\s+", " ");
-        return collapsed.ToLowerInvariant().Replace(" ", "-");
+        Name = SlugHelper.Normalize(newName);
     }
 }

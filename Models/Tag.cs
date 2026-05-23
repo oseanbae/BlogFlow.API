@@ -1,4 +1,5 @@
 ﻿using BlogFlow.API.Exceptions;
+using BlogFlow.API.Helper;
 using System.Text.RegularExpressions;
 
 namespace BlogFlow.API.Models
@@ -18,7 +19,7 @@ namespace BlogFlow.API.Models
                 throw new BadRequestException("Tag name cannot be empty or whitespace.", "EMPTY_TAG_NAME");
 
             DisplayName = displayName.Trim();
-            Name = Normalize(displayName);
+            Name = SlugHelper.Normalize(displayName);
         }
 
         // SEED constructor
@@ -26,12 +27,6 @@ namespace BlogFlow.API.Models
             : this(displayName)
         {
             Id = id;
-        }
-
-        public static string Normalize(string name)
-        {
-            var collapsed = Regex.Replace(name.Trim(), @"\s+", " ");
-            return collapsed.ToLowerInvariant().Replace(" ", "-");
         }
     }
 }
