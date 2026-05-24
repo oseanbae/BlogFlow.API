@@ -1,5 +1,7 @@
 ﻿using BlogFlow.API.DTOs.Categories;
 using Microsoft.EntityFrameworkCore;
+using BlogFlow.API.Models;
+
 namespace BlogFlow.API.QueryExtensions
 {
     public static class CategoryQueryExtensions

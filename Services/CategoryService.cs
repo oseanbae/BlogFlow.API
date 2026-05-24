@@ -4,6 +4,7 @@ using BlogFlow.API.Services.Interfaces;
 using Microsoft.EntityFrameworkCore;
 using BlogFlow.API.QueryExtensions;
 using BlogFlow.API.Exceptions;
+using BlogFlow.API.Models;
 
 namespace BlogFlow.API.Services
 {

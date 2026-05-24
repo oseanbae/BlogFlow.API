@@ -1,4 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using BlogFlow.API.Models;
 
 namespace BlogFlow.API.Data.Seeding.Seeds
 {
