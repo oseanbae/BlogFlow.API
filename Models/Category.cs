@@ -1,7 +1,7 @@
 ﻿using BlogFlow.API.Exceptions;
 using BlogFlow.API.Helper;
-using BlogFlow.API.Models;
-using System.Text.RegularExpressions;
+
+namespace BlogFlow.API.Models;
 
 public class Category
 {
@@ -15,13 +15,15 @@ public class Category
     public Category(string displayName)
     {
         if (string.IsNullOrWhiteSpace(displayName))
-            throw new BadRequestException("Category name cannot be empty or whitespace.", "EMPTY_CATEGORY_NAME");
+            throw new BadRequestException(
+                "Category name cannot be empty or whitespace.",
+                "EMPTY_CATEGORY_NAME"
+            );
 
         DisplayName = displayName.Trim();
         Name = SlugHelper.Normalize(displayName);
     }
 
-    // SEED constructor
     public Category(Guid id, string displayName)
         : this(displayName)
     {
@@ -31,7 +33,10 @@ public class Category
     public void Rename(string newName)
     {
         if (string.IsNullOrWhiteSpace(newName))
-            throw new BadRequestException("Category name cannot be empty or whitespace.", "EMPTY_CATEGORY_NAME");
+            throw new BadRequestException(
+                "Category name cannot be empty or whitespace.",
+                "EMPTY_CATEGORY_NAME"
+            );
 
         var sanitizedName = newName.Trim();
 
