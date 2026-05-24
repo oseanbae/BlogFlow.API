@@ -17,9 +17,6 @@ namespace BlogFlow.API.Data.Seeding
 
         public async Task SeedAsync()
         {
-            //apply pending migrations
-            await _context.Database.MigrateAsync();
-
             foreach (var seeder in _seeders.OrderBy(s => s.Order))
             {
                 var name = seeder.GetType().Name;
@@ -29,7 +26,7 @@ namespace BlogFlow.API.Data.Seeding
                     await seeder.SeedAsync(_context);
                     _logger.LogInformation("Seeder completed: {Seeder}", name);
                 }
-                catch (InvalidOperationException ex)
+                catch (Exception ex)
                 {
                     _logger.LogError(ex, "Seeder failed: {Seeder}", name);
                     throw;

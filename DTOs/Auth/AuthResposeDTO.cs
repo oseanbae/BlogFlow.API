@@ -9,7 +9,6 @@ namespace BlogFlow.API.DTOs.Auth
         public string Username { get; init; } = null!;
         public string Email { get; init; } = null!;
 
-        [JsonConverter(typeof(JsonStringEnumConverter))]
         public UserRole Role { get; init; }
 
         public string AccessToken { get; init; } = null!;

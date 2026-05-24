@@ -6,7 +6,8 @@
 		<ImplicitUsings>enable</ImplicitUsings>
 		<AssemblyName>BlogFlow.API</AssemblyName>
 		<RootNamespace>BlogFlow.API</RootNamespace>
-	</PropertyGroup>
+	  <UserSecretsId>170d87df-39c2-49e2-b8be-d5a13544e9cf</UserSecretsId>
+  </PropertyGroup>
 
 	<ItemGroup>
 		<PackageReference Include="AspNetCoreRateLimit" Version="5.0.0" />
