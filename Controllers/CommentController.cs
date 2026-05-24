@@ -1,5 +1,6 @@
 ﻿using BlogFlow.API.DTOs.Comment;
 using BlogFlow.API.DTOs.Common;
+using BlogFlow.API.Models;
 using BlogFlow.API.Services.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -42,11 +43,10 @@ namespace BlogFlow.API.Controllers
         [AllowAnonymous]
         public async Task<ActionResult<PaginatedResultDTO<CommentReadDTO>>> GetCommentsByPostAsync(
             Guid postId,
-            [FromQuery] int page = 1,
-            [FromQuery] int pageSize = 10,
+            [FromQuery] CommentQueryParams p,
             CancellationToken cancellationToken = default)
         {
-            var result = await _service.GetByPostAsync(postId, page, pageSize, cancellationToken);
+            var result = await _service.GetByPostAsync(postId, p, cancellationToken);
             return Ok(result);
         }
 

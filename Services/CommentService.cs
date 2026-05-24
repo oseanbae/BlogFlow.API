@@ -77,21 +77,23 @@ namespace BlogFlow.API.Services
 
         public async Task<PaginatedResultDTO<CommentReadDTO>> GetByPostAsync(
             Guid postId,
-            int page,
-            int pageSize,
+            CommentQueryParams p,
             CancellationToken cancellationToken)
         {
             var postExists = await _postRepo.GetPostsQuery(includeDeleted: false)
-                .AnyAsync(p => p.Id == postId, cancellationToken);
+                .AnyAsync(post => post.Id == postId, cancellationToken);
 
             if (!postExists)
                 throw new NotFoundException("Post", postId);
 
-            var query = _repo.GetCommentsByPostQuery(postId)
-                             .OrderByDescending(c => c.CreatedAt)
-                             .AsDTO();
+            var query = _repo.GetCommentsByPostQuery(postId);
 
-            return await query.ToPaginatedResultAsync(page, pageSize, cancellationToken);
+            query = ApplyFilters(query, p);
+            query = ApplySorting(query);
+
+            return await query
+                .AsDTO()
+                .ToPaginatedResultAsync(p.Page, p.PageSize, cancellationToken);
         }
 
         public async Task<CommentReadDTO> UpdateAsync(
@@ -163,6 +165,26 @@ namespace BlogFlow.API.Services
             }
 
             return comment;
+        }
+
+        private static IQueryable<Comment> ApplyFilters(IQueryable<Comment> query, CommentQueryParams p)
+        {
+            if (p.AuthorId.HasValue)
+                query = query.Where(c => c.UserId == p.AuthorId.Value);
+
+            if (p.CreatedAfter.HasValue)
+                query = query.Where(c => c.CreatedAt >= p.CreatedAfter.Value);
+
+            if (p.CreatedBefore.HasValue)
+                query = query.Where(c => c.CreatedAt <= p.CreatedBefore.Value);
+
+            return query;
+        }
+
+        private static IQueryable<Comment> ApplySorting(IQueryable<Comment> query)
+        {
+            // TODO: extend to support dynamic sorting
+            return query.OrderByDescending(c => c.CreatedAt);
         }
     }
 }
