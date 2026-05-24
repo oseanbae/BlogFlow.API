@@ -2,7 +2,7 @@
 {
     public class UserUpdateDTO
     {
-        public string Username { get; set; } = null!;
-        public string Email { get; set; } = null!;
+        public string Username { get; init; } = null!;
+        public string Email { get; init; } = null!;
     }
 }

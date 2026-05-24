@@ -4,15 +4,15 @@ namespace BlogFlow.API.DTOs.Post
 {
     public class PostReadDTO
     {
-        public Guid Id { get; set; }
-        public string Title { get; set; } = null!;
-        public string Body { get; set; } = null!;
-        public DateTime CreatedAt { get; set; }
-        public DateTime? UpdatedAt { get; set; }
-        public Guid AuthorId { get; set; }
-        public string AuthorUsername { get; set; } = null!;
-        public Guid CategoryId { get; set; }
-        public string CategoryName { get; set; } = null!;
-        public IEnumerable<TagReadDTO> Tags { get; set; } = [];
-    }
+        public Guid Id { get; init; }
+        public string Title { get; init; } = null!;
+        public string Body { get; init; } = null!;
+        public DateTime CreatedAt { get; init; }
+        public DateTime? UpdatedAt { get; init; }
+        public Guid AuthorId { get; init; }
+        public string AuthorUsername { get; init; } = null!;
+        public Guid CategoryId { get; init; }
+        public string CategoryName { get; init; } = null!;
+        public IEnumerable<TagReadDTO> Tags { get; init; } = [];
+    }   
 }

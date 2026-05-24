@@ -2,20 +2,20 @@
 {
     public class AdminStatsDTO
     {
-        public int TotalUsers { get; set; }
+        public int TotalUsers { get; init; }
 
-        public int ActiveUsers { get; set; }
+        public int ActiveUsers { get; init; }
 
-        public int DeletedUsers { get; set; }
+        public int DeletedUsers { get; init; }
 
-        public int AdminCount { get; set; }
+        public int AdminCount { get; init; }
 
-        public int AuthorCount { get; set; }
+        public int AuthorCount { get; init; }
 
-        public int ReaderCount { get; set; }
+        public int ReaderCount { get; init; }
 
-        public int NewUsersThisWeek { get; set; }
+        public int NewUsersThisWeek { get; init; }
 
-        public int NewUsersThisMonth { get; set; }
+        public int NewUsersThisMonth { get; init; }
     }
 }

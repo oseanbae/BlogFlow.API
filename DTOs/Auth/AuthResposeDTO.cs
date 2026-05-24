@@ -5,15 +5,15 @@ namespace BlogFlow.API.DTOs.Auth
 {
     public class AuthResponseDTO
     {
-        public Guid Id { get; set; }
-        public string Username { get; set; } = null!;
-        public string Email { get; set; } = null!;
+        public Guid Id { get; init; }
+        public string Username { get; init; } = null!;
+        public string Email { get; init; } = null!;
 
         [JsonConverter(typeof(JsonStringEnumConverter))]
-        public UserRole Role { get; set; }
+        public UserRole Role { get; init; }
 
-        public string AccessToken { get; set; } = null!;
-        public string RefreshToken { get; set; } = null!;
-        public DateTime RefreshTokenExpiry { get; set; }
+        public string AccessToken { get; init; } = null!;
+        public string RefreshToken { get; init; } = null!;
+        public DateTime RefreshTokenExpiry { get; init; }
     }
 }

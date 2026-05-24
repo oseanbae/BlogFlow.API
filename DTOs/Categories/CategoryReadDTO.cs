@@ -2,8 +2,8 @@
 {
     public class CategoryReadDTO
     {
-        public Guid Id { get; set; }
-        public string Name { get; set; } = null!;
-        public string DisplayName { get; set; } = null!;
+        public Guid Id { get; init; }
+        public string Name { get; init; } = null!;
+        public string DisplayName { get; init; } = null!;
     }
 }

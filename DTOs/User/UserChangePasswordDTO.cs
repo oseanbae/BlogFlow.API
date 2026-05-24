@@ -2,7 +2,7 @@
 {
     public class UserChangePasswordDTO
     {
-        public string CurrentPassword { get; set; } = null!;
-        public string NewPassword { get; set; } = null!;
+        public string CurrentPassword { get; init; } = null!;
+        public string NewPassword { get; init; } = null!;
     }
 }

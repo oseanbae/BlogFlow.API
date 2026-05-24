@@ -2,12 +2,12 @@
 {
     public class CommentReadDTO
     {
-        public Guid Id { get; set; }
-        public Guid PostId { get; set; }
-        public Guid UserId { get; set; }
-        public string AuthorName { get; set; } = null!;
-        public string Body { get; set; } = null!;
-        public DateTime CreatedAt { get; set; }
-        public DateTime? UpdatedAt { get; set; }
+        public Guid Id { get; init; }
+        public Guid PostId { get; init; }
+        public Guid UserId { get; init; }
+        public string AuthorName { get; init; } = null!;
+        public string Body { get; init; } = null!;
+        public DateTime CreatedAt { get; init; }
+        public DateTime? UpdatedAt { get; init; }
     }
 }

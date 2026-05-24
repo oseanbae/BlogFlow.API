@@ -2,9 +2,9 @@
 {
     public class PaginatedResultDTO<T>
     {
-        public List<T> Items { get; set; } = [];
-        public int TotalCount { get; set; }
-        public int Page { get; set; }
+        public List<T> Items { get; init; } = [];
+        public int TotalCount { get; init; }
+        public int Page { get; init; }
 
         private int _pageSize = 10;
         public int PageSize

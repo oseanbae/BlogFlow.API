@@ -2,6 +2,6 @@
 {
     public class CommentCreateDTO
     {
-        public string Body { get; set; } = null!;
+        public string Body { get; init; } = null!;
     }
 }

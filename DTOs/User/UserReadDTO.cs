@@ -4,10 +4,10 @@ namespace BlogFlow.API.DTOs.User
 {
     public class UserReadDTO
     {
-        public Guid Id { get; set; }
-        public string Username { get; set; } = null!;
-        public string Email { get; set; } = null!;
-        public UserRole Role { get; set; }
-        public DateTime CreatedAt { get; set; }
+        public Guid Id { get; init; }
+        public string Username { get; init; } = null!;
+        public string Email { get; init; } = null!;
+        public UserRole Role { get; init; }
+        public DateTime CreatedAt { get; init; }
     }
 }

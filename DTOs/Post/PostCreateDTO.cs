@@ -2,9 +2,9 @@
 {
     public class PostCreateDTO
     {
-        public required string Title { get; set; }
-        public required string Body { get; set; }
-        public Guid CategoryId { get; set; }
-        public List<Guid>? TagIds { get; set; }
+        public required string Title { get; init; }
+        public required string Body { get; init; }
+        public Guid CategoryId { get; init; }
+        public List<Guid>? TagIds { get; init; }
     }
 }
