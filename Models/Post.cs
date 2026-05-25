@@ -2,12 +2,20 @@
 
 namespace BlogFlow.API.Models;
 
+public enum PostState
+{
+    Draft = 1,
+    Published = 2,
+    Archived = 3
+}
+
 public class Post
 {
     //PK
     public Guid Id { get; private set; } = Guid.NewGuid();
     public string Title { get; private set; } = null!;
     public string Body { get; private set; } = null!;
+    public PostState State { get; private set; } = PostState.Draft;
     public DateTime CreatedAt { get; private set; } = DateTime.UtcNow;
     public DateTime? UpdatedAt { get; private set; }
     public DateTime? DeletedAt { get; private set; }
@@ -40,6 +48,7 @@ public class Post
 
         Title = title.Trim();
         Body = body;
+        State = PostState.Draft;
         AuthorId = authorId;
         CategoryId = categoryId;
     }
@@ -49,6 +58,62 @@ public class Post
         : this(title, body, authorId, categoryId)
     {
         Id = id;
+    }
+
+    public void Publish()
+    {
+        if (DeletedAt.HasValue)
+            throw new ConflictException("Cannot publish a deleted post. It must be restored first.", "POST_IS_DELETED");
+
+        if (State == PostState.Published)
+            throw new ConflictException("This post is already live.", "POST_ALREADY_PUBLISHED");
+
+        if (State == PostState.Archived)
+            throw new ConflictException("Archived posts cannot be published directly. Please restore to draft first.", "POST_CANNOT_PUBLISH_FROM_ARCHIVE");
+
+        State = PostState.Published;
+        UpdatedAt = DateTime.UtcNow;
+    }
+
+    public void Archive()
+    {
+        if (DeletedAt.HasValue)
+            throw new ConflictException("Cannot archive a deleted post. It must be restored first.", "POST_IS_DELETED");
+
+        if (State == PostState.Archived)
+            throw new ConflictException("This post is already archived.", "POST_ALREADY_ARCHIVED");
+
+        State = PostState.Archived;
+        UpdatedAt = DateTime.UtcNow;
+    }
+
+    // Use case 1: Taking a live post down to edit it
+    public void Unpublish()
+    {
+        if (DeletedAt.HasValue)
+            throw new ConflictException("Cannot unpublish a deleted post.", "POST_IS_DELETED");
+
+        if (State == PostState.Draft)
+            throw new ConflictException("This post is already a draft.", "POST_ALREADY_DRAFT");
+
+        if (State == PostState.Archived)
+            throw new ConflictException("Cannot unpublish an archived post. Use MoveToDraft instead.", "POST_CANNOT_UNPUBLISH_ARCHIVE");
+
+        State = PostState.Draft;
+        UpdatedAt = DateTime.UtcNow;
+    }
+
+    // Use case 2: Bringing an old post out of retirement
+    public void MoveToDraft()
+    {
+        if (DeletedAt.HasValue)
+            throw new ConflictException("Cannot move a deleted post to draft. It must be restored first.", "POST_IS_DELETED");
+
+        if (State == PostState.Draft)
+            throw new ConflictException("This post is already a draft.", "POST_ALREADY_DRAFT");
+
+        State = PostState.Draft;
+        UpdatedAt = DateTime.UtcNow;
     }
 
     public void SoftDelete()
@@ -62,6 +127,7 @@ public class Post
     {
         if (DeletedAt == null) throw new ConflictException($"Post '{Id}' is not deleted.", "POST_NOT_DELETED");
         DeletedAt = null;
+        State = PostState.Draft;
         UpdatedAt = DateTime.UtcNow;
     }
     public void Update(string title, string body, Guid categoryId)
@@ -74,9 +140,6 @@ public class Post
 
         if (string.IsNullOrWhiteSpace(body))
             throw new BadRequestException("Body is required", "EMPTY_POST_BODY");
-
-        if (categoryId == Guid.Empty)
-            throw new BadRequestException("Invalid category", "INVALID_CATEGORY_ID");
 
         if (categoryId == Guid.Empty)
             throw new BadRequestException("Invalid category", "INVALID_CATEGORY_ID");

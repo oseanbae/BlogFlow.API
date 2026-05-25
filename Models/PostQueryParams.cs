@@ -15,6 +15,8 @@ public class PostQueryParams
         get => _pageSize;
         set => _pageSize = value < 1 ? 1 : (value > 100 ? 100 : value);
     }
+
+    public PostState? State { get; set; }
     public Guid? CategoryId { get; set; }
     public Guid? TagId { get; set; }
     public Guid? AuthorId { get; set; }

@@ -108,12 +108,16 @@ namespace BlogFlow.API.Data
                     .IsRequired()
                     .HasMaxLength(10000);
 
+                entity.Property(p => p.State).IsRequired();
+
                 entity.Property(p => p.CreatedAt).IsRequired();
+
                 entity.Property(p => p.UpdatedAt);
 
                 entity.HasQueryFilter(p => p.DeletedAt == null);
 
-                entity.HasIndex(p => new { p.AuthorId, p.DeletedAt });
+                entity.HasIndex(p => p.State);
+                entity.HasIndex(p => new { p.AuthorId, p.State, p.DeletedAt });
                 entity.HasIndex(p => p.CategoryId);
 
                 // Post -> User

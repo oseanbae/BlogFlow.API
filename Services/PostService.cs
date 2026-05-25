@@ -34,8 +34,12 @@ namespace BlogFlow.API.Services
             UserContext user,
             CancellationToken cancellationToken)
         {
-            var postDto = await _postRepo.GetPostsQuery(includeDeleted: user.IsAdmin)
-                .Where(p => p.Id == postId)
+            var query = _postRepo.GetPostsQuery(includeDeleted: user.IsAdmin)
+                .Where(p => p.Id == postId);
+
+            query = ApplyReadVisibility(query, user);
+
+            var postDto = await query
                 .AsDTO()
                 .FirstOrDefaultAsync(cancellationToken);
 
@@ -49,6 +53,7 @@ namespace BlogFlow.API.Services
         {
             var query = _postRepo.GetPostsQuery(includeDeleted: user.IsAdmin);
 
+            query = ApplyReadVisibility(query, user);
             query = ApplyFilters(query, p);
             query = ApplySorting(query);
 
@@ -114,8 +119,12 @@ namespace BlogFlow.API.Services
             var post = await _postRepo.GetTrackedByIdAsync(postId, includeDeleted: false)
                 ?? throw new NotFoundException("Post", postId);
 
-            if (!user.IsAdmin && post.AuthorId != user.UserId)
-                throw new ForbiddenException("You do not have permission to edit this post.", "NOT_POST_OWNER");
+            ValidateOwnership(post, user);
+
+            if (post.State != PostState.Draft)
+                throw new BadRequestException(
+                    "Only draft posts can be edited. Unpublish or move to draft first.",
+                    "POST_NOT_EDITABLE");
 
             if (dto.CategoryId.HasValue)
             {
@@ -149,36 +158,90 @@ namespace BlogFlow.API.Services
             return await GetPostByIdAsync(post.Id, user, cancellationToken);
         }
 
+        public async Task<PostReadDTO> PublishPostAsync(
+            Guid postId,
+            UserContext user,
+            CancellationToken cancellationToken)
+        {
+            var post = await _postRepo.GetTrackedByIdAsync(postId, includeDeleted: user.IsAdmin, cancellationToken)
+                ?? throw new NotFoundException("Post", postId);
+
+            ValidateOwnership(post, user);
+
+            post.Publish();
+
+            await _postRepo.SaveChangesAsync(cancellationToken);
+
+            _logger.LogInformation("Post {PostId} published successfully by user {UserId}", postId, user.UserId);
+            return await GetPostByIdAsync(post.Id, user, cancellationToken);
+        }
+
+        public async Task<PostReadDTO> ArchivePostAsync(
+            Guid postId,
+            UserContext user,
+            CancellationToken cancellationToken)
+        {
+            var post = await _postRepo.GetTrackedByIdAsync(postId, includeDeleted: user.IsAdmin)
+                ?? throw new NotFoundException("Post", postId);
+
+            ValidateOwnership(post, user);
+
+            post.Archive();
+
+            await _postRepo.SaveChangesAsync(cancellationToken);
+
+            _logger.LogInformation("Post {PostId} archived successfully by user {UserId}", postId, user.UserId);
+            return await GetPostByIdAsync(post.Id, user, cancellationToken);
+        }
+        public async Task<PostReadDTO> UnpublishPostAsync(
+            Guid postId,
+            UserContext user,
+            CancellationToken cancellationToken)
+        {
+            var post = await _postRepo.GetTrackedByIdAsync(postId, includeDeleted: user.IsAdmin)
+                ?? throw new NotFoundException("Post", postId);
+
+            ValidateOwnership(post, user);
+
+            post.Unpublish();
+
+            await _postRepo.SaveChangesAsync(cancellationToken);
+
+            _logger.LogInformation(
+                "Post {PostId} unpublished successfully by user {UserId}",
+                postId,
+                user.UserId);
+
+            return await GetPostByIdAsync(post.Id, user, cancellationToken);
+        }
+
+        public async Task<PostReadDTO> MoveToDraftAsync(
+            Guid postId,
+            UserContext user,
+            CancellationToken cancellationToken)
+        {
+            var post = await _postRepo.GetTrackedByIdAsync(postId, includeDeleted: user.IsAdmin)
+                ?? throw new NotFoundException("Post", postId);
+
+            ValidateOwnership(post, user);
+
+            post.MoveToDraft();
+
+            await _postRepo.SaveChangesAsync(cancellationToken);
+
+            _logger.LogInformation("Post {PostId} reverted to draft successfully by user {UserId}", postId, user.UserId);
+            return await GetPostByIdAsync(post.Id, user, cancellationToken);
+        }
+
         public async Task SoftDeletePostAsync(Guid postId, UserContext user, CancellationToken cancellationToken)
         {
-            if (!user.IsAuthor && !user.IsAdmin)
-            {
-                _logger.LogWarning(
-                    "Unauthorized post delete attempt by user {UserId}",
-                    user.UserId);
-
-                throw new ForbiddenException(
-                    "Only authors or admins can delete posts.",
-                    "INSUFFICIENT_ROLE");
-            }
-
             var post = await _postRepo.GetTrackedByIdAsync(postId, includeDeleted: user.IsAdmin)
                 ?? throw new NotFoundException("Post", postId);
 
             if (post.DeletedAt != null)
                 throw new BadRequestException("Post is already deleted.", "POST_ALREADY_DELETED");
 
-            if (!user.IsAdmin && post.AuthorId != user.UserId)
-            {
-                _logger.LogWarning(
-                    "User {UserId} attempted to delete post {PostId} owned by another user",
-                    user.UserId,
-                    postId);
-
-                throw new ForbiddenException(
-                    "You do not have permission to delete this post.",
-                    "NOT_POST_OWNER");
-            }
+            ValidateOwnership(post, user);
 
             post.SoftDelete();
 
@@ -276,6 +339,9 @@ namespace BlogFlow.API.Services
 
         private static IQueryable<Post> ApplyFilters(IQueryable<Post> query, PostQueryParams p)
         {
+            if (p.State.HasValue)
+                query = query.Where(post => post.State == p.State.Value);
+
             if (p.CategoryId is Guid catId)
                 query = query.Where(post => post.CategoryId == catId);
 
@@ -294,6 +360,36 @@ namespace BlogFlow.API.Services
         private static IQueryable<Post> ApplySorting(IQueryable<Post> query)
         {
             return query.OrderByDescending(u => u.CreatedAt);
+        }
+
+        private static void ValidateOwnership(Post post, UserContext user)
+        {
+            if (!user.IsAuthenticated)
+                throw new UnauthorizedException("User context is unauthenticated.", "UNAUTHENTICATED");
+
+            if (user.Role == UserRole.Reader)
+                throw new ForbiddenException("Readers are forbidden from mutating post data.", "INSUFFICIENT_ROLE");
+
+            if (user.IsAdmin)
+                return;
+
+            if (user.IsAuthor && post.AuthorId != user.UserId)
+                throw new ForbiddenException("You do not have permission to modify this post.", "NOT_POST_OWNER");
+        }
+
+        private static IQueryable<Post> ApplyReadVisibility(IQueryable<Post> query, UserContext user)
+        {
+            if (user.IsAdmin)
+                return query; // admin sees everything
+
+            if (user.IsAuthor)
+                // authors see published posts + their own drafts/archived
+                return query.Where(p =>
+                    p.State == PostState.Published ||
+                    p.AuthorId == user.UserId);
+
+            // anonymous and readers only see published
+            return query.Where(p => p.State == PostState.Published);
         }
     }
 }

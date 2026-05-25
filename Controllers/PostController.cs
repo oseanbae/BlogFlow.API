@@ -42,6 +42,47 @@ namespace BlogFlow.API.Controllers
             return Ok(result);
         }
 
+        [HttpPatch("{postId}/publish")]
+        [Authorize(Roles = "Author,Admin")]
+        public async Task<ActionResult<PostReadDTO>> PublishPostAsync(
+            Guid postId, CancellationToken cancellationToken)
+        {
+            var user = _currentUser.GetCurrentUser();
+            var result = await _postService.PublishPostAsync(postId, user, cancellationToken);
+            return Ok(result);
+        }
+
+        [HttpPatch("{postId}/unpublish")]
+        [Authorize(Roles = "Author,Admin")]
+        public async Task<ActionResult<PostReadDTO>> UnpublishPostAsync(
+            Guid postId, CancellationToken cancellationToken)
+        {
+            var user = _currentUser.GetCurrentUser();
+            var result = await _postService.UnpublishPostAsync(postId, user, cancellationToken);
+            return Ok(result);
+        }
+
+        [HttpPatch("{postId}/archive")]
+        [Authorize(Roles = "Author,Admin")]
+        public async Task<ActionResult<PostReadDTO>> ArchivePostAsync(
+            Guid postId, CancellationToken cancellationToken)
+        {
+            var user = _currentUser.GetCurrentUser();
+            var result = await _postService.ArchivePostAsync(postId, user, cancellationToken);
+            return Ok(result);
+        }
+
+        [HttpPatch("{postId}/draft")]
+        [Authorize(Roles = "Author,Admin")]
+        public async Task<ActionResult<PostReadDTO>> MoveToDraftAsync(
+            Guid postId, CancellationToken cancellationToken)
+        {
+            var user = _currentUser.GetCurrentUser();
+            var result = await _postService.MoveToDraftAsync(postId, user, cancellationToken);
+            return Ok(result);
+        }
+
+
         [HttpPost] // POST api/v1/posts
         [Authorize(Roles = "Author,Admin")]
         public async Task<ActionResult<PostReadDTO>> CreatePostAsync(
