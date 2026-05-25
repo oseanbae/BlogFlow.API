@@ -17,6 +17,7 @@ namespace BlogFlow.API.QueryExtensions
                     Id = p.Id,
                     Title = p.Title,
                     Body = p.Body,
+                    State = p.State,
                     CreatedAt = p.CreatedAt,
                     UpdatedAt = p.UpdatedAt,
 
@@ -46,6 +47,7 @@ namespace BlogFlow.API.QueryExtensions
                 Id = post.Id,
                 Title = post.Title,
                 Body = post.Body,
+                State = post.State,
                 CreatedAt = post.CreatedAt,
                 UpdatedAt = post.UpdatedAt,
                 AuthorId = post.AuthorId,
