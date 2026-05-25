@@ -6,10 +6,10 @@ namespace BlogFlow.API.Services.Interfaces
 {
     public interface ICommentService
     {
-        Task<CommentReadDTO> CreateAsync(Guid postId, Guid userId, CommentCreateDTO dto, CancellationToken cancellationToken);
-        Task<CommentReadDTO> GetByIdAsync(Guid postId, Guid commentId, CancellationToken cancellationToken);
-        Task<PaginatedResultDTO<CommentReadDTO>> GetByPostAsync(Guid postId, CommentQueryParams p, CancellationToken cancellationToken);
-        Task<CommentReadDTO> UpdateAsync(Guid postId, Guid commentId, Guid userId, string newBody, CancellationToken cancellationToken);
-        Task DeleteAsync(Guid postId, Guid commentId, Guid userId, bool isAdmin, bool isAuthor, CancellationToken cancellationToken);
+        Task<CommentReadDTO> CreateAsync(Guid postId, UserContext user, CommentCreateDTO dto, CancellationToken cancellationToken);
+        Task<PaginatedResultDTO<CommentReadDTO>> GetByPostAsync(Guid postId, CommentQueryParams p, UserContext user, CancellationToken cancellationToken);
+        Task<CommentReadDTO> GetByIdAsync(Guid postId, Guid commentId, UserContext user, CancellationToken cancellationToken);
+        Task<CommentReadDTO> UpdateAsync(Guid postId, Guid commentId, UserContext user, string newBody, CancellationToken cancellationToken);
+        Task DeleteAsync(Guid postId, Guid commentId, UserContext user, CancellationToken cancellationToken);
     }
 }

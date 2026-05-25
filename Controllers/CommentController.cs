@@ -30,23 +30,22 @@ namespace BlogFlow.API.Controllers
             CancellationToken cancellationToken)
         {
             var user = _currentUser.GetCurrentUser();
-
-            var result = await _service.CreateAsync(postId, user.UserId, dto, cancellationToken);
-
+            var result = await _service.CreateAsync(postId, user, dto, cancellationToken);
             return CreatedAtAction(
                 nameof(GetCommentByIdAsync),
                 new { postId, commentId = result.Id },
                 result);
         }
 
-        [HttpGet("{postId}/comments")] // GET    api/v1/posts/{postId}/comments
+        [HttpGet("{postId}/comments")]
         [AllowAnonymous]
         public async Task<ActionResult<PaginatedResultDTO<CommentReadDTO>>> GetCommentsByPostAsync(
             Guid postId,
             [FromQuery] CommentQueryParams p,
             CancellationToken cancellationToken = default)
         {
-            var result = await _service.GetByPostAsync(postId, p, cancellationToken);
+            var user = _currentUser.GetCurrentUser();
+            var result = await _service.GetByPostAsync(postId, p, user, cancellationToken);
             return Ok(result);
         }
 
@@ -56,7 +55,10 @@ namespace BlogFlow.API.Controllers
             Guid postId,
             Guid commentId,
             CancellationToken cancellationToken)
-            => Ok(await _service.GetByIdAsync(postId, commentId, cancellationToken));
+        {
+            var user = _currentUser.GetCurrentUser();
+            return Ok(await _service.GetByIdAsync(postId, commentId, user, cancellationToken));
+        }
 
         [HttpPatch("{postId}/comments/{commentId}")] // PATCH
         [Authorize]
@@ -67,12 +69,7 @@ namespace BlogFlow.API.Controllers
             CancellationToken cancellationToken)
         {
             var user = _currentUser.GetCurrentUser();
-            return Ok(await _service.UpdateAsync(
-                    postId,
-                    commentId,
-                    user.UserId,
-                    dto.Body,
-                    cancellationToken));
+            return Ok(await _service.UpdateAsync(postId, commentId, user, dto.Body, cancellationToken));
         }
 
         [HttpDelete("{postId}/comments/{commentId}")] // DELETE
@@ -83,7 +80,7 @@ namespace BlogFlow.API.Controllers
             CancellationToken cancellationToken)
         {
             var user = _currentUser.GetCurrentUser();
-            await _service.DeleteAsync(postId, commentId, user.UserId, user.IsAdmin, user.IsAuthor, cancellationToken);
+            await _service.DeleteAsync(postId, commentId, user, cancellationToken);
             return NoContent();
         }
     }

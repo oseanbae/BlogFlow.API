@@ -27,17 +27,24 @@ namespace BlogFlow.API.Services
 
         public async Task<CommentReadDTO> CreateAsync(
             Guid postId,
-            Guid userId,
+            UserContext user,
             CommentCreateDTO dto,
             CancellationToken cancellationToken)
         {
-            var postExists = await _postRepo.GetPostsQuery(includeDeleted: false)
-                .AnyAsync(p => p.Id == postId, cancellationToken);
+            var postQuery = _postRepo.GetPostsQuery(includeDeleted: false)
+                .Where(p => p.Id == postId);
 
-            if (!postExists)
-                throw new NotFoundException("Post", postId);
+            postQuery = ApplyPostVisibility(postQuery, user);
 
-            var comment = new Comment(dto.Body, userId, postId);
+            var post = await postQuery.FirstOrDefaultAsync(cancellationToken)
+                ?? throw new NotFoundException("Post", postId);
+
+            if (post.State != PostState.Published)
+                throw new BadRequestException(
+                    "Comments can only be added to published posts.",
+                    "POST_NOT_PUBLISHED");
+
+            var comment = new Comment(dto.Body, user.UserId, postId);
 
             await _repo.AddAsync(comment, cancellationToken);
             await _repo.SaveChangesAsync(cancellationToken);
@@ -45,25 +52,23 @@ namespace BlogFlow.API.Services
             _logger.LogInformation(
                 "Comment created: {CommentId} by user {UserId} on post {PostId}",
                 comment.Id,
-                userId,
+                user.UserId,
                 postId);
 
             return await _repo.GetQueryable()
                 .Where(c => c.Id == comment.Id)
                 .AsDTO()
                 .FirstOrDefaultAsync(cancellationToken)
-                ?? throw new Exception("Failed to load created comment.");
+                ?? throw new InvalidOperationException("Failed to load created comment.");
         }
 
         public async Task DeleteAsync(
             Guid postId,
             Guid commentId,
-            Guid userId,
-            bool isAdmin,
-            bool isAuthor,
+            UserContext user,
             CancellationToken cancellationToken)
         {
-            var comment = await ValidateAsync(commentId, postId, userId, isAdmin, isAuthor, cancellationToken);
+            var comment = await ValidateAsync(commentId, postId, user, cancellationToken);
 
             comment.SoftDelete();
 
@@ -72,18 +77,21 @@ namespace BlogFlow.API.Services
             _logger.LogInformation(
                 "Comment soft deleted: {CommentId} by user {UserId}",
                 commentId,
-                userId);
+                user.UserId);
         }
 
         public async Task<PaginatedResultDTO<CommentReadDTO>> GetByPostAsync(
             Guid postId,
             CommentQueryParams p,
+            UserContext user,
             CancellationToken cancellationToken)
         {
-            var postExists = await _postRepo.GetPostsQuery(includeDeleted: false)
-                .AnyAsync(post => post.Id == postId, cancellationToken);
+            var postQuery = _postRepo.GetPostsQuery(includeDeleted: false)
+                .Where(post => post.Id == postId);
 
-            if (!postExists)
+            postQuery = ApplyPostVisibility(postQuery, user);
+
+            if (!await postQuery.AnyAsync(cancellationToken))
                 throw new NotFoundException("Post", postId);
 
             var query = _repo.GetCommentsByPostQuery(postId);
@@ -99,11 +107,11 @@ namespace BlogFlow.API.Services
         public async Task<CommentReadDTO> UpdateAsync(
             Guid postId,
             Guid commentId,
-            Guid userId,
+            UserContext user,
             string newBody,
             CancellationToken cancellationToken)
         {
-            var comment = await ValidateAsync(commentId, postId, userId, isAdmin: false, isAuthor: false, cancellationToken);
+            var comment = await ValidateAsync(commentId, postId, user, cancellationToken);
 
             comment.UpdateBody(newBody);
 
@@ -112,16 +120,25 @@ namespace BlogFlow.API.Services
             _logger.LogInformation(
                 "Comment updated: {CommentId} by user {UserId}",
                 commentId,
-                userId);
+                user.UserId);
 
             return comment.ToDTO();
         }
 
         public async Task<CommentReadDTO> GetByIdAsync(
-           Guid postId,
-           Guid commentId,
-           CancellationToken cancellationToken)
+            Guid postId,
+            Guid commentId,
+            UserContext user,
+            CancellationToken cancellationToken)
         {
+            var postQuery = _postRepo.GetPostsQuery(includeDeleted: false)
+                .Where(p => p.Id == postId);
+
+            postQuery = ApplyPostVisibility(postQuery, user);
+
+            if (!await postQuery.AnyAsync(cancellationToken))
+                throw new NotFoundException("Post", postId);
+
             return await _repo.GetQueryable()
                 .Where(c => c.Id == commentId && c.PostId == postId)
                 .AsDTO()
@@ -132,10 +149,8 @@ namespace BlogFlow.API.Services
         private async Task<Comment> ValidateAsync(
             Guid commentId,
             Guid postId,
-            Guid? userId,
-            bool isAdmin = false,
-            bool isAuthor = false,
-            CancellationToken cancellationToken = default)
+            UserContext user,
+            CancellationToken cancellationToken)
         {
             var comment = await _repo.GetTrackedByIdAsync(commentId, cancellationToken)
                 ?? throw new NotFoundException("Comment", commentId);
@@ -143,19 +158,19 @@ namespace BlogFlow.API.Services
             if (comment.PostId != postId)
                 throw new NotFoundException("Comment", commentId);
 
-            if (userId.HasValue && !isAdmin)
+            if (!user.IsAdmin)
             {
-                var isCommentOwner = comment.UserId == userId.Value;
+                var isCommentOwner = comment.UserId == user.UserId;
 
-                var isPostOwner = isAuthor && await _postRepo
+                var isPostOwner = user.IsAuthor && await _postRepo
                     .GetPostsQuery(includeDeleted: false)
-                    .AnyAsync(p => p.Id == postId && p.AuthorId == userId.Value, cancellationToken);
+                    .AnyAsync(p => p.Id == postId && p.AuthorId == user.UserId, cancellationToken);
 
                 if (!isCommentOwner && !isPostOwner)
                 {
                     _logger.LogWarning(
                         "Unauthorized comment modification attempt. User {UserId} tried to modify comment {CommentId}",
-                        userId.Value,
+                        user.UserId,
                         commentId);
 
                     throw new ForbiddenException(
@@ -185,6 +200,21 @@ namespace BlogFlow.API.Services
         {
             // TODO: extend to support dynamic sorting
             return query.OrderByDescending(c => c.CreatedAt);
+        }
+
+        private static IQueryable<Post> ApplyPostVisibility(
+            IQueryable<Post> query,
+            UserContext user)
+        {
+            if (user.IsAdmin)
+                return query;
+
+            if (user.IsAuthor)
+                return query.Where(p =>
+                    p.State == PostState.Published ||
+                    p.AuthorId == user.UserId);
+
+            return query.Where(p => p.State == PostState.Published);
         }
     }
 }
