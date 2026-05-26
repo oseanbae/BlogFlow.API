@@ -1,5 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using BlogFlow.API.Models;
+using BlogFlow.API.Constants;
 
 namespace BlogFlow.API.Data.Seeding.Seeds
 {
@@ -16,13 +17,13 @@ namespace BlogFlow.API.Data.Seeding.Seeds
             var sportId = Guid.Parse("b1a1c1d1-0000-0000-0000-000000000003");
             var travelId = Guid.Parse("b1a1c1d1-0000-0000-0000-000000000004");
             var foodId = Guid.Parse("b1a1c1d1-0000-0000-0000-000000000005");
-
             var financeId = Guid.Parse("b1a1c1d1-0000-0000-0000-000000000006");
             var gamingId = Guid.Parse("b1a1c1d1-0000-0000-0000-000000000007");
             var educationId = Guid.Parse("b1a1c1d1-0000-0000-0000-000000000008");
             var healthId = Guid.Parse("b1a1c1d1-0000-0000-0000-000000000009");
 
             await db.Categories.AddRangeAsync(
+                new Category(CategoryConstants.UncategorizedId, CategoryConstants.UncategorizedName),
                 new Category(techId, "Technology"),
                 new Category(lifeId, "Lifestyle"),
                 new Category(sportId, "Sports"),

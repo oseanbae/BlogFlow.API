@@ -1,4 +1,5 @@
 ﻿using BlogFlow.API.DTOs.Categories;
+using BlogFlow.API.Constants;
 using BlogFlow.API.Repositories.Interfaces;
 using BlogFlow.API.Services.Interfaces;
 using Microsoft.EntityFrameworkCore;
@@ -107,6 +108,40 @@ namespace BlogFlow.API.Services
                 newName);
 
             return category.ToDTO();
+        }
+
+        public async Task<DeleteCategoryResultDTO> DeleteCategoryAsync(
+    Guid id,
+    CancellationToken cancellationToken)
+        {
+            if (id == CategoryConstants.UncategorizedId)
+                throw new BadRequestException(
+                    "The Uncategorized category cannot be deleted.",
+                    "CATEGORY_IS_PROTECTED");
+
+            var category = await _repo.GetByIdAsync(id, cancellationToken)
+                ?? throw new NotFoundException("Category", id);
+
+            var reassignedCount = await _repo.ReassignPostsAsync(
+                id,
+                CategoryConstants.UncategorizedId,
+                cancellationToken);
+
+            await _repo.DeleteAsync(category, cancellationToken);
+            await _repo.SaveChangesAsync(cancellationToken);
+
+            _logger.LogInformation(
+                "Category deleted: {CategoryId} ({DisplayName}). {ReassignedCount} posts reassigned to Uncategorized.",
+                id,
+                category.DisplayName,
+                reassignedCount);
+
+            return new DeleteCategoryResultDTO
+            {
+                DeletedCategoryId = id,
+                DeletedCategoryName = category.DisplayName,
+                ReassignedPostCount = reassignedCount
+            };
         }
     }
 }

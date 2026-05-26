@@ -11,5 +11,7 @@ namespace BlogFlow.API.Repositories.Interfaces
         Task CreateCategoryAsync(Category category, CancellationToken cancellationToken);
         Task SaveChangesAsync(CancellationToken cancellationToken);
         Task<bool> ExistsByNameAsync(string name, Guid? excludeId = null, CancellationToken cancellationToken = default);
+        Task<int> ReassignPostsAsync(Guid fromCategoryId, Guid toCategoryId, CancellationToken cancellationToken);
+        Task DeleteAsync(Category category, CancellationToken cancellationToken);
     }
 }

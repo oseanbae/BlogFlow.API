@@ -47,5 +47,15 @@ namespace BlogFlow.API.Controllers
             var result = await _categoryService.RenameCategoryAsync(categoryId, dto.Name, cancellationToken);
             return Ok(result);
         }
+
+        [HttpDelete("{categoryId}")] // DELETE api/v1/categories/{categoryId}
+        [Authorize(Roles = "Admin")]
+        public async Task<ActionResult<DeleteCategoryResultDTO>> DeleteCategoryAsync(
+            Guid categoryId,
+            CancellationToken cancellationToken)
+        {
+            var result = await _categoryService.DeleteCategoryAsync(categoryId, cancellationToken);
+            return Ok(result);
+        }
     }
 }

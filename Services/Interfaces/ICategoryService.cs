@@ -8,5 +8,6 @@ namespace BlogFlow.API.Services.Interfaces
         Task<CategoryReadDTO> RenameCategoryAsync(Guid categoryId, string newName, CancellationToken cancellationToken);
         Task<IEnumerable<CategoryReadDTO>> GetCategoriesAsync(CancellationToken cancellationToken);
         Task<CategoryReadDTO?> GetCategoryByIdAsync(Guid id, CancellationToken cancellationToken);
+        Task<DeleteCategoryResultDTO> DeleteCategoryAsync(Guid id, CancellationToken cancellationToken);
     }
 }

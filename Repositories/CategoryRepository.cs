@@ -37,5 +37,24 @@ namespace BlogFlow.API.Repositories
                     (!excludeId.HasValue || c.Id != excludeId.Value),
                 cancellationToken);
         }
+
+        public async Task<int> ReassignPostsAsync(
+            Guid fromCategoryId,
+            Guid toCategoryId,
+            CancellationToken cancellationToken)
+        {
+            return await _context.Posts
+                .IgnoreQueryFilters()
+                .Where(p => p.CategoryId == fromCategoryId)
+                .ExecuteUpdateAsync(
+                    s => s.SetProperty(p => p.CategoryId, toCategoryId),
+                    cancellationToken);
+        }
+
+        public Task DeleteAsync(Category category, CancellationToken cancellationToken)
+        {
+            _context.Categories.Remove(category);
+            return Task.CompletedTask;
+        }
     }
 }
