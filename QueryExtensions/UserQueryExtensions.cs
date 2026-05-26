@@ -25,17 +25,30 @@ namespace BlogFlow.API.QueryExtensions
         }
 
         // Public projection — excludes sensitive fields
-        public static IQueryable<UserReadDTO> AsDTO(this IQueryable<User> query)
+        public static IQueryable<UserProfileDTO> AsProfileDTO(this IQueryable<User> query)
         {
             return query
                 .AsNoTracking()
-                .Select(u => new UserReadDTO
+                .Select(u => new UserProfileDTO
                 {
                     Id = u.Id,
                     Username = u.Username,
                     Email = u.Email,
                     Role = u.Role,
-                    CreatedAt = u.CreatedAt,
+                    CreatedAt = u.CreatedAt
+                });
+        }
+
+        public static IQueryable<UserPublicProfileDTO> AsPublicProfileDTO(this IQueryable<User> query)
+        {
+            return query
+                .AsNoTracking()
+                .Select(u => new UserPublicProfileDTO
+                {
+                    Id = u.Id,
+                    Username = u.Username,
+                    Role = u.Role,
+                    CreatedAt = u.CreatedAt
                 });
         }
     }

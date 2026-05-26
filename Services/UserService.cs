@@ -76,15 +76,26 @@ namespace BlogFlow.API.Services
                 userId);
         }
 
-        public async Task<UserReadDTO> GetUserByIdAsync(
-            Guid id,
+        public async Task<UserProfileDTO> GetMyProfileAsync(
+            Guid userId,
             CancellationToken cancellationToken)
         {
             return await _repo.GetUsersQuery()
-                .Where(u => u.Id == id)
-                .AsDTO()
+                .Where(u => u.Id == userId)
+                .AsProfileDTO()
                 .FirstOrDefaultAsync(cancellationToken)
-                ?? throw new NotFoundException("User", id);
+                ?? throw new NotFoundException("User", userId);
+        }
+
+        public async Task<UserPublicProfileDTO> GetPublicProfileAsync(
+            Guid userId,
+            CancellationToken cancellationToken)
+        {
+            return await _repo.GetUsersQuery()
+                .Where(u => u.Id == userId)
+                .AsPublicProfileDTO()
+                .FirstOrDefaultAsync(cancellationToken)
+                ?? throw new NotFoundException("User", userId);
         }
 
         public async Task UpdateProfileAsync(

@@ -18,19 +18,23 @@ namespace BlogFlow.API.Controllers
             _currentUser = currentUser;
         }
 
-        [HttpGet("{userId}")] // GET    api/v1/users/{userId}
+        [HttpGet("{userId}")] // GET api/v1/users/{userId}
         [AllowAnonymous]
-        public async Task<ActionResult<UserReadDTO>> GetProfileAsync(Guid userId, CancellationToken cancellationToken)
+        public async Task<ActionResult<UserPublicProfileDTO>> GetProfileAsync(
+            Guid userId,
+            CancellationToken cancellationToken)
         {
-            var result = await _service.GetUserByIdAsync(userId, cancellationToken);
+            var result = await _service.GetPublicProfileAsync(userId, cancellationToken);
             return Ok(result);
         }
 
         [HttpGet("me")] // GET api/v1/users/me
         [Authorize]
-        public async Task<ActionResult<UserReadDTO>> GetMyProfileAsync(CancellationToken cancellationToken)
+        public async Task<ActionResult<UserProfileDTO>> GetMyProfileAsync(
+            CancellationToken cancellationToken)
         {
-            var result = await _service.GetUserByIdAsync(_currentUser.GetRequiredUserId(), cancellationToken);
+            var userId = _currentUser.GetRequiredUserId();
+            var result = await _service.GetMyProfileAsync(userId, cancellationToken);
             return Ok(result);
         }
 
