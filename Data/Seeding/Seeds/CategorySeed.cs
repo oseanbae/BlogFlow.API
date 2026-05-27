@@ -10,7 +10,8 @@ namespace BlogFlow.API.Data.Seeding.Seeds
 
         public async Task SeedAsync(AppDbContext db)
         {
-            if (await db.Categories.AnyAsync()) return;
+            if (await db.Categories.AnyAsync(c => c.Id == CategoryConstants.UncategorizedId))
+                return;
 
             var techId = Guid.Parse("b1a1c1d1-0000-0000-0000-000000000001");
             var lifeId = Guid.Parse("b1a1c1d1-0000-0000-0000-000000000002");

@@ -69,17 +69,21 @@ namespace BlogFlow.API.Data.Seeding.Seeds
 
             await db.SaveChangesAsync();
 
-            // Apply states 
+            // Published posts
             posts[0].Publish();
             posts[1].Publish();
             posts[2].Publish();
             posts[3].Publish();
             posts[4].Publish();
             posts[5].Publish();
-            posts[6].Archive(); 
-            posts[7].Publish(); 
-            posts[8].Archive(); 
-            // post3 (Cloud) and post9 (Mental Health) stay as Draft 
+
+            posts[6].Publish();
+            posts[6].Archive();
+
+            posts[7].Publish();
+
+            posts[8].Publish();
+            posts[8].Archive();
 
             await db.SaveChangesAsync();
         }

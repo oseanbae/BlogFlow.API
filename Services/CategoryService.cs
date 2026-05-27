@@ -111,8 +111,8 @@ namespace BlogFlow.API.Services
         }
 
         public async Task<DeleteCategoryResultDTO> DeleteCategoryAsync(
-    Guid id,
-    CancellationToken cancellationToken)
+            Guid id,
+            CancellationToken cancellationToken)
         {
             if (id == CategoryConstants.UncategorizedId)
                 throw new BadRequestException(
