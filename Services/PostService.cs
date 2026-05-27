@@ -220,7 +220,7 @@ namespace BlogFlow.API.Services
             UserContext user,
             CancellationToken cancellationToken)
         {
-            var post = await _postRepo.GetTrackedByIdAsync(postId, includeDeleted: user.IsAdmin)
+            var post = await _postRepo.GetTrackedByIdAsync(postId, includeDeleted: user.IsAdmin, cancellationToken)
                 ?? throw new NotFoundException("Post", postId);
 
             ValidateOwnership(post, user);

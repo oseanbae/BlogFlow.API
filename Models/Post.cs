@@ -68,9 +68,6 @@ public class Post
         if (State == PostState.Published)
             throw new ConflictException("This post is already live.", "POST_ALREADY_PUBLISHED");
 
-        if (State == PostState.Archived)
-            throw new ConflictException("Archived posts cannot be published directly. Please restore to draft first.", "POST_CANNOT_PUBLISH_FROM_ARCHIVE");
-
         State = PostState.Published;
         UpdatedAt = DateTime.UtcNow;
     }
@@ -83,6 +80,9 @@ public class Post
         if (State == PostState.Archived)
             throw new ConflictException("This post is already archived.", "POST_ALREADY_ARCHIVED");
 
+        if (State != PostState.Published) 
+            throw new ConflictException("Only published posts can be archived.", "POST_NOT_PUBLISHED");
+
         State = PostState.Archived;
         UpdatedAt = DateTime.UtcNow;
     }
@@ -93,13 +93,10 @@ public class Post
         if (DeletedAt.HasValue)
             throw new ConflictException("Cannot unpublish a deleted post.", "POST_IS_DELETED");
 
-        if (State == PostState.Draft)
-            throw new ConflictException("This post is already a draft.", "POST_ALREADY_DRAFT");
+        if (State != PostState.Published)
+            throw new ConflictException("Only published posts can be unpublished.", "POST_NOT_PUBLISHED");
 
-        if (State == PostState.Archived)
-            throw new ConflictException("Cannot unpublish an archived post. Use MoveToDraft instead.", "POST_CANNOT_UNPUBLISH_ARCHIVE");
-
-        State = PostState.Draft;
+        State = PostState.Archived;
         UpdatedAt = DateTime.UtcNow;
     }
 
@@ -111,6 +108,9 @@ public class Post
 
         if (State == PostState.Draft)
             throw new ConflictException("This post is already a draft.", "POST_ALREADY_DRAFT");
+
+        if (State != PostState.Archived)
+            throw new ConflictException("Only archived posts can be restored to draft.", "POST_NOT_ARCHIVED");
 
         State = PostState.Draft;
         UpdatedAt = DateTime.UtcNow;
