@@ -255,27 +255,19 @@ namespace BlogFlow.API.Services
 
         public async Task RestorePostAsync(Guid postId, UserContext user, CancellationToken cancellationToken)
         {
-            if (!user.IsAdmin)
-            {
-                _logger.LogWarning(
-                    "Unauthorized post restore attempt by user {UserId}",
-                    user.UserId);
-
-                throw new ForbiddenException(
-                    "Only admins can restore posts.",
-                    "ADMIN_ONLY_ACTION");
-            }
-
-            var post = await _postRepo.GetTrackedByIdAsync(postId, includeDeleted: true)
+            var post = await _postRepo.GetTrackedByIdAsync(postId, includeDeleted: true, cancellationToken)
                 ?? throw new NotFoundException("Post", postId);
+
+            ValidateOwnership(post, user);
 
             post.Restore();
             await _postRepo.SaveChangesAsync(cancellationToken);
 
             _logger.LogInformation(
-                "Post restored: {PostId} by admin {UserId}",
+                "Post {PostId} restored by user {UserId} ({Role})",
                 post.Id,
-                user.UserId);
+                user.UserId,
+                user.Role);
         }
 
         public async Task HardDeletePostAsync(Guid postId, UserContext user, CancellationToken cancellationToken)

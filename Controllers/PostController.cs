@@ -118,7 +118,7 @@ namespace BlogFlow.API.Controllers
         }
 
         [HttpPatch("{postId}/restore")] // PATCH api/v1/posts/{postId}/restore
-        [Authorize(Roles = "Admin")]
+        [Authorize(Roles = "Author,Admin")]
         public async Task<ActionResult> RestorePostAsync(
             Guid postId,
             CancellationToken cancellationToken)
