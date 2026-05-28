@@ -1,6 +1,6 @@
-﻿using BlogFlow.API.DTOs.Post;
+﻿using BlogFlow.API.Domain.Entities;
+using BlogFlow.API.DTOs.Post;
 using BlogFlow.API.DTOs.Tag;
-using BlogFlow.API.Models;
 using Microsoft.EntityFrameworkCore;
 
 namespace BlogFlow.API.QueryExtensions

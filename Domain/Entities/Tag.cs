@@ -1,7 +1,7 @@
 ﻿using BlogFlow.API.Exceptions;
 using BlogFlow.API.Helper;
 
-namespace BlogFlow.API.Models;
+namespace BlogFlow.API.Domain.Entities;
 
 public class Tag
 {

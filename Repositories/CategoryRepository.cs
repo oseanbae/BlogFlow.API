@@ -2,7 +2,7 @@
 using BlogFlow.API.Helper;
 using BlogFlow.API.Repositories.Interfaces;
 using Microsoft.EntityFrameworkCore;
-using BlogFlow.API.Models;
+using BlogFlow.API.Domain.Entities;
 
 namespace BlogFlow.API.Repositories
 {

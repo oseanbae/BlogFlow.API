@@ -1,4 +1,4 @@
-﻿using BlogFlow.API.Models;
+﻿using BlogFlow.API.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 
 namespace BlogFlow.API.Data.Seeding.Seeds

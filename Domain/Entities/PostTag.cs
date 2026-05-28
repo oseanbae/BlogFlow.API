@@ -1,6 +1,6 @@
 ﻿using BlogFlow.API.Exceptions;
 
-namespace BlogFlow.API.Models;
+namespace BlogFlow.API.Domain.Entities;
 
 // Join entity for many-to-many relationship between Post and Tag
 public class PostTag

@@ -5,7 +5,7 @@ using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
 
-public static class JWTExtension
+public static class JwtExtension
 {
     public static IServiceCollection AddJwtAuthentication(
         this IServiceCollection services,

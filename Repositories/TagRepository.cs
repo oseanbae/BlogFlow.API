@@ -1,6 +1,6 @@
 ﻿using BlogFlow.API.Data;
+using BlogFlow.API.Domain.Entities;
 using BlogFlow.API.Helper;
-using BlogFlow.API.Models;
 using BlogFlow.API.Repositories.Interfaces;
 using Microsoft.EntityFrameworkCore;
 

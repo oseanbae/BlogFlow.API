@@ -2,7 +2,7 @@
 using BlogFlow.API.Helper;
 using BlogFlow.API.Constants;
 
-namespace BlogFlow.API.Models;
+namespace BlogFlow.API.Domain.Entities;
 
 public class Category
 {

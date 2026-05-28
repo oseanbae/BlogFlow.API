@@ -1,5 +1,5 @@
-﻿using BlogFlow.API.DTOs.Comment;
-using BlogFlow.API.Models;
+﻿using BlogFlow.API.Domain.Entities;
+using BlogFlow.API.DTOs.Comment;
 using Microsoft.EntityFrameworkCore;
 using System.Linq.Expressions;
 

@@ -1,6 +1,6 @@
 ﻿using BlogFlow.API.DTOs.Tag;
 using BlogFlow.API.Exceptions;
-using BlogFlow.API.Models;
+using BlogFlow.API.Domain.Entities;
 using BlogFlow.API.QueryExtensions;
 using BlogFlow.API.Repositories.Interfaces;
 using BlogFlow.API.Services.Interfaces;

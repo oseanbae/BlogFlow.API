@@ -1,5 +1,5 @@
-﻿using BlogFlow.API.Exceptions;
-using BlogFlow.API.Models;
+﻿using BlogFlow.API.Domain.Entities;
+using BlogFlow.API.Exceptions;
 using BlogFlow.API.Services.Interfaces;
 using System.Security.Claims;
 

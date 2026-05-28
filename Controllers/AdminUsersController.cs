@@ -1,7 +1,7 @@
-﻿using BlogFlow.API.DTOs.Admin;
+﻿using BlogFlow.API.Domain.QueryParams;
+using BlogFlow.API.DTOs.Admin;
 using BlogFlow.API.DTOs.Common;
 using BlogFlow.API.DTOs.User;
-using BlogFlow.API.Models;
 using BlogFlow.API.Services.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;

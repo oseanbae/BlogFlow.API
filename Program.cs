@@ -1,6 +1,7 @@
 using BlogFlow.API.Data;
 using BlogFlow.API.Data.Seeding;
 using BlogFlow.API.Infrastructure;
+using BlogFlow.API.Middleware;
 using FluentValidation;
 using FluentValidation.AspNetCore;
 using Microsoft.EntityFrameworkCore;

@@ -1,5 +1,5 @@
-﻿using BlogFlow.API.DTOs.Tag;
-using BlogFlow.API.Models;
+﻿using BlogFlow.API.Domain.Entities;
+using BlogFlow.API.DTOs.Tag;
 
 namespace BlogFlow.API.DTOs.Post
 {

@@ -1,7 +1,7 @@
 ﻿using BlogFlow.API.Exceptions;
 using System.ComponentModel.DataAnnotations.Schema;
 
-namespace BlogFlow.API.Models;
+namespace BlogFlow.API.Domain.Entities;
 
 public class RefreshToken
 {

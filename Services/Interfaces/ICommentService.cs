@@ -1,6 +1,7 @@
-﻿using BlogFlow.API.DTOs.Comment;
+﻿using BlogFlow.API.Domain.Entities;
+using BlogFlow.API.Domain.QueryParams;
+using BlogFlow.API.DTOs.Comment;
 using BlogFlow.API.DTOs.Common;
-using BlogFlow.API.Models;
 
 namespace BlogFlow.API.Services.Interfaces
 {

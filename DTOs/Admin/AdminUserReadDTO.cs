@@ -1,4 +1,4 @@
-﻿using BlogFlow.API.Models;
+﻿using BlogFlow.API.Domain.Entities;
 
 namespace BlogFlow.API.DTOs.Admin
 {

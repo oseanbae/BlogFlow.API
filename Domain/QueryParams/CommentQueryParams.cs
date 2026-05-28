@@ -1,4 +1,4 @@
-﻿namespace BlogFlow.API.Models;
+﻿namespace BlogFlow.API.Domain.QueryParams;
 
 public class CommentQueryParams
 {

@@ -1,6 +1,6 @@
-﻿using BlogFlow.API.DTOs.Auth;
+﻿using BlogFlow.API.Domain.Entities;
+using BlogFlow.API.DTOs.Auth;
 using BlogFlow.API.Exceptions;
-using BlogFlow.API.Models;
 using BlogFlow.API.Repositories.Interfaces;
 using BlogFlow.API.Services.Interfaces;
 using BlogFlow.API.Settings;

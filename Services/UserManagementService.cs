@@ -1,8 +1,9 @@
-﻿using BlogFlow.API.DTOs.Admin;
+﻿using BlogFlow.API.Domain.Entities;
+using BlogFlow.API.Domain.QueryParams;
+using BlogFlow.API.DTOs.Admin;
 using BlogFlow.API.DTOs.Common;
 using BlogFlow.API.DTOs.User;
 using BlogFlow.API.Exceptions;
-using BlogFlow.API.Models;
 using BlogFlow.API.QueryExtensions;
 using BlogFlow.API.Repositories.Interfaces;
 using BlogFlow.API.Services.Interfaces;

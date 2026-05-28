@@ -1,6 +1,6 @@
 ﻿using BlogFlow.API.Exceptions;
 
-namespace BlogFlow.API.Models;
+namespace BlogFlow.API.Domain.Entities;
 
 public enum PostState
 {

@@ -1,4 +1,4 @@
-﻿using BlogFlow.API.Models;
+﻿using BlogFlow.API.Domain.Entities;
 using System.Text.Json.Serialization;
 
 namespace BlogFlow.API.DTOs.Auth

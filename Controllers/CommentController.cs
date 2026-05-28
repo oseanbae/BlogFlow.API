@@ -1,6 +1,6 @@
-﻿using BlogFlow.API.DTOs.Comment;
+﻿using BlogFlow.API.Domain.QueryParams;
+using BlogFlow.API.DTOs.Comment;
 using BlogFlow.API.DTOs.Common;
-using BlogFlow.API.Models;
 using BlogFlow.API.Services.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;

@@ -1,5 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
-using BlogFlow.API.Models;
+using BlogFlow.API.Domain.Entities;
 using BlogFlow.API.Constants;
 
 namespace BlogFlow.API.Data.Seeding.Seeds

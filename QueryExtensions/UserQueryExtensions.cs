@@ -1,6 +1,6 @@
-﻿using BlogFlow.API.DTOs.Admin;
+﻿using BlogFlow.API.Domain.Entities;
+using BlogFlow.API.DTOs.Admin;
 using BlogFlow.API.DTOs.User;
-using BlogFlow.API.Models;
 using Microsoft.EntityFrameworkCore;
 
 namespace BlogFlow.API.QueryExtensions

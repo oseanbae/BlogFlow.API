@@ -5,7 +5,7 @@ using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.EntityFrameworkCore;
 using System.Net.Mime;
 
-namespace BlogFlow.API.Infrastructure
+namespace BlogFlow.API.Middleware
 {
     // Centralized handler for all unhandled API exceptions
     public sealed class GlobalExceptionHandler : IExceptionHandler

@@ -1,4 +1,6 @@
-﻿namespace BlogFlow.API.Models;
+﻿using BlogFlow.API.Domain.Entities;
+
+namespace BlogFlow.API.Domain.QueryParams;
 
 public class UserQueryParams
 {

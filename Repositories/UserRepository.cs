@@ -1,5 +1,5 @@
 ﻿using BlogFlow.API.Data;
-using BlogFlow.API.Models;
+using BlogFlow.API.Domain.Entities;
 using BlogFlow.API.Repositories.Interfaces;
 using Microsoft.EntityFrameworkCore;
 

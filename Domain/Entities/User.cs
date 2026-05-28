@@ -1,7 +1,7 @@
 ﻿using BlogFlow.API.Exceptions;
 using System.Text.Json.Serialization;
 
-namespace BlogFlow.API.Models;
+namespace BlogFlow.API.Domain.Entities;
 
 public enum UserRole
 {
