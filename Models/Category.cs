@@ -1,5 +1,6 @@
 ﻿using BlogFlow.API.Exceptions;
 using BlogFlow.API.Helper;
+using BlogFlow.API.Constants;
 
 namespace BlogFlow.API.Models;
 
@@ -32,6 +33,12 @@ public class Category
 
     public void Rename(string newName)
     {
+        if (Id == CategoryConstants.UncategorizedId)
+            throw new BadRequestException(
+                "The default Uncategorized category cannot be renamed.",
+                "CANNOT_RENAME_DEFAULT_CATEGORY"
+            );
+
         if (string.IsNullOrWhiteSpace(newName))
             throw new BadRequestException(
                 "Category name cannot be empty or whitespace.",
