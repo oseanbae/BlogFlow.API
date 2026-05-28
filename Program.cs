@@ -63,8 +63,20 @@ Log.Logger = new LoggerConfiguration()
     .Enrich.FromLogContext()
     .CreateLogger();
 
-
 builder.Host.UseSerilog();
+
+// CORS Policy
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("Development", policy =>
+    {
+        policy
+            .WithOrigins("http://localhost:3000", "http://localhost:5173")
+            .AllowAnyHeader()
+            .AllowAnyMethod()
+            .AllowCredentials();
+    });
+});
 
 var app = builder.Build();
 
@@ -99,6 +111,8 @@ app.UseExceptionHandler();
 app.UseHttpsRedirection(); 
 app.UseRouting();
 app.UseRateLimiter();
+
+app.UseCors("Development");
 app.UseAuthentication();
 app.UseAuthorization();
 
