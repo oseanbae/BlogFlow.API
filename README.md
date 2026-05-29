@@ -389,4 +389,3 @@ See [IMPROVEMENT.md](Docs/IMPROVEMENT.md) for planned V2 features and future imp
 
 ## License
 This project is licensed under the MIT License.
-See the [LICENSE](LICENSE) file for details.
