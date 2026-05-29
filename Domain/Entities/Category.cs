@@ -11,7 +11,7 @@ public class Category
     public string Name { get; private set; } = null!;
     public ICollection<Post> Posts { get; private set; } = [];
 
-    private Category() { }
+    private Category() { } //EF Core
 
     public Category(string displayName)
     {
@@ -25,6 +25,7 @@ public class Category
         Name = SlugHelper.Normalize(displayName);
     }
 
+    // Seed Constructor
     public Category(Guid id, string displayName)
         : this(displayName)
     {

@@ -216,55 +216,46 @@ namespace BlogFlow.API.Services
             // Define signing algorithm and credentials (HMAC SHA-256)
             var credentials = new SigningCredentials(securityKey, SecurityAlgorithms.HmacSha256);
 
-            // Convert user role enum/value into string for JWT claim storage
             var userRole = user.Role.ToString();
 
             // Define claims (data embedded inside the JWT payload)
             var claims = new[]
             {
-                // NameIdentifier claim is used by ASP.NET for user identity mapping
-                // (used by User.FindFirst(ClaimTypes.NameIdentifier))
+                // Required for ASP.NET identity mapping (User.Identity / authorization system)
                 new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
 
                 // Standard email claim
                 new Claim(JwtRegisteredClaimNames.Email, user.Email),
 
-                // Username stored as Name claim (used by identity frameworks)
+                // Username stored as Name claim
                 new Claim(ClaimTypes.Name, user.Username),
 
                 // Role claim used for authorization [Authorize(Roles = "...")]
                 new Claim(ClaimTypes.Role, userRole),
 
-                // Unique token identifier (prevents replay / helps revoke tracking)
+                // Unique token identifier used for replay protection / revocation tracking
                 new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
             };
 
-            // Build token descriptor (this defines structure + metadata of JWT)
             var tokenDescriptor = new SecurityTokenDescriptor
             {
-                // Attach identity + claims payload
                 Subject = new ClaimsIdentity(claims),
 
-                // Expiration time (important for security)
+                // Token expiration time
                 Expires = DateTime.UtcNow.AddMinutes(expiryMinutes),
 
-                // Issuer validation (server that created the token)
+                // Issuer validation
                 Issuer = _jwt.Issuer,
 
-                // Audience validation (who this token is intended for)
+                // Audience validation
                 Audience = _jwt.Audience,
 
-                // Signing credentials ensure token integrity and authenticity
                 SigningCredentials = credentials
             };
 
-            // Handler responsible for creating and writing JWT tokens
             var tokenHandler = new JwtSecurityTokenHandler();
-
-            // Create token object based on descriptor
             var securityToken = tokenHandler.CreateToken(tokenDescriptor);
 
-            // Serialize token into compact JWT string (header.payload.signature)
             return tokenHandler.WriteToken(securityToken);
         }
 

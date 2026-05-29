@@ -48,7 +48,6 @@ public class Comment
 
         var sanitizedBody = newBody.Trim();
 
-        // Check if it actually changed
         if (Body == sanitizedBody) return;
 
         Body = sanitizedBody;

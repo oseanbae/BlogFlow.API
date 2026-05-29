@@ -20,7 +20,7 @@ namespace BlogFlow.API.Controllers
             _currentUser = currentUserService;
         }
 
-        [HttpGet] // GET api/v1/posts
+        [HttpGet]
         [AllowAnonymous]
         public async Task<ActionResult<PaginatedResultDTO<PostReadDTO>>> GetPostsAsync(
             [FromQuery] PostQueryParams p,
@@ -31,7 +31,7 @@ namespace BlogFlow.API.Controllers
             return Ok(result);
         }
 
-        [HttpGet("{postId}")] // GET api/v1/posts/{postId}
+        [HttpGet("{postId}")]
         [AllowAnonymous]
         public async Task<ActionResult<PostReadDTO>> GetPostAsync(
             Guid postId,
@@ -83,7 +83,7 @@ namespace BlogFlow.API.Controllers
         }
 
 
-        [HttpPost] // POST api/v1/posts
+        [HttpPost]
         [Authorize(Roles = "Author,Admin")]
         public async Task<ActionResult<PostReadDTO>> CreatePostAsync(
             PostCreateDTO dto,
@@ -94,7 +94,7 @@ namespace BlogFlow.API.Controllers
             return CreatedAtAction(nameof(GetPostAsync), new { postId = result.Id }, result);
         }
 
-        [HttpPut("{postId}")] // PUT api/v1/posts/{postId}
+        [HttpPut("{postId}")]
         [Authorize(Roles = "Author,Admin")]
         public async Task<ActionResult<PostReadDTO>> UpdatePostAsync(
             Guid postId,
@@ -106,7 +106,7 @@ namespace BlogFlow.API.Controllers
             return Ok(result);
         }
 
-        [HttpDelete("{postId}")] // DELETE api/v1/posts/{postId}
+        [HttpDelete("{postId}")]
         [Authorize(Roles = "Author,Admin")]
         public async Task<ActionResult> SoftDeletePostAsync(
             Guid postId,
@@ -117,7 +117,7 @@ namespace BlogFlow.API.Controllers
             return NoContent();
         }
 
-        [HttpPatch("{postId}/restore")] // PATCH api/v1/posts/{postId}/restore
+        [HttpPatch("{postId}/restore")]
         [Authorize(Roles = "Author,Admin")]
         public async Task<ActionResult> RestorePostAsync(
             Guid postId,
@@ -128,7 +128,7 @@ namespace BlogFlow.API.Controllers
             return NoContent();
         }
 
-        [HttpDelete("{postId}/hard")] // DELETE api/v1/posts/{postId}/hard
+        [HttpDelete("{postId}/hard")]
         [Authorize(Roles = "Admin")]
         public async Task<ActionResult> HardDeletePostAsync(
             Guid postId,

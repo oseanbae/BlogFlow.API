@@ -7,7 +7,6 @@ namespace BlogFlow.API.QueryExtensions
 {
     public static class PostQueryExtensions
     {
-        // For Database Queries (translates to SQL)
         public static IQueryable<PostReadDTO> AsDTO(this IQueryable<Post> query)
         {
             return query

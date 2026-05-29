@@ -18,7 +18,7 @@ namespace BlogFlow.API.Controllers
             _currentUser = currentUser;
         }
 
-        [HttpGet("{userId}")] // GET api/v1/users/{userId}
+        [HttpGet("{userId}")]
         [AllowAnonymous]
         public async Task<ActionResult<UserPublicProfileDTO>> GetProfileAsync(
             Guid userId,
@@ -28,7 +28,7 @@ namespace BlogFlow.API.Controllers
             return Ok(result);
         }
 
-        [HttpGet("me")] // GET api/v1/users/me
+        [HttpGet("me")]
         [Authorize]
         public async Task<ActionResult<UserProfileDTO>> GetMyProfileAsync(
             CancellationToken cancellationToken)
@@ -38,7 +38,7 @@ namespace BlogFlow.API.Controllers
             return Ok(result);
         }
 
-        [HttpPut("me")] // PUT    api/v1/users/me 
+        [HttpPut("me")]
         [Authorize]
         public async Task<ActionResult> UpdateProfile(UserUpdateDTO dto, CancellationToken cancellationToken)
         {
@@ -46,7 +46,7 @@ namespace BlogFlow.API.Controllers
             return NoContent();
         }
 
-        [HttpPatch("me/password")]  // PATCH  api/v1/users/me/password
+        [HttpPatch("me/password")]
         [Authorize]
         public async Task<ActionResult> ChangePassword([FromBody] UserChangePasswordDTO dto, CancellationToken cancellationToken)
         {
@@ -54,7 +54,7 @@ namespace BlogFlow.API.Controllers
             return NoContent();
         }
 
-        [HttpDelete("me")] // DELETE api/v1/users/me
+        [HttpDelete("me")]
         [Authorize]
         public async Task<ActionResult> DeleteAccount(CancellationToken cancellationToken)
         {

@@ -11,7 +11,7 @@ public static class JwtExtension
         this IServiceCollection services,
         IConfiguration configuration)
     {
-        // Bind JwtSettings from configuration (appsettings.json)
+        // Bind JwtSettings from appsettings.json
         // and register it in the Options pipeline
         services.AddOptions<JwtSettings>()
             .Bind(configuration.GetSection("JwtSettings"))
@@ -47,16 +47,9 @@ public static class JwtExtension
 
                 bearerOptions.TokenValidationParameters = new TokenValidationParameters
                 {
-                    // Ensure token issuer matches expected value
                     ValidateIssuer = true,
-
-                    // Ensure token audience matches expected value
                     ValidateAudience = true,
-
-                    // Ensure token is not expired
                     ValidateLifetime = true,
-
-                    // Ensure token signature is valid
                     ValidateIssuerSigningKey = true,
 
                     // Values come from validated JwtSettings

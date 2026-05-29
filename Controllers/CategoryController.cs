@@ -16,7 +16,7 @@ namespace BlogFlow.API.Controllers
             _categoryService = service;
         }
 
-        [HttpGet] // GET   api/v1/categories
+        [HttpGet]
         [AllowAnonymous]
         public async Task<ActionResult<IEnumerable<CategoryReadDTO>>> GetAllCategoriesAsync(CancellationToken cancellationToken)
         {
@@ -24,7 +24,7 @@ namespace BlogFlow.API.Controllers
             return Ok(result);
         }
 
-        [HttpGet("{categoryId}")] // GET   api/v1/categories/{categoryId}
+        [HttpGet("{categoryId}")]
         [AllowAnonymous]
         public async Task<ActionResult<CategoryReadDTO>> GetCategoryByIdAsync(Guid categoryId, CancellationToken cancellationToken)
         {
@@ -32,7 +32,7 @@ namespace BlogFlow.API.Controllers
             return Ok(result);
         }
 
-        [HttpPost] // POST  api/v1/categories
+        [HttpPost]
         [Authorize(Roles = "Admin")]
         public async Task<ActionResult<CategoryReadDTO>> CreateCategoryAsync(CategoryCreateDTO dto, CancellationToken cancellationToken)
         {
@@ -40,7 +40,7 @@ namespace BlogFlow.API.Controllers
             return CreatedAtAction(nameof(GetCategoryByIdAsync), new { categoryId = result.Id }, result);
         }
 
-        [HttpPatch("{categoryId}")] // PATCH api/v1/categories/{categoryId}
+        [HttpPatch("{categoryId}")]
         [Authorize(Roles = "Admin")]
         public async Task<ActionResult> RenameCategoryAsync(Guid categoryId, CategoryRenameDTO dto, CancellationToken cancellationToken)
         {
@@ -48,7 +48,7 @@ namespace BlogFlow.API.Controllers
             return Ok(result);
         }
 
-        [HttpDelete("{categoryId}")] // DELETE api/v1/categories/{categoryId}
+        [HttpDelete("{categoryId}")]
         [Authorize(Roles = "Admin")]
         public async Task<ActionResult<DeleteCategoryResultDTO>> DeleteCategoryAsync(
             Guid categoryId,

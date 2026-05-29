@@ -13,7 +13,7 @@ namespace BlogFlow.API.QueryExtensions
             Id = comment.Id,
             PostId = comment.PostId,
             UserId = comment.UserId,
-            AuthorName = comment.User.Username, // EF translates this to a JOIN in SQL
+            AuthorName = comment.User.Username,
             Body = comment.Body,
             CreatedAt = comment.CreatedAt,
             UpdatedAt = comment.UpdatedAt

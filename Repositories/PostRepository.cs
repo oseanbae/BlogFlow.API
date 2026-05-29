@@ -14,7 +14,6 @@ namespace BlogFlow.API.Repositories
             _context = context;
         }
 
-        // Returns raw IQueryable for the Service to project
         public IQueryable<Post> GetPostsQuery(bool includeDeleted = false)
         {
             return includeDeleted
