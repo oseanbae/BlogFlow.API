@@ -16,7 +16,7 @@ namespace BlogFlow.API.Controllers
             _service = service;
         }
 
-        [HttpGet] // GET    api/v1/tags
+        [HttpGet]
         [AllowAnonymous]
         public async Task<ActionResult<IEnumerable<TagReadDTO>>> GetAllTagsAsync(CancellationToken cancellationToken)
         {
@@ -24,7 +24,7 @@ namespace BlogFlow.API.Controllers
             return Ok(tags);
         }
 
-        [HttpGet("{tagId}")] // GET    api/v1/tags/{tagId}
+        [HttpGet("{tagId}")]
         [AllowAnonymous]
         public async Task<ActionResult<TagReadDTO>> GetTagByIdAsync(Guid tagId, CancellationToken cancellationToken)
         {
@@ -32,7 +32,7 @@ namespace BlogFlow.API.Controllers
             return Ok(result);
         }
 
-        [HttpPost] // POST   api/v1/tags
+        [HttpPost]
         [Authorize(Roles = "Author,Admin")]
         public async Task<ActionResult<TagReadDTO>> CreateTagAsync(TagCreateDTO dto, CancellationToken cancellationToken)
         {
@@ -45,7 +45,7 @@ namespace BlogFlow.API.Controllers
             );
         }
 
-        [HttpDelete("{tagId}")] // DELETE api/v1/tags/{tagId}
+        [HttpDelete("{tagId}")]
         [Authorize(Roles = "Admin")]
         public async Task<ActionResult> DeleteTagAsync(Guid tagId, CancellationToken cancellationToken)
         {

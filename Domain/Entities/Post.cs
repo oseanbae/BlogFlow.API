@@ -87,7 +87,6 @@ public class Post
         UpdatedAt = DateTime.UtcNow;
     }
 
-    // Use case 1: Taking a live post down to edit it
     public void Unpublish()
     {
         if (DeletedAt.HasValue)
@@ -99,8 +98,6 @@ public class Post
         State = PostState.Archived;
         UpdatedAt = DateTime.UtcNow;
     }
-
-    // Use case 2: Bringing an old post out of retirement
     public void MoveToDraft()
     {
         if (DeletedAt.HasValue)

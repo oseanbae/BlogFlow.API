@@ -18,10 +18,9 @@ namespace BlogFlow.API.Services
             _logger = logger;
         }
 
-        /// <summary>
-        /// Returns the current user context.
-        /// Returns an empty UserContext when the request is unauthenticated.
-        /// </summary>
+
+        // Returns the current user context.
+        // Returns an empty UserContext when the request is unauthenticated.
         public UserContext GetCurrentUser()
         {
             var user = _contextAccessor.HttpContext?.User;
@@ -66,10 +65,8 @@ namespace BlogFlow.API.Services
             };
         }
 
-        /// <summary>
-        /// Returns the authenticated user.
-        /// Throws if the request is unauthenticated.
-        /// </summary>
+        // Returns the authenticated user.
+        // Throws if the request is unauthenticated.
         public UserContext GetRequiredUser()
         {
             var user = GetCurrentUser();
@@ -88,19 +85,15 @@ namespace BlogFlow.API.Services
             return user;
         }
 
-        /// <summary>
-        /// Returns the authenticated user's id.
-        /// Throws if the request is unauthenticated.
-        /// </summary>
+        // Returns the authenticated user's id.
+        // Throws if the request is unauthenticated.
         public Guid GetRequiredUserId()
         {
             return GetRequiredUser().UserId;
         }
 
-        /// <summary>
-        /// Returns the authenticated user's valid role.
-        /// Throws if the role claim is missing or invalid.
-        /// </summary>
+        // Returns the authenticated user's valid role.
+        // Throws if the role claim is missing or invalid.
         public UserRole GetRequiredValidRole()
         {
             var user = GetRequiredUser();

@@ -21,6 +21,7 @@ public class User
     public DateTime? DeletedAt { get; private set; }
     public DateTime? UpdatedAt { get; private set; }
 
+    public User() { } //EF Core
     public User(string username, string email, string passwordHash)
     {
         if (string.IsNullOrWhiteSpace(username))

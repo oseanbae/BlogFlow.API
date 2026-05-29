@@ -22,7 +22,7 @@ namespace BlogFlow.API.Controllers
             _currentUser = currentUserService;
         }
 
-        [HttpPost("{postId}/comments")] // POST   api/v1/posts/{postId}/comments
+        [HttpPost("{postId}/comments")]
         [Authorize]
         public async Task<ActionResult<CommentReadDTO>> CreateCommentAsync(
             Guid postId,
@@ -49,7 +49,7 @@ namespace BlogFlow.API.Controllers
             return Ok(result);
         }
 
-        [HttpGet("{postId}/comments/{commentId}")] // GET api/v1/posts/{postId}/comments/{commentId}
+        [HttpGet("{postId}/comments/{commentId}")]
         [AllowAnonymous]
         public async Task<ActionResult<CommentReadDTO>> GetCommentByIdAsync(
             Guid postId,
@@ -60,7 +60,7 @@ namespace BlogFlow.API.Controllers
             return Ok(await _service.GetByIdAsync(postId, commentId, user, cancellationToken));
         }
 
-        [HttpPatch("{postId}/comments/{commentId}")] // PATCH
+        [HttpPatch("{postId}/comments/{commentId}")]
         [Authorize]
         public async Task<ActionResult<CommentReadDTO>> UpdateCommentAsync(
             Guid postId,
@@ -72,7 +72,7 @@ namespace BlogFlow.API.Controllers
             return Ok(await _service.UpdateAsync(postId, commentId, user, dto.Body, cancellationToken));
         }
 
-        [HttpDelete("{postId}/comments/{commentId}")] // DELETE
+        [HttpDelete("{postId}/comments/{commentId}")]
         [Authorize]
         public async Task<ActionResult> DeleteComment(
             Guid postId,
