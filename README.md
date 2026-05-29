@@ -4,9 +4,7 @@
 
 BlogFlow is a RESTful blog platform API built with ASP.NET Core 10 and PostgreSQL.
 
-It demonstrates backend engineering practices beyond basic tutorials, including authentication, role-based access control, domain modeling, content lifecycle management, and API design patterns used in production systems.
-
-The project is implemented as a layered monolith with rich domain models inspired by Domain-Driven Design.
+It demonstrates authentication, authorization, domain modeling, and API design patterns using a layered monolith architecture with domain-focused design.
 
 ---
 
@@ -21,8 +19,7 @@ The project is implemented as a layered monolith with rich domain models inspire
 
 ### Posts
 - Full CRUD with draft/publish/archive state machine
-- State transitions: Draft → Published → Archived
-  with explicit Unpublish and MoveToDraft paths
+- State transitions: Draft → Published → Archived, with support for Unpublish (Published → Draft) and Archive operations.
 - Visibility rules enforced server-side:
   - Anonymous / Reader → Published posts only
   - Author → Published + their own Drafts and Archived
@@ -41,7 +38,7 @@ The project is implemented as a layered monolith with rich domain models inspire
 ### Categories
 - Full CRUD with admin-only write access
 - Safe delete with automatic post reassignment to Uncategorized
-- Uncategorized is a protected fallback — cannot be deleted
+- Uncategorized is a protected system category used as a fallback for reassignment and cannot be deleted.
 
 ### Tags
 - Full CRUD with admin-only delete
@@ -104,17 +101,12 @@ HTTP Request
 
 ### Key Design Decisions
 
-**Rich Domain Models** — entities own their own validation and state transitions. `Post.Publish()`, `User.SoftDelete()`, `RefreshToken.Revoke()` are domain methods, not service-level property assignments.
-
-**UserContext over IHttpContextAccessor in services** — controllers extract identity from JWT claims via `ICurrentUserService` and pass a `UserContext` object to services. Services never touch `HttpContext` directly.
-
-**Soft delete via global query filters** — deleted records are invisible by default. Admins bypass filters via `IgnoreQueryFilters()`.
-
-**Repository pattern with IQueryable** — repositories return `IQueryable<T>` so services can compose filters and projections before hitting the database. No N+1 queries.
-
-**Defense in depth** — role checks exist at both controller (`[Authorize(Roles)]`) and service layer (`ValidateOwnership()`). The controller blocks at middleware level; the service guards against direct invocation.
-
-**Post visibility** — `ApplyReadVisibility()` runs before any client filters, ensuring readers never see draft or archived content regardless of query params.
+- **Rich domain models** — entities encapsulate state changes and validation instead of relying on service-level property mutation.
+- **UserContext abstraction** — authentication data is extracted at the controller layer and passed explicitly to services, avoiding direct HttpContext dependency.
+- **Soft delete via global query filters** — deleted entities are excluded by default and only visible to administrators using explicit override queries.
+- **Repository pattern with IQueryable** — repositories expose queryable data to allow composition of filters and projections before execution.
+- **Defense in depth authorization** — critical actions are protected at both controller and service layers to prevent bypass through internal calls.
+- **Server-side visibility enforcement** — post visibility rules are applied in query logic to ensure unauthorized data is never returned, regardless of client filters.
 
 ---
 
@@ -144,81 +136,113 @@ BlogFlow.API/
 ├── Settings/           — JwtSettings, RateLimitOptions
 └── Validators/         — FluentValidation validators per DTO
 ```
+---
 
+## Core Workflows
 
+### 1. Authentication & Session Management
+This workflow handles user identity, session lifecycle, and security enforcement.
 
+#### Flow
+* User registers an account
+* User logs in with credentials
+* System issues:
+  * JWT access token (short-lived)
+  * Refresh token (long-lived)
+* Client uses access token for API requests
+* When expired, refresh token is used to rotate session
+* Logout revokes refresh token
+* Reuse of revoked refresh token triggers full session invalidation
 
-## API Documentation
+#### Covers Endpoints
+* `/auth/register`
+* `/auth/login`
+* `/auth/refresh`
+* `/auth/revoke`
 
-Interactive docs available at `/scalar/v1` when running in Development.
+#### Key Behavior
+* **Stateless JWT authentication** paired with refresh token rotation
+* **Reuse detection** for refresh token reuse detection for session invalidation
+* **Role claims** embedded directly within the JWT for authorization
 
-### Auth
-| Method | Endpoint | Auth | Description |
-|---|---|---|---|
-| POST | /api/v1/auth/register | None | Register new account |
-| POST | /api/v1/auth/login | None | Login, returns tokens |
-| POST | /api/v1/auth/refresh | None | Rotate refresh token |
-| POST | /api/v1/auth/revoke | Bearer | Revoke refresh token |
+---
 
-### Posts
-| Method | Endpoint | Auth | Description |
-|---|---|---|---|
-| GET | /api/v1/posts | None | Get paginated posts |
-| GET | /api/v1/posts/{id} | None | Get post by ID |
-| POST | /api/v1/posts | Author, Admin | Create post |
-| PUT | /api/v1/posts/{id} | Author, Admin | Update post (draft only) |
-| DELETE | /api/v1/posts/{id} | Author, Admin | Soft delete post |
-| PATCH | /api/v1/posts/{id}/publish | Author, Admin | Publish post |
-| PATCH | /api/v1/posts/{id}/unpublish | Author, Admin | Unpublish post |
-| PATCH | /api/v1/posts/{id}/archive | Author, Admin | Archive post |
-| PATCH | /api/v1/posts/{id}/draft | Author, Admin | Move to draft |
-| PATCH | /api/v1/posts/{id}/restore | Admin | Restore soft deleted |
-| DELETE | /api/v1/posts/{id}/hard | Admin | Permanent delete |
+### 2. Post Lifecycle Management
+This workflow manages the full content lifecycle from creation to archival.
 
-### Comments
-| Method | Endpoint | Auth | Description |
-|---|---|---|---|
-| GET | /api/v1/posts/{id}/comments | None | Get comments for post |
-| GET | /api/v1/posts/{id}/comments/{cid} | None | Get comment by ID |
-| POST | /api/v1/posts/{id}/comments | Bearer | Create comment |
-| PATCH | /api/v1/posts/{id}/comments/{cid} | Bearer | Update comment |
-| DELETE | /api/v1/posts/{id}/comments/{cid} | Bearer | Soft delete comment |
+#### Flow
+* Author creates post in **Draft** state
+* Post can be updated while in **Draft** state
+* Author publishes post $\rightarrow$ becomes publicly visible (**Published** state)
+* Post can be:
+  * **Unpublished** (moved back to Draft)
+  * **Archived** (hidden from public but preserved for author)
+* Admin can restore or hard delete soft-deleted posts
 
-### Categories
-| Method | Endpoint | Auth | Description |
-|---|---|---|---|
-| GET | /api/v1/categories | None | Get all categories |
-| GET | /api/v1/categories/{id} | None | Get category by ID |
-| POST | /api/v1/categories | Admin | Create category |
-| PATCH | /api/v1/categories/{id} | Admin | Rename category |
-| DELETE | /api/v1/categories/{id} | Admin | Delete, reassign posts |
+#### Covers Endpoints
+* `/posts` (CRUD)
+* `/posts/{id}/publish`
+* `/posts/{id}/unpublish`
+* `/posts/{id}/archive`
+* `/posts/{id}/draft`
+* `/posts/{id}/restore`
+* `/posts/{id}/hard`
 
-### Tags
-| Method | Endpoint | Auth | Description |
-|---|---|---|---|
-| GET | /api/v1/tags | None | Get all tags |
-| GET | /api/v1/tags/{id} | None | Get tag by ID |
-| POST | /api/v1/tags | Author, Admin | Create tag |
-| DELETE | /api/v1/tags/{id} | Admin | Delete tag |
+#### Key Behavior
+* **Strict state machine enforcement** (Draft $\rightarrow$ Published $\rightarrow$ Archived)
+* **Server-side visibility enforcement** instead of basic client-side filtering
+* **Soft delete safety net** with a dedicated admin recovery path
+* **Role-based write access** control separation (Author vs. Admin)
 
-### Users
-| Method | Endpoint | Auth | Description |
-|---|---|---|---|
-| GET | /api/v1/users/{id} | None | Get public profile |
-| GET | /api/v1/users/me | Bearer | Get own profile |
-| PUT | /api/v1/users/me | Bearer | Update profile |
-| PATCH | /api/v1/users/me/password | Bearer | Change password |
-| DELETE | /api/v1/users/me | Bearer | Delete own account |
+---
 
-### Admin
-| Method | Endpoint | Auth | Description |
-|---|---|---|---|
-| GET | /api/v1/admin/users | Admin | List all users |
-| PATCH | /api/v1/admin/users/{id}/role | Admin | Change user role |
-| DELETE | /api/v1/admin/users/{id} | Admin | Soft delete user |
-| POST | /api/v1/admin/users/{id}/restore | Admin | Restore user |
-| GET | /api/v1/admin/users/stats | Admin | User statistics |
+### 3. Content Interaction (Comments & Visibility Rules)
+This workflow handles how users interact with published content.
 
+#### Flow
+* User views a post (succeeds only if it matches their role visibility)
+* User retrieves comments for that specific post
+* User can:
+  * Create comments (authenticated users only)
+  * Edit their own comments
+  * Delete their own comments
+* Post author can moderate and delete comments on their own posts
+* Comments are automatically hidden if the parent post visibility is restricted
+
+#### Covers Endpoints
+* `/posts/{id}`
+* `/posts/{id}/comments`
+* `/posts/{id}/comments/{cid}`
+
+#### Key Behavior
+* **Cascading visibility rules:** Comment visibility depends entirely on parent post visibility
+* **Ownership-based authorization layers** (User vs. Post Owner vs. Admin)
+* **Soft delete implementations** for community moderation safety
+* **Prevention of orphaned content** exposure across the platform
+
+---
+
+### 4. Administration & System Management
+
+This workflow handles platform-level control and monitoring.
+
+#### Flow
+- Admin accesses system management endpoints
+- Admin manages users, roles, and system data integrity
+- System enforces constraints like protected categories and safe deletions
+
+#### Covers Endpoints
+- `/admin/users`
+- `/admin/users/{id}/role`
+- `/admin/users/{id}/restore`
+- `/admin/users/stats`
+- `/categories` (admin write operations)
+- `/tags` (admin delete operations)
+
+#### Key Behavior
+- Role-based access control enforced at controller and service level
+- System protects core entities like “Uncategorized”
+- Soft-deleted data can be restored via admin endpoints
 
 ## Getting Started
 
