@@ -4,6 +4,7 @@ using BlogFlow.API.Exceptions;
 using BlogFlow.API.Repositories.Interfaces;
 using BlogFlow.API.Services.Interfaces;
 using BlogFlow.API.Settings;
+using Microsoft.CodeAnalysis.Host.Mef;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
@@ -19,6 +20,7 @@ namespace BlogFlow.API.Services
         private readonly IRefreshTokenRepository _refreshTokenRepo;
         private readonly IUserRepository _userRepo;
         private readonly ILogger<AuthService> _logger;
+        private const int WORK_FACTOR = 12;
 
         public AuthService(
             IRefreshTokenRepository refrshTokenRepo,
@@ -68,6 +70,19 @@ namespace BlogFlow.API.Services
                 throw new UnauthorizedException(
                     "Invalid Credentials",
                     "INVALID_CREDENTIALS");
+            }
+
+            
+            if (BCrypt.Net.BCrypt.PasswordNeedsRehash(user.PasswordHash, WORK_FACTOR))
+            {
+                _logger.LogInformation(
+                    "Rehashing password for user {UserId}",
+                    user.Id);
+
+                var newHashPassword = BCrypt.Net.BCrypt.HashPassword(request.Password, workFactor: 12);
+                user.RehashPassword(newHashPassword);
+
+                await _userRepo.SaveChangesAsync(cancellationToken);
             }
 
             _logger.LogInformation(
