@@ -1,4 +1,6 @@
 ﻿using BlogFlow.API.Exceptions;
+using Newtonsoft.Json.Bson;
+using System.Security.Cryptography;
 using System.Text.Json.Serialization;
 
 namespace BlogFlow.API.Domain.Entities;
@@ -55,14 +57,12 @@ public class User
         DeletedAt = DateTime.UtcNow;
         UpdatedAt = DateTime.UtcNow;
     }
-
     public void Restore()
     {
         if (DeletedAt == null) throw new ConflictException($"User '{Username}' is not deleted.", "USER_NOT_DELETED");
         DeletedAt = null;
         UpdatedAt = DateTime.UtcNow;
     }
-
     public void UpdateIdentity(string newUsername, string newEmail)
     {
         if (string.IsNullOrWhiteSpace(newUsername))
@@ -81,12 +81,16 @@ public class User
         Email = newEmail;
         UpdatedAt = DateTime.UtcNow;
     }
-
     public void ChangePassword(string newHashedPassword)
     {
         if (string.IsNullOrWhiteSpace(newHashedPassword))
             throw new BadRequestException("Password hash cannot be empty.", "EMPTY_PASSWORD_HASH");
 
+        PasswordHash = newHashedPassword;
+        UpdatedAt = DateTime.UtcNow;
+    }
+    public void RehashPassword(string newHashedPassword)
+    {
         PasswordHash = newHashedPassword;
         UpdatedAt = DateTime.UtcNow;
     }
@@ -97,7 +101,7 @@ public class User
         Role = newRole;
         UpdatedAt = DateTime.UtcNow;
     }
-
+    
     // Navigation properties
     [JsonIgnore]
     public ICollection<Post> Posts { get; set; } = [];

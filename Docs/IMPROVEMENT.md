@@ -1,7 +1,10 @@
 # Future Improvements
 
 ## V2 Improvements
-
+### Refactor
+- [ ] Use DbContext directly in service layer (remove repository pattern)
+  - Why: EF Core is already an abstraction over data access
+  
 ### Features
 - [ ] Like / reaction system for posts
 - [ ] Full-text search — search by post body content, not just title
